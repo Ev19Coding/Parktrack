@@ -18,6 +18,10 @@ export default function About() {
           Home
         </A>
         {" - "}
+        <A href="/settings" class="text-sky-600 hover:underline">
+          Settings
+        </A>
+        {" - "}
         <span>About Page</span>
       </p>
     </main>
