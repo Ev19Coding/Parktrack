@@ -1,11 +1,8 @@
-import { onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import L from "leaflet";
+import { onMount } from "solid-js";
 import "leaflet/dist/leaflet.css";
-import type { JSX } from "solid-js";
-import { ESCAPED_HTML_ELEMENT_FROM_OUTER_HTML } from "~/shared/constants";
 import { location } from "../data/spots";
-
 
 const userLocationIcon = L.icon({
 	iconUrl: "https://img.icons8.com/officel/80/marker.png",
@@ -14,110 +11,98 @@ const userLocationIcon = L.icon({
 });
 
 export default function ParkMap() {
-  let mapDiv: HTMLDivElement | undefined;
-  const navigate = useNavigate();
+	let mapDiv: HTMLDivElement | undefined;
+	const navigate = useNavigate();
 
-  onMount(() => {
-    if (!mapDiv) return;
+	onMount(() => {
+		if (!mapDiv) return;
 
-    // Create map
-    const map = L.map(mapDiv);
+		// Create map
+		const map = L.map(mapDiv);
 
-    // Add tiles
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+		// Add tiles
+		L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+			attribution:
+				'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+		}).addTo(map);
 
-    const bounds = L.latLngBounds([]);
-    let userMarker: L.Marker | null = null;
+		const bounds = L.latLngBounds([]);
+		let userMarker: L.Marker | null = null;
 
-    function safeAddMarker(lat: number, lng: number, popupHTML: string) {
-      if (
-        typeof lat === "number" &&
-        typeof lng === "number" &&
-        lat >= -90 &&
-        lat <= 90 &&
-        lng >= -180 &&
-        lng <= 180
-      ) {
-        const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupHTML);
-        bounds.extend([lat, lng]);
-        return marker;
-      }
-      console.warn("Invalid coordinates skipped:", lat, lng);
-    }
+		function safeAddMarker(lat: number, lng: number, popupHTML: string) {
+			if (
+				typeof lat === "number" &&
+				typeof lng === "number" &&
+				lat >= -90 &&
+				lat <= 90 &&
+				lng >= -180 &&
+				lng <= 180
+			) {
+				const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupHTML);
+				bounds.extend([lat, lng]);
+				return marker;
+			}
+			console.warn("Invalid coordinates skipped:", lat, lng);
+		}
 
-    function addParks() {
-      location.forEach(({ lat, lng, name, address, entryFee, phone, id }) => {
-        const popupHTML = (
-          PopupContent({ address, entryFee, name, phone }) as HTMLDivElement
-        ).outerHTML.replaceAll(ESCAPED_HTML_ELEMENT_FROM_OUTER_HTML, "");
+		function addParks() {
+			location.forEach(({ lat, lng, name, address, entryFee, phone, id }) => {
+				const popupHTML = `
+         <div class="w-50">
+           <strong>${name}</strong><br/>
+           <em>${address}</em><br/>
+           Entry Fee: ${entryFee}<br/>
+           Phone: ${phone}
+         </div>
+       `;
 
-        const marker = safeAddMarker(lat, lng, popupHTML);
-        if (marker) {
-          marker.on("dblclick", () => {
-            navigate(`/park/${id}`);
-          });
-        }
-      });
-    }
+				const marker = safeAddMarker(lat, lng, popupHTML);
+				if (marker) {
+					marker.on("dblclick", () => {
+						navigate(`/park/${id}`);
+					});
+				}
+			});
+		}
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.watchPosition(
-        ({ coords }) => {
-          const userLat = coords.latitude;
-          const userLng = coords.longitude;
+		if ("geolocation" in navigator) {
+			navigator.geolocation.watchPosition(
+				({ coords }) => {
+					const userLat = coords.latitude;
+					const userLng = coords.longitude;
 
-          if (!userMarker) {
-            // First time locating user
-            userMarker = L.marker([userLat, userLng], { icon: userLocationIcon })
-              .addTo(map)
-              .bindPopup("You are here")
-              .openPopup();
+					if (!userMarker) {
+						// First time locating user
+						userMarker = L.marker([userLat, userLng], {
+							icon: userLocationIcon,
+						})
+							.addTo(map)
+							.bindPopup("You are here")
+							.openPopup();
 
-            map.setView([userLat, userLng], 12); // set initial view
-            addParks();
-          } else {
-            // Update position
-            userMarker.setLatLng([userLat, userLng]);
-          }
-        },
-        (err) => {
-          console.error("Geolocation error:", err);
-          addParks();
-          map.fitBounds(bounds, { padding: [50, 50] });
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
-        }
-      );
-    } else {
-      addParks();
-      map.fitBounds(bounds, { padding: [50, 50] });
-    }
-  });
+						map.setView([userLat, userLng], 12); // set initial view
+						addParks();
+					} else {
+						// Update position
+						userMarker.setLatLng([userLat, userLng]);
+					}
+				},
+				(err) => {
+					console.error("Geolocation error:", err);
+					addParks();
+					map.fitBounds(bounds, { padding: [50, 50] });
+				},
+				{
+					enableHighAccuracy: true,
+					timeout: 10000,
+					maximumAge: 0,
+				},
+			);
+		} else {
+			addParks();
+			map.fitBounds(bounds, { padding: [50, 50] });
+		}
+	});
 
-  return <div ref={mapDiv} class="h-125 w-full" />;
-}
-
-function PopupContent(prop: {
-  name: string;
-  address: string;
-  entryFee: string;
-  phone: string;
-}): JSX.Element {
-  return (
-    <div class="w-50">
-      <strong>{prop.name}</strong>
-      <br />
-      <em>{prop.address}</em>
-      <br />
-      Entry Fee: {prop.entryFee}
-      <br />
-      Phone: {prop.phone}
-    </div>
-  );
+	return <div ref={mapDiv} class="h-125 w-full" />;
 }
