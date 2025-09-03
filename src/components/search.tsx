@@ -1,80 +1,74 @@
 import { A } from "@solidjs/router";
-import { createSignal, Index, onCleanup, onMount, Show } from "solid-js";
+import { createMemo, createSignal, Index } from "solid-js";
 import { parkdata } from "~/data/parkdata"; // Or parkdata → rename accordingly
 
 export default function SearchableParks() {
 	const [query, setQuery] = createSignal("");
-	const [isOpen, setIsOpen] = createSignal(false);
+	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
 	// Filter parks
-	const results = () => {
+	const results = createMemo(() => {
 		const q = query().trim().toLowerCase();
 		if (!q) return parkdata; // Show all parks when empty (like YouTube does with suggestions)
 		return parkdata.filter((p) => p.name.toLowerCase().includes(q));
-	};
-
-	// Close dropdown if clicked outside
-	onMount(() => {
-		const handleClickOutside = (e: MouseEvent) => {
-			const target = e.target as HTMLElement;
-			if (!target.closest(".search-container")) {
-				setIsOpen(false);
-			}
-		};
-		document.addEventListener("click", handleClickOutside);
-		onCleanup(() => document.removeEventListener("click", handleClickOutside));
 	});
 
 	return (
-		<div class="relative w-full max-w-md search-container">
-			{/* Search bar */}
-			<div class="flex items-center border rounded px-2 py-1 bg-white">
-				<input
-					type="text"
-					placeholder="Search parks..."
-					value={query()}
-					onFocus={() => setIsOpen(true)} // Open when focused
-					onInput={(e) => setQuery(e.currentTarget.value)} // Update query but keep dropdown open
-					class="flex-1 p-2 outline-none"
-				/>
-
-				{/* Clear (cancel) button */}
-				<Show when={query()}>
-					<button
-						type="button"
-						onClick={() => setQuery("")}
-						class="ml-2 text-gray-500 hover:text-black"
-						aria-label="Clear search"
+		<details
+			class="dropdown"
+			open={areSuggestionsOpen()}
+			onFocusOut={(e) =>
+				//@ts-expect-error This works
+				!e.currentTarget.contains(e.relatedTarget) &&
+				setAreSuggestionsOpen(false)
+			}
+		>
+			<summary class="block">
+				{/* Search bar */}
+				<label class="input input-primary">
+					{/* TODO: Use an icon library like lucide to replace this inline svg */}
+					<svg
+						class="h-[1em] opacity-50"
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						aria-label="Search icon"
 					>
-						✖
-					</button>
-				</Show>
-			</div>
+						<title>Search</title>
+						<g
+							stroke-linejoin="round"
+							stroke-linecap="round"
+							stroke-width="2.5"
+							fill="none"
+							stroke="currentColor"
+						>
+							<circle cx="11" cy="11" r="8"></circle>
+							<path d="m21 21-4.3-4.3"></path>
+						</g>
+					</svg>
 
-			{/* Dropdown list */}
-			<Show when={isOpen()}>
-				<button
-					type="button"
-					class="absolute top-full left-0 right-0 mt-1 bg-white border rounded shadow-lg max-h-72 overflow-y-auto z-50"
-					onMouseDown={(e) => e.preventDefault()} // Prevent losing focus before click
+					<input
+						type="search"
+						placeholder="Search parks..."
+						value={query()}
+						onClick={(_) => setAreSuggestionsOpen(true)}
+						onInput={(e) => setQuery(e.currentTarget.value)} // Update query but keep dropdown open
+						class="flex-1 p-2 outline-none"
+					/>
+				</label>
+			</summary>
+
+			<ul class="menu dropdown-content bg-base-100 rounded-box z-1 w-full p-2 shadow-sm">
+				<Index
+					each={results()}
+					fallback={<div class="px-3 py-2">No results found</div>}
 				>
-					<Index
-						each={results()}
-						fallback={
-							<div class="px-3 py-2 text-gray-500">No results found</div>
-						}
-					>
-						{(park) => (
-							<A
-								href={`/parks/${park().id}`}
-								class="block px-3 py-2 hover:bg-gray-100"
-							>
-								{park().name}
-							</A>
-						)}
-					</Index>
-				</button>
-			</Show>
-		</div>
+					{(park) => (
+						<li>
+							<A href={`/parks/${park().id}`}>{park().name}</A>
+						</li>
+					)}
+				</Index>
+			</ul>
+		</details>
 	);
 }
