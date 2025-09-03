@@ -18,3 +18,8 @@ export default function App() {
     </Router>
   );
 }
+export function search(){
+  return(
+    <input type="search" placeholder="Search..." name="search" id="#" />
+  )
+}

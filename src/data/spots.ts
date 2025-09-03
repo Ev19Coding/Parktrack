@@ -1,6 +1,6 @@
 
 
-export const parks = [
+export const location = [
   {
     id: "millennium-park",
     name: "Millennium Park",

@@ -1,10 +1,10 @@
+import { onMount } from "solid-js";
 import { useNavigate } from "@solidjs/router";
 import L from "leaflet";
-import { onMount } from "solid-js";
 import "leaflet/dist/leaflet.css";
 import type { JSX } from "solid-js";
 import { ESCAPED_HTML_ELEMENT_FROM_OUTER_HTML } from "~/shared/constants";
-import { parks } from "../data/parks";
+import { location } from "../data/spots";
 
 
 const userLocationIcon = L.icon({
@@ -14,55 +14,110 @@ const userLocationIcon = L.icon({
 });
 
 export default function ParkMap() {
-	let mapDiv: HTMLDivElement | undefined;
-	const navigate = useNavigate();
+  let mapDiv: HTMLDivElement | undefined;
+  const navigate = useNavigate();
 
-	onMount(() => {
-		if (!mapDiv) return;
+  onMount(() => {
+    if (!mapDiv) return;
 
+    // Create map
     const map = L.map(mapDiv);
+
+    // Add tiles
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution:
-        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map);
 
     const bounds = L.latLngBounds([]);
+    let userMarker: L.Marker | null = null;
 
-    parks.forEach((park) => {
-      const popupContent = `
-        <div style="width:200px">
-          <strong>${park.name}</strong><br/>
-          <em>${park.address}</em><br/>
-          Entry Fee: ${park.entryFee}<br/>
-          Phone: ${park.phone}
-        </div>
-      `;
+    function safeAddMarker(lat: number, lng: number, popupHTML: string) {
+      if (
+        typeof lat === "number" &&
+        typeof lng === "number" &&
+        lat >= -90 &&
+        lat <= 90 &&
+        lng >= -180 &&
+        lng <= 180
+      ) {
+        const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupHTML);
+        bounds.extend([lat, lng]);
+        return marker;
+      }
+      console.warn("Invalid coordinates skipped:", lat, lng);
+    }
 
-      const marker = L.marker([park.lat, park.lng])
-        .addTo(map)
-        .bindPopup(popupContent);
+    function addParks() {
+      location.forEach(({ lat, lng, name, address, entryFee, phone, id }) => {
+        const popupHTML = (
+          PopupContent({ address, entryFee, name, phone }) as HTMLDivElement
+        ).outerHTML.replaceAll(ESCAPED_HTML_ELEMENT_FROM_OUTER_HTML, "");
 
-      // Double-click marker → go to park details
-      marker.on("dblclick", () => {
-        navigate(`/park/${park.id}`);
+        const marker = safeAddMarker(lat, lng, popupHTML);
+        if (marker) {
+          marker.on("dblclick", () => {
+            navigate(`/park/${id}`);
+          });
+        }
       });
-
-      bounds.extend([park.lat, park.lng]);
-    });
+    }
 
     if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(({ coords }) => {
-        const userMarker = L.marker([coords.latitude, coords.longitude])
-          .addTo(map)
-          .bindPopup("You are here");
+      navigator.geolocation.watchPosition(
+        ({ coords }) => {
+          const userLat = coords.latitude;
+          const userLng = coords.longitude;
 
-        bounds.extend(userMarker.getLatLng());
-        map.fitBounds(bounds, { padding: [50, 50] });
-      });
+          if (!userMarker) {
+            // First time locating user
+            userMarker = L.marker([userLat, userLng], { icon: userLocationIcon })
+              .addTo(map)
+              .bindPopup("You are here")
+              .openPopup();
+
+            map.setView([userLat, userLng], 12); // set initial view
+            addParks();
+          } else {
+            // Update position
+            userMarker.setLatLng([userLat, userLng]);
+          }
+        },
+        (err) => {
+          console.error("Geolocation error:", err);
+          addParks();
+          map.fitBounds(bounds, { padding: [50, 50] });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0,
+        }
+      );
     } else {
+      addParks();
       map.fitBounds(bounds, { padding: [50, 50] });
     }
   });
 
-  return <div ref={mapDiv} style={{ height: "500px", width: "100%" }} />;
+  return <div ref={mapDiv} class="h-125 w-full" />;
+}
+
+function PopupContent(prop: {
+  name: string;
+  address: string;
+  entryFee: string;
+  phone: string;
+}): JSX.Element {
+  return (
+    <div class="w-50">
+      <strong>{prop.name}</strong>
+      <br />
+      <em>{prop.address}</em>
+      <br />
+      Entry Fee: {prop.entryFee}
+      <br />
+      Phone: {prop.phone}
+    </div>
+  );
 }
