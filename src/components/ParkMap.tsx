@@ -8,9 +8,9 @@ import { location } from "../data/spots";
 
 
 const userLocationIcon = L.icon({
-  iconUrl: "https://img.icons8.com/officel/80/marker.png",
-  iconSize: [40, 40],
-  iconAnchor: [20, 40]
+	iconUrl: "https://img.icons8.com/officel/80/marker.png",
+	iconSize: [40, 40],
+	iconAnchor: [20, 40],
 });
 
 export default function ParkMap() {

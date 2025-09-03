@@ -1,10 +1,13 @@
-import { useParams } from "@solidjs/router";
+import { useLocation, useParams } from "@solidjs/router";
 import { parkdata } from "~/data/parkdata";
+import { ParkRouteState } from "~/types/park-route";
 
 
 export default function ParkDetails() {
-  const params = useParams();
-  const park = parkdata.find((p: { id: number; }) => p.id === Number(params.id));
+  //@ts-expect-error I'll deal with the type issue later
+  const state:ParkRouteState|null = useLocation().state
+
+  const park = parkdata.find(park=>park.name === state?.name);
 
   if (!park) return <p>Park not found</p>;
 
@@ -32,7 +35,7 @@ export default function ParkDetails() {
         </div>
       </section>
 
-      
+
     </div>
   );
 }
