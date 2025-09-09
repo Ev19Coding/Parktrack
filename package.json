@@ -1,32 +1,35 @@
 {
-  "name": "example-with-tailwindcss",
-  "type": "module",
-  "scripts": {
-    "dev": "vinxi dev",
-    "build": "vinxi build",
-    "start": "vinxi start"
-  },
-  "dependencies": {
-    "@solidjs/router": "^0.15.0",
-    "@solidjs/start": "^1.1.0",
-    "leaflet": "^1.9.4",
-    "solid-js": "^1.9.5",
-    "solid-leaflet": "^0.0.1",
-    "vinxi": "^0.5.7"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.1.4",
-    "@solidjs/testing-library": "^0.8.10",
-    "@tailwindcss/vite": "^4.0.7",
-    "@testing-library/jest-dom": "^6.6.4",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/leaflet": "^1.9.20",
-    "daisyui": "^5.0.50",
-    "jsdom": "^26.1.0",
-    "tailwindcss": "^4.0.7",
-    "vitest": "^3.2.4"
-  },
-  "engines": {
-    "node": ">=22"
-  }
+	"name": "example-with-tailwindcss",
+	"type": "module",
+	"scripts": {
+		"dev": "vinxi dev",
+		"build": "vinxi build",
+		"start": "vinxi start",
+		"bun:dev": "bun --bun vinxi dev",
+		"bun:build": "bun --bun vinxi build",
+		"bun:start": "bun --bun vinxi start"
+	},
+	"dependencies": {
+		"@solidjs/router": "^0.15.0",
+		"@solidjs/start": "^1.1.0",
+		"leaflet": "^1.9.4",
+		"solid-js": "^1.9.5",
+		"solid-leaflet": "^0.0.1",
+		"vinxi": "^0.5.7"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.1.4",
+		"@solidjs/testing-library": "^0.8.10",
+		"@tailwindcss/vite": "^4.0.7",
+		"@testing-library/jest-dom": "^6.6.4",
+		"@testing-library/user-event": "^14.6.1",
+		"@types/leaflet": "^1.9.20",
+		"daisyui": "^5.0.50",
+		"jsdom": "^26.1.0",
+		"tailwindcss": "^4.0.7",
+		"vitest": "^3.2.4"
+	},
+	"engines": {
+		"node": ">=22"
+	}
 }
