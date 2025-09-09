@@ -4,27 +4,32 @@
     "": {
       "name": "example-with-tailwindcss",
       "dependencies": {
-        "@solidjs/router": "latest",
-        "@solidjs/start": "latest",
-        "leaflet": "latest",
-        "solid-js": "latest",
-        "solid-leaflet": "latest",
-        "vinxi": "latest",
+        "@solidjs/router": "^0.15.3",
+        "@solidjs/start": "^1.1.7",
+        "leaflet": "^1.9.4",
+        "lucide-solid": "^0.543.0",
+        "solid-js": "^1.9.9",
+        "solid-leaflet": "^0.0.1",
+        "vinxi": "^0.5.8",
       },
       "devDependencies": {
-        "@biomejs/biome": "latest",
-        "@solidjs/testing-library": "latest",
-        "@tailwindcss/vite": "latest",
-        "@testing-library/jest-dom": "latest",
-        "@testing-library/user-event": "latest",
-        "@types/leaflet": "latest",
-        "daisyui": "latest",
-        "jsdom": "latest",
-        "tailwindcss": "latest",
-        "vitest": "latest",
+        "@biomejs/biome": "^2.2.3",
+        "@solidjs/testing-library": "^0.8.10",
+        "@tailwindcss/vite": "^4.1.13",
+        "@testing-library/jest-dom": "^6.8.0",
+        "@testing-library/user-event": "^14.6.1",
+        "@types/leaflet": "^1.9.20",
+        "daisyui": "^5.1.9",
+        "jsdom": "^26.1.0",
+        "tailwindcss": "^4.1.13",
+        "vitest": "^3.2.4",
       },
     },
   },
+  "trustedDependencies": [
+    "@tailwindcss/oxide",
+    "@parcel/watcher",
+  ],
   "packages": {
     "@adobe/css-tools": ["@adobe/css-tools@4.4.3", "", {}, "sha512-VQKMkwriZbaOgVCby1UDY/LDk5fIjhQicCvVPFqfe+69fWaPWydbWJ3wRt59/YzIwda1I81loas3oCoHxnqvdA=="],
 
@@ -1031,6 +1036,8 @@
     "loupe": ["loupe@3.2.0", "", {}, "sha512-2NCfZcT5VGVNX9mSZIxLRkEAegDGBpuQZBy13desuHeVORmBDyAET4TkJr4SjqQy3A8JDofMN6LpkK8Xcm/dlw=="],
 
     "lru-cache": ["lru-cache@10.4.3", "", {}, "sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ=="],
+
+    "lucide-solid": ["lucide-solid@0.543.0", "", { "peerDependencies": { "solid-js": "^1.4.7" } }, "sha512-0SlQUNj2idRjN1hBXFqwYRzMxsRt8FaNlCXC1ArOHtAhXIoyJllYMwAoId5R7oQa3Mc3izSpOEWruUcXjA4Wag=="],
 
     "luxon": ["luxon@3.7.1", "", {}, "sha512-RkRWjA926cTvz5rAb1BqyWkKbbjzCGchDUIKMCUvNi17j6f6j8uHGDV82Aqcqtzd+icoYpELmG3ksgGiFNNcNg=="],
 
