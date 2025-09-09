@@ -1,7 +1,9 @@
+import { A } from "@solidjs/router";
 import SettingsIcon from "lucide-solid/icons/menu";
 import SearchIcon from "lucide-solid/icons/search";
-import { Index, type JSXElement } from "solid-js";
+import { createMemo, createSignal, Index, type JSXElement } from "solid-js";
 import { TooltipButton } from "~/components/button";
+import { parkdata } from "~/data/parkdata";
 
 function Header() {
 	return (
@@ -22,11 +24,54 @@ function Header() {
 }
 
 function SearchBar() {
+	const [query, setQuery] = createSignal("");
+	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
+
+	// Filter parks
+	const results = createMemo(() => {
+		const q = query().trim().toLowerCase();
+		if (!q) return parkdata; // Show all parks when empty (like YouTube does with suggestions)
+		return parkdata.filter((p) => p.name.toLowerCase().includes(q));
+	});
 	return (
-		<label class="input place-self-center bg-base-200 sm:min-w-120 lg:col-[1/3]">
-			<SearchIcon class="text-base-content/50" />
-			<input type="search" required placeholder="Search" />
-		</label>
+		<details
+			class="dropdown place-self-center lg:col-[1/3]"
+			open={areSuggestionsOpen()}
+			onFocusOut={(e) =>
+				//@ts-expect-error This works
+				!e.currentTarget.contains(e.relatedTarget) &&
+				setAreSuggestionsOpen(false)
+			}
+		>
+			<summary class="block">
+				{/* Search bar */}
+				<label class="input bg-base-200 sm:min-w-120">
+					<SearchIcon class="text-base-content/50" />{" "}
+					<input
+						type="search"
+						placeholder="Search parks..."
+						value={query()}
+						onClick={(_) => setAreSuggestionsOpen(true)}
+						onInput={(e) => setQuery(e.currentTarget.value)} // Update query but keep dropdown open
+						class="flex-1 p-2 outline-none"
+					/>
+				</label>
+			</summary>
+
+			{/* Dropdown */}
+			<ul class="menu dropdown-content z-1 mt-2 w-full rounded-box border bg-base-300 p-2 shadow-sm">
+				<Index
+					each={results()}
+					fallback={<div class="px-3 py-2">No results found</div>}
+				>
+					{(park) => (
+						<li>
+							<A href={`/parks/${park().id}`}>{park().name}</A>
+						</li>
+					)}
+				</Index>
+			</ul>
+		</details>
 	);
 }
 
