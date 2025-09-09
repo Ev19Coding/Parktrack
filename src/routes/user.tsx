@@ -5,8 +5,8 @@ import { TooltipButton } from "~/components/button";
 
 function Header() {
 	return (
-		<header class="flex justify-around items-center gap-4 text-2xl lg:col-[1/3]">
-			<h1 class="font-bold text-center">
+		<header class="flex items-center justify-around gap-4 text-2xl lg:col-[1/3]">
+			<h1 class="text-center font-bold">
 				Parks {"&"} Restaurants in AMAC, Abuja
 			</h1>
 
@@ -23,7 +23,7 @@ function Header() {
 
 function SearchBar() {
 	return (
-		<label class="input place-self-center sm:min-w-120 bg-base-200 lg:col-[1/3]">
+		<label class="input place-self-center bg-base-200 sm:min-w-120 lg:col-[1/3]">
 			<SearchIcon class="text-base-content/50" />
 			<input type="search" required placeholder="Search" />
 		</label>
@@ -33,7 +33,7 @@ function SearchBar() {
 function MapView() {
 	// TODO: Load the map here
 	return (
-		<section class="rounded-box bg-base-200 sm:place-self-center sm:w-170 h-full lg:col-[1/3]"></section>
+		<section class="h-full rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]"></section>
 	);
 }
 
@@ -43,13 +43,13 @@ function DataSection(prop: {
 	class: string;
 }) {
 	return (
-		<section class={`overflow-auto space-y-2 ${prop.class}`}>
+		<section class={`space-y-2 overflow-auto ${prop.class}`}>
 			<h2 class="font-bold text-xl">{prop.header}</h2>
 
-			<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-3 auto-rows-fr gap-4">
+			<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
 				<Index each={prop.data}>
 					{(_) => (
-						<div class="size-36 rounded-box bg-base-200 place-self-center md:size-40 lg:size-44"></div>
+						<div class="size-36 place-self-center rounded-box bg-base-200 md:size-40 lg:size-44"></div>
 					)}
 				</Index>
 			</div>
@@ -79,7 +79,7 @@ function RestaurantSection() {
 
 export default function Home() {
 	return (
-		<div class="size-full grid grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 p-4 overflow-auto lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)] lg:grid-cols-2">
+		<div class="grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
 			<Header />
 
 			<SearchBar />
