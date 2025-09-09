@@ -16,6 +16,7 @@
     "lucide-solid": "^0.543.0",
     "solid-js": "^1.9.9",
     "solid-leaflet": "^0.0.1",
+    "solidjs-use": "^2.3.0",
     "valibot": "^1.1.0",
     "vinxi": "^0.5.8"
   },
