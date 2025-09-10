@@ -2,6 +2,6 @@
 @plugin "daisyui" {
 	exclude: rootscrollgutter;
 	themes:
-		cupcake --default,
+		bumblebee --default,
 		night --prefersdark;
 }
