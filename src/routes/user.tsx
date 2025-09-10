@@ -81,7 +81,7 @@ function SearchBar() {
 			<summary class="block">
 				{/* Search bar */}
 				{/** biome-ignore lint/a11y/noLabelWithoutControl: <The're an input but biome doesn't detect it because of the iife> */}
-				<label class="input sm: min-w-120 bg-base-200">
+				<label class="input bg-base-200 sm:min-w-120">
 					<SearchIcon class="text-base-content/50" /> {(() => {
 						let inputRef$: HTMLInputElement | undefined;
 
