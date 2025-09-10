@@ -398,9 +398,11 @@ export async function getRelevantDataFromJawgsApi(
 	arg: JawgsRequestParam,
 ): Promise<ReadonlyArray<JawgsLocationResult>> {
 	try {
+		if (!arg.query) throw Error("Empty query");
+
 		return extractRelevantDataFromJawgsResponse(await fetchJawgsResponse(arg));
 	} catch (e) {
-		console.log("Valibot errored. :/", e, "Defaulting to an empty result");
+		console.log("Error. :/", e, "Defaulting to an empty result");
 
 		return [];
 	}
