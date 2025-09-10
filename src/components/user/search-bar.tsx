@@ -1,11 +1,14 @@
 import { A, createAsync, query } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
-import { createSignal, Index, Suspense } from "solid-js";
+import { createSignal, Index, type Setter, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
-import { getRelevantDataFromJawgsApi as _getRelevantDataFromJawgsApi } from "~/location/geocoding";
+import { getRelevantDataFromJawgsApi as _getRelevantDataFromJawgsApi } from "~/location/jawg-geocoding";
+import type { LocationApiResult } from "~/location/types";
 import type { PromiseValue } from "~/utils/generics";
 
-export default function UserSearchBar() {
+export default function UserSearchBar(prop: {
+	setLocationResult: Setter<LocationApiResult | null>;
+}) {
 	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
@@ -92,8 +95,8 @@ export default function UserSearchBar() {
 				</label>
 			</summary>
 
-			{/* Dropdown */}
-			<ul class="menu dropdown-content z-1 mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm">
+			{/* Dropdown. It's z-index is 1001 so that it stays above the leaflet map buttons */}
+			<ul class="menu dropdown-content z-[1001] mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm">
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
@@ -102,7 +105,15 @@ export default function UserSearchBar() {
 					>
 						{(park) => (
 							<li>
-								<A href="/user">{park().label}</A>
+								<A
+									href="/user"
+									onClick={() => {
+										prop.setLocationResult(park());
+										setAreSuggestionsOpen(false);
+									}}
+								>
+									{park().label}
+								</A>
 							</li>
 						)}
 					</Index>

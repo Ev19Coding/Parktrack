@@ -1,6 +1,7 @@
 "use server";
 
 import * as v from "valibot";
+import type { LocationApiResult } from "./types";
 
 /**
  * Language information for the geocoding query
@@ -371,7 +372,7 @@ async function fetchJawgsResponse(
 	return v.parse(GeocodingResponseSchema, fetchedJson);
 }
 
-type JawgsLocationResult = {
+export type JawgsLocationResult = {
 	name: string;
 	/** Similar to it's address */
 	label: string;
@@ -381,7 +382,7 @@ type JawgsLocationResult = {
 
 function extractRelevantDataFromJawgsResponse(
 	response: GeocodingResponse,
-): ReadonlyArray<JawgsLocationResult> {
+): ReadonlyArray<LocationApiResult> {
 	return response.features.map((feature) => {
 		const {
 			geometry: {
@@ -390,13 +391,13 @@ function extractRelevantDataFromJawgsResponse(
 			properties: { label, name },
 		} = feature;
 
-		return { latitude, label, longitude, name };
+		return { api: "jawg", latitude, label, longitude, name };
 	});
 }
 
 export async function getRelevantDataFromJawgsApi(
 	arg: JawgsRequestParam,
-): Promise<ReadonlyArray<JawgsLocationResult>> {
+): Promise<ReadonlyArray<LocationApiResult>> {
 	try {
 		if (!arg.query) throw Error("Empty query");
 

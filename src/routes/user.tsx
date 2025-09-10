@@ -1,10 +1,12 @@
 import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
+import { createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
 import {
 	UserParkSection,
 	UserRestaurantSection,
 } from "~/components/user/park-restaurant";
+import type { LocationApiResult } from "~/location/types";
 
 // TODO: Move this out of here
 function Header() {
@@ -29,13 +31,24 @@ const UserSearchBar = clientOnly(() => import("~/components/user/search-bar"));
 const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 export default function Home() {
+	const [selectedArea, setSelectedArea] =
+		createSignal<LocationApiResult | null>(null);
+
 	return (
 		<div class="grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
 			<Header />
 
-			<UserSearchBar />
+			<UserSearchBar setLocationResult={setSelectedArea} />
 
-			<UserMapView />
+			<UserMapView
+				coords={
+					selectedArea()
+						? // biome-ignore lint/style/noNonNullAssertion: <This is valid>
+							[selectedArea()!.latitude, selectedArea()!.longitude]
+						: null
+				}
+				label={selectedArea()?.label ?? ""}
+			/>
 
 			<UserParkSection />
 
