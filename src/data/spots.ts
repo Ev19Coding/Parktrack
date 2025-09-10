@@ -1,26 +1,23 @@
-
-
 export const location = [
-  {
-    id: "millennium-park",
-    name: "Millennium Park",
-    lat: 9.0622,
-    lng: 7.4951,
-    entryFee: "₦500",
-    phone: "+234 800 123 4567",
-    address: "Shehu Shagari Way, Abuja",
-    
-  },
-  {
-    id: "acropolis-park",
-    name: "Acropolis Park",
-    lat: 8.9885873,
-    lng:7.5002199,
-    entryFee: "Free",
-    phone: "+234 800 123 4567",
-    address: "Plot No. 3872, E27, Apo District, Abuja, FCT 900110, Federal Capital Territory",
-    
-  },
+	{
+		id: "millennium-park",
+		name: "Millennium Park",
+		lat: 9.0622,
+		lng: 7.4951,
+		entryFee: "₦500",
+		phone: "+234 800 123 4567",
+		address: "Shehu Shagari Way, Abuja",
+	},
+	{
+		id: "acropolis-park",
+		name: "Acropolis Park",
+		lat: 8.9885873,
+		lng: 7.5002199,
+		entryFee: "Free",
+		phone: "+234 800 123 4567",
+		address:
+			"Plot No. 3872, E27, Apo District, Abuja, FCT 900110, Federal Capital Territory",
+	},
 
 	{
 		id: "jabi-lake",

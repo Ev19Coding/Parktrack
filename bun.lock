@@ -10,6 +10,7 @@
         "lucide-solid": "^0.543.0",
         "solid-js": "^1.9.9",
         "solid-leaflet": "^0.0.1",
+        "solidjs-leaflet": "^1.0.2",
         "solidjs-use": "^2.3.0",
         "valibot": "^1.1.0",
         "vinxi": "^0.5.8",
@@ -1350,6 +1351,8 @@
     "solid-refresh": ["solid-refresh@0.6.3", "", { "dependencies": { "@babel/generator": "^7.23.6", "@babel/helper-module-imports": "^7.22.15", "@babel/types": "^7.23.6" }, "peerDependencies": { "solid-js": "^1.3" } }, "sha512-F3aPsX6hVw9ttm5LYlth8Q15x6MlI/J3Dn+o3EQyRTtTxidepSTwAYdozt01/YA+7ObcciagGEyXIopGZzQtbA=="],
 
     "solid-use": ["solid-use@0.9.1", "", { "peerDependencies": { "solid-js": "^1.7" } }, "sha512-UwvXDVPlrrbj/9ewG9ys5uL2IO4jSiwys2KPzK4zsnAcmEl7iDafZWW1Mo4BSEWOmQCGK6IvpmGHo1aou8iOFw=="],
+
+    "solidjs-leaflet": ["solidjs-leaflet@1.0.2", "", { "dependencies": { "leaflet": "^1.9.4", "solid-js": "^1.7.8" }, "peerDependencies": { "@types/leaflet": ">=1.9.4" }, "optionalPeers": ["@types/leaflet"] }, "sha512-RB7yLq/2h7f2shSwNiRHCe3chDuMKN+YUBRBoz0XjbAzMhNw6ivHgSzsphPg4VortyiqqRHqRdRC/VkaYKA8Qw=="],
 
     "solidjs-use": ["solidjs-use@2.3.0", "", { "dependencies": { "@solidjs-use/shared": "2.3.0", "@types/web-bluetooth": "^0.0.16" } }, "sha512-ZyH2jiUSQU+5S5vd8zyvqz9X2ikhMjJhDeh/TjRzjLDJlZ1RuZaMxdM+jGsrJxo3X/xBW9kDpYNONXs6wYrQCQ=="],
 
