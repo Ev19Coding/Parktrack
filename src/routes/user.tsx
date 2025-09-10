@@ -1,7 +1,6 @@
 import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { TooltipButton } from "~/components/button";
-import UserMapView from "~/components/user/map-view";
 import {
 	UserParkSection,
 	UserRestaurantSection,
@@ -27,6 +26,7 @@ function Header() {
 }
 
 const UserSearchBar = clientOnly(() => import("~/components/user/search-bar"));
+const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 export default function Home() {
 	return (
