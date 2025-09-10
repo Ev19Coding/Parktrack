@@ -1,9 +1,11 @@
-import { A } from "@solidjs/router";
+import { A, createAsync, query } from "@solidjs/router";
 import SettingsIcon from "lucide-solid/icons/menu";
 import SearchIcon from "lucide-solid/icons/search";
-import { createMemo, createSignal, Index, type JSXElement } from "solid-js";
+import { createSignal, Index, type JSXElement, Suspense } from "solid-js";
+import { useGeolocation, useThrottle } from "solidjs-use";
 import { TooltipButton } from "~/components/button";
-import { parkdata } from "~/data/parkdata";
+import { getRelevantDataFromJawgsApi as _getRelevantDataFromJawgsApi } from "~/location/geocoding";
+import type { PromiseValue } from "~/utils/generics";
 
 function Header() {
 	return (
@@ -24,15 +26,48 @@ function Header() {
 }
 
 function SearchBar() {
-	const [query, setQuery] = createSignal("");
+	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
+	const { coords } = useGeolocation({ enableHighAccuracy: true });
+
+	// Cache previous results
+	const getRelevantDataFromJawgsApi = query(
+		_getRelevantDataFromJawgsApi,
+		"jawgs-autocomplete-api",
+	);
+
+	let lastValidApiResultCache:
+		| PromiseValue<ReturnType<typeof getRelevantDataFromJawgsApi>>
+		| undefined;
+
+	const results = useThrottle(
+		createAsync(async () => {
+			const res = await getRelevantDataFromJawgsApi({
+				distance: 500,
+				latitude: coords().latitude,
+				longitude: coords().longitude,
+				query: input(),
+			});
+
+			if (res.length) {
+				lastValidApiResultCache = res;
+
+				return res;
+			} else {
+				return lastValidApiResultCache ?? res;
+			}
+		}),
+		1000,
+	);
+
 	// Filter parks
-	const results = createMemo(() => {
-		const q = query().trim().toLowerCase();
-		if (!q) return parkdata; // Show all parks when empty (like YouTube does with suggestions)
-		return parkdata.filter((p) => p.name.toLowerCase().includes(q));
-	});
+	// const results = createMemo(() => {
+	// 	const q = query().trim().toLowerCase();
+	// 	if (!q) return parkdata; // Show all parks when empty (like YouTube does with suggestions)
+	// 	return parkdata.filter((p) => p.name.toLowerCase().includes(q));
+	// });
+
 	return (
 		<details
 			class="dropdown place-self-center lg:col-[1/3]"
@@ -45,16 +80,31 @@ function SearchBar() {
 		>
 			<summary class="block">
 				{/* Search bar */}
-				<label class="input bg-base-200 sm:min-w-120">
-					<SearchIcon class="text-base-content/50" />{" "}
-					<input
-						type="search"
-						placeholder="Search parks..."
-						value={query()}
-						onClick={(_) => setAreSuggestionsOpen(true)}
-						onInput={(e) => setQuery(e.currentTarget.value)} // Update query but keep dropdown open
-						class="flex-1 p-2 outline-none"
-					/>
+				{/** biome-ignore lint/a11y/noLabelWithoutControl: <The're an input but biome doesn't detect it because of the iife> */}
+				<label class="input sm: min-w-120 bg-base-200">
+					<SearchIcon class="text-base-content/50" /> {(() => {
+						let inputRef$: HTMLInputElement | undefined;
+
+						function setInputWithValue() {
+							if ((inputRef$?.value ?? "").length >= 2)
+								// biome-ignore lint/style/noNonNullAssertion: <biome can't tell this will be valid>
+								setInput(inputRef$!.value);
+						}
+
+						return (
+							<input
+								type="search"
+								placeholder="Search parks..."
+								value={input()}
+								onClick={(_) => setAreSuggestionsOpen(true)}
+								// Update query but keep dropdown open
+								onInput={setInputWithValue}
+								onKeyPress={({ key }) => key === "Enter" && setInputWithValue()}
+								class="flex-1 p-2 outline-none"
+								ref={inputRef$}
+							/>
+						);
+					})()}
 					<p class="label">
 						<span class="text-xs sm:text-sm">
 							Powered by{" "}
@@ -72,17 +122,20 @@ function SearchBar() {
 			</summary>
 
 			{/* Dropdown */}
-			<ul class="menu dropdown-content z-1 mt-2 w-full rounded-box border bg-base-300 p-2 shadow-sm">
-				<Index
-					each={results()}
-					fallback={<div class="px-3 py-2">No results found</div>}
-				>
-					{(park) => (
-						<li>
-							<A href={`/parks/${park().id}`}>{park().name}</A>
-						</li>
-					)}
-				</Index>
+			<ul class="menu dropdown-content z-1 mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm">
+				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
+				<Suspense>
+					<Index
+						each={results()}
+						fallback={<div class="px-3 py-2">No results found</div>}
+					>
+						{(park) => (
+							<li>
+								<A href="/user">{park().label}</A>
+							</li>
+						)}
+					</Index>
+				</Suspense>
 			</ul>
 		</details>
 	);
