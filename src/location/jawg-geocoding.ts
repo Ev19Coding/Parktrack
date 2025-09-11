@@ -1,6 +1,7 @@
 "use server";
 
 import * as v from "valibot";
+import testData from "~/data/test-data.json";
 import type { LocationApiResult } from "./types";
 
 /**
@@ -398,13 +399,16 @@ function extractRelevantDataFromJawgsResponse(
 export async function getRelevantDataFromJawgsApi(
 	arg: JawgsRequestParam,
 ): Promise<ReadonlyArray<LocationApiResult>> {
-	try {
-		if (!arg.query) throw Error("Empty query");
+	//@ts-expect-error So I don't rack up API costs yet
+	return testData;
 
-		return extractRelevantDataFromJawgsResponse(await fetchJawgsResponse(arg));
-	} catch (e) {
-		console.log("Error. :/", e, "Defaulting to an empty result");
+	// try {
+	// 	if (!arg.query) throw Error("Empty query");
 
-		return [];
-	}
+	// 	return extractRelevantDataFromJawgsResponse(await fetchJawgsResponse(arg));
+	// } catch (e) {
+	// 	console.log("Error. :/", e, "Defaulting to an empty result");
+
+	// 	return [];
+	// }
 }
