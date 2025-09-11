@@ -1,123 +1,203 @@
 "use server";
 import * as v from "valibot";
 
-const WorkHoursSchema = v.pipe(
-	v.object({
-		/** A number in minutes i.e. 360 == 6:00 AM, 1020 == 5:00 PM */
-		open: v.number(),
+const UrlSchema = v.pipe(v.string(), v.url());
 
-		/** A number in minutes i.e. 360 == 6:00 AM, 1020 == 5:00 PM */
-		close: v.number(),
+const ImageSchema = v.pipe(
+	v.object({
+		title: v.string(),
+		image: UrlSchema,
+	}),
+	v.readonly(),
+);
+
+const OpenHoursSchema = v.pipe(
+	v.record(v.string(), v.array(v.string())), // e.g., { "Monday": ["8 am–2 am"], "Sunday": ["Closed"] }
+	v.readonly(),
+);
+
+const PopularTimesSchema = v.pipe(
+	v.record(v.string(), v.record(v.string(), v.number())), // e.g., { "Monday": { "0": 38, "1": 21, ... } }
+	v.readonly(),
+);
+
+const ReviewsBreakdownSchema = v.pipe(
+	v.object({
+		"1": v.number(),
+		"2": v.number(),
+		"3": v.number(),
+		"4": v.number(),
+		"5": v.number(),
+	}),
+	v.readonly(),
+);
+
+const ExternalLinkSchema = v.pipe(
+	v.object({
+		link: UrlSchema,
+		source: v.string(),
+	}),
+	v.readonly(),
+);
+
+const MenuSchema = v.pipe(
+	v.object({
+		link: v.string(), // Can be empty string
+		source: v.string(), // Can be empty string
+	}),
+	v.readonly(),
+);
+
+const OwnerSchema = v.pipe(
+	v.object({
+		id: v.string(),
+		name: v.string(),
+		link: UrlSchema,
+	}),
+	v.readonly(),
+);
+
+const CompleteAddressSchema = v.pipe(
+	v.object({
+		borough: v.optional(v.string()),
+		street: v.optional(v.string()),
+		city: v.string(),
+		postal_code: v.optional(v.string()),
+		state: v.string(),
+		country: v.string(),
+	}),
+	v.readonly(),
+);
+
+const AboutOptionSchema = v.pipe(
+	v.object({
+		name: v.string(),
+		enabled: v.boolean(),
+	}),
+	v.readonly(),
+);
+
+const AboutCategorySchema = v.pipe(
+	v.object({
+		id: v.string(),
+		name: v.string(),
+		options: v.pipe(v.array(AboutOptionSchema), v.readonly()),
 	}),
 	v.readonly(),
 );
 
 const LocationSchema = v.pipe(
 	v.object({
+		/** Google's unique business ID (cid from the data) */
 		id: v.string(),
 
-		address: v.string(),
-
+		/** Business name */
 		name: v.string(),
 
-		type: v.picklist([
-			"park",
-			"restaurant",
-			"cafe",
-			"store",
-			"hotel",
-			"museum",
-			"gym",
-			"hospital",
-			"school",
-			"library",
-		]),
+		/** Primary category */
+		category: v.string(),
 
+		/** All categories this business belongs to */
+		categories: v.pipe(v.array(v.string()), v.readonly()),
+
+		/** Full address string */
+		address: v.string(),
+
+		/** Detailed address breakdown */
+		completeAddress: CompleteAddressSchema,
+
+		/** Direct URL to the business listing on Google Maps */
+		googleMapLink: UrlSchema,
+
+		/** Latitude coordinate */
 		latitude: v.number(),
 
+		/** Longitude coordinate */
 		longitude: v.number(),
 
-		/** An array containing image urls or base64 encoded data  */
-		img: v.pipe(
-			v.array(
-				v.union(
-					[v.pipe(v.string(), v.url()), v.pipe(v.string(), v.base64())],
-					"The data is badly encoded or not a valid url.",
-				),
-			),
-			v.readonly(),
-		),
+		/** Main thumbnail image URL */
+		thumbnail: UrlSchema,
 
-		/** When the business opens and closes */
-		workHours: WorkHoursSchema,
+		/** Array of categorized images */
+		images: v.pipe(v.array(ImageSchema), v.readonly()),
 
-		/** Description of the location */
+		/** Operating hours by day e.g., { "Monday": ["8 am–2 am"], "Sunday": ["Closed"] } */
+		openHours: OpenHoursSchema,
+
+		/** Popular times data by day and hour e.g. { "Monday": { "0": 38, "1": 21, ... } } */
+		popularTimes: PopularTimesSchema,
+
+		/** Current business status */
+		status: v.string(),
+
+		/** Business description */
 		description: v.optional(v.string()),
 
-		/** Phone number for the location */
+		/** Phone number */
 		phone: v.optional(v.string()),
 
 		/** Website URL */
-		website: v.optional(v.pipe(v.string(), v.url())),
+		website: v.optional(v.string()), // Can be empty string in data
 
-		/** Email address */
-		email: v.optional(v.pipe(v.string(), v.email())),
+		/** Email addresses */
+		emails: v.optional(v.nullable(v.array(v.pipe(v.string(), v.email())))),
 
 		/** Average rating (1-5 stars) */
 		rating: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
 
-		/** Number of reviews */
+		/** Total number of reviews */
 		reviewCount: v.optional(v.pipe(v.number(), v.minValue(0))),
 
-		/** Price level (1-4, $ to $$$$) */
-		priceLevel: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(4))),
+		/** Breakdown of reviews by star rating */
+		reviewsBreakdown: v.optional(ReviewsBreakdownSchema),
 
-		/** Tags/categories for the location */
-		tags: v.optional(v.pipe(v.array(v.string()), v.readonly())),
+		/** Price range as text (e.g., "₦₦₦", "₦25,000–30,000") */
+		priceRange: v.optional(v.string()),
 
-		/** Amenities available */
-		amenities: v.optional(
-			v.pipe(
-				v.array(
-					v.picklist([
-						"wifi",
-						"parking",
-						"wheelchair_accessible",
-						"outdoor_seating",
-						"pet_friendly",
-						"delivery",
-						"takeout",
-						"reservations",
-						"credit_cards",
-					]),
-				),
-				v.readonly(),
-			),
-		),
+		/** Timezone */
+		timezone: v.optional(v.string()),
 
-		/** Social media links */
-		socialMedia: v.optional(
-			v.pipe(
-				v.object({
-					facebook: v.optional(v.pipe(v.string(), v.url())),
-					instagram: v.optional(v.pipe(v.string(), v.url())),
-					twitter: v.optional(v.pipe(v.string(), v.url())),
-				}),
-				v.readonly(),
-			),
-		),
+		/** Google Plus Code */
+		plusCode: v.optional(v.string()),
 
-		/** Date when location was created */
+		/** Google's internal data ID */
+		dataId: v.optional(v.string()),
+
+		/** Link to reviews */
+		reviewsLink: v.optional(UrlSchema),
+
+		/** Reservation links */
+		reservations: v.optional(v.nullable(v.array(ExternalLinkSchema))),
+
+		/** Online ordering links */
+		orderOnline: v.optional(v.nullable(v.array(ExternalLinkSchema))),
+
+		/** Menu information */
+		menu: v.optional(MenuSchema),
+
+		/** Business owner information */
+		owner: v.optional(OwnerSchema),
+
+		/** Detailed business features and amenities */
+		about: v.optional(v.pipe(v.array(AboutCategorySchema), v.readonly())),
+
+		/** User reviews array */
+		userReviews: v.optional(v.array(v.any())), // Can be expanded based on review structure
+
+		/** Extended user reviews */
+		userReviewsExtended: v.optional(v.nullable(v.any())),
+
+		/** Input ID from scraping process */
+		inputId: v.optional(v.string()),
+
+		/** Date when location was created in our system */
 		createdAt: v.optional(v.date()),
 
-		/** Date when location was last updated */
+		/** Date when location was last updated in our system */
 		updatedAt: v.optional(v.date()),
 
-		/** Whether the location is currently active/open */
-		isActive: v.optional(v.boolean()),
-
-		/** Special notes or announcements */
-		notes: v.optional(v.string()),
+		/** Whether the location is currently active in our system */
+		isActive: v.optional(v.boolean(), true),
 	}),
 	v.readonly(),
 );
