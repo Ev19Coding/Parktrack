@@ -181,10 +181,10 @@ const LocationSchema = v.pipe(
 		/** Detailed business features and amenities */
 		about: v.optional(v.pipe(v.array(AboutCategorySchema), v.readonly())),
 
-		/** User reviews array */
-		userReviews: v.optional(v.array(v.any())), // Can be expanded based on review structure
+		/** TODO: User reviews array */
+		userReviews: v.optional(v.array(v.any())),
 
-		/** Extended user reviews */
+		/** TODO: Extended user reviews */
 		userReviewsExtended: v.optional(v.nullable(v.any())),
 
 		/** Input ID from scraping process */
