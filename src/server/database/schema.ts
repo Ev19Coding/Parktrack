@@ -89,7 +89,7 @@ const AboutCategorySchema = v.pipe(
 const LocationSchema = v.pipe(
 	v.object({
 		/** Google's unique business ID (cid from the data) */
-		id: v.string(),
+		id: v.union([v.string(), v.number(), v.bigint()]),
 
 		/** Business name */
 		name: v.string(),
