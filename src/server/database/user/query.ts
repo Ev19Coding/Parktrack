@@ -11,8 +11,9 @@ const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
 	data: RecreationalLocationSchema[];
+	fuseIndex: Fuse<RecreationalLocationSchema>;
 	cachedOn: Date;
-} = { cachedOn: new Date(0), data: [] };
+} = { cachedOn: new Date(0), data: [], fuseIndex: new Fuse([]) };
 
 async function getAllRecreationalLocations() {
 	const currentDate = new Date();
@@ -63,13 +64,28 @@ async function getAllRecreationalLocations() {
 				}
 			});
 
+		const fuse = new Fuse(fetchedData, {
+			keys: [
+				{ name: "title", weight: 2 },
+				{ name: "description", weight: 1 },
+				{ name: "address", weight: 1 },
+				{ name: "category", weight: 1.5 },
+				// { name: "phone", weight: 0.5 },
+			],
+			threshold: 0.3,
+			includeScore: true,
+			ignoreLocation: true,
+			shouldSort: true,
+		});
+
 		recreationalLocationsCache = {
 			cachedOn: currentDate,
 			data: fetchedData,
+			fuseIndex: fuse,
 		};
 	}
 
-	return recreationalLocationsCache.data;
+	return recreationalLocationsCache;
 }
 
 /** Returns a fuzzy searched result array of the recreation areas based off a user's search query */
@@ -77,25 +93,8 @@ export async function getUserQueryResultFromDatabase(
 	query: string,
 	maxResults = 10,
 ) {
-	const locations = await getAllRecreationalLocations();
+	const { fuseIndex } = await getAllRecreationalLocations();
 
-	const fuse = new Fuse(locations, {
-		keys: [
-			{ name: "title", weight: 2 },
-			{ name: "description", weight: 1 },
-			{ name: "address", weight: 1 },
-			{ name: "category", weight: 1.5 },
-			// { name: "phone", weight: 0.5 },
-		],
-		threshold: 0.3,
-		includeScore: true,
-		ignoreLocation: true,
-		shouldSort: true,
-	});
-
-	const results = fuse.search(query);
-	return results
-		.values()
-		.take(maxResults)
-		.map((result) => result.item);
+	const results = fuseIndex.search(query);
+	return results.slice(0, maxResults).map((result) => result.item);
 }
