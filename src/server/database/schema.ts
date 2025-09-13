@@ -1,4 +1,3 @@
-"use server";
 import * as v from "valibot";
 
 const UrlSchema = v.pipe(
