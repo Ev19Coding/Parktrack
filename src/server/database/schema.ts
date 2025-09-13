@@ -98,7 +98,7 @@ const AboutCategorySchema = v.pipe(
 const NullableStringSchema = v.optional(v.nullable(v.string()));
 
 export const RecreationalLocationSchema = v.pipe(
-	v.object({
+	v.looseObject({
 		/** Google's unique business ID (cid from the data) */
 		id: v.union([v.string(), v.bigint()]),
 

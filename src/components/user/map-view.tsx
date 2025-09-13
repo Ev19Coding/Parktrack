@@ -40,7 +40,7 @@ export default function UserMapView(prop: {
 	return (
 		<section class="h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
 			<SolidLeafletMap
-				center={[63.0, 13.0]}
+				center={[prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0]}
 				id={mapId}
 				zoom={zoomSize}
 				height="100%"
@@ -51,7 +51,7 @@ export default function UserMapView(prop: {
 						// shadowUrl: "/marker-shadow.png",
 					});
 					const marker = leaflet
-						.marker([63.0, 13.0], {
+						.marker([prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0], {
 							icon,
 						})
 						.addTo(map);

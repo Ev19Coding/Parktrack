@@ -1,4 +1,4 @@
-import { A, createAsyncStore, query } from "@solidjs/router";
+import { A, createAsyncStore, query, useNavigate } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, type Setter, Show, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
@@ -7,12 +7,13 @@ import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
 	getUserQueryResultFromDatabase,
 } from "~/server/database/user/query";
-import type { PromiseValue } from "~/utils/generics";
 import { getProxiedImageUrl } from "~/utils/image";
 
 export default function UserSearchBar(prop: {
 	setLocationResult: Setter<RecreationalLocationSchema | null>;
 }) {
+	const navigate = useNavigate();
+
 	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
@@ -103,9 +104,9 @@ export default function UserSearchBar(prop: {
 						{(park) => {
 							return (
 								<li>
-									<A
+									<button
+										type="button"
 										class="flex justify-between"
-										href="/user"
 										onClick={async () => {
 											const data =
 												await getRecreationalLocationFromDatabaseById(
@@ -116,6 +117,9 @@ export default function UserSearchBar(prop: {
 											if (data) {
 												prop.setLocationResult(data);
 												setAreSuggestionsOpen(false);
+
+												// Navigate to the info route and set the data to
+												navigate("/info", { state: data });
 											}
 										}}
 									>
@@ -136,7 +140,7 @@ export default function UserSearchBar(prop: {
 												);
 											}}
 										</Show>
-									</A>
+									</button>
 								</li>
 							);
 						}}
