@@ -95,18 +95,17 @@ export default function UserSearchBar(prop: {
 						fallback={<div class="px-3 py-2">No results found</div>}
 					>
 						{(park) => {
-							const getFullLocationData = createAsync(() =>
-							// Use a string so that the query can serialize the arguments
-								getRecreationalLocationFromDatabaseById(`${park().id}`),
-							);
-
 							return (
 								<li>
 									<A
 										class="flex justify-between"
 										href="/user"
-										onClick={() => {
-											const data = getFullLocationData();
+										onClick={async () => {
+											const data =
+												await getRecreationalLocationFromDatabaseById(
+													// Use a string so the query can be serialized and cached
+													`${park().id}`,
+												);
 
 											if (data) {
 												prop.setLocationResult(data);
@@ -118,7 +117,11 @@ export default function UserSearchBar(prop: {
 
 										<Show when={park().thumbnail}>
 											{(thumbnail) => (
-												<img alt={park().title} class="h-7 aspect-square" src={thumbnail()}  />
+												<img
+													alt={park().title}
+													class="aspect-square h-7"
+													src={thumbnail()}
+												/>
 											)}
 										</Show>
 									</A>
