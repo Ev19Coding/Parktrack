@@ -76,7 +76,10 @@ async function getAllRecreationalLocations() {
 }
 
 /** Returns a fuzzy searched result array of the recreation areas based off a user's search query */
-export async function getUserQueryResultFromDatabase(query: string) {
+export async function getUserQueryResultFromDatabase(
+	query: string,
+	maxResults = 10,
+) {
 	const locations = await getAllRecreationalLocations();
 
 	const fuse = new Fuse(locations, {
@@ -94,5 +97,8 @@ export async function getUserQueryResultFromDatabase(query: string) {
 	});
 
 	const results = fuse.search(query);
-	return results.map((result) => result.item);
+	return results
+		.values()
+		.take(maxResults)
+		.map((result) => result.item);
 }

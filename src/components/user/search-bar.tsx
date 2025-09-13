@@ -2,36 +2,31 @@ import { A, createAsync, query } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, type Setter, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
-import { getRelevantDataFromJawgsApi as _getRelevantDataFromJawgsApi } from "~/location/jawg-geocoding";
-import type { LocationApiResult } from "~/location/types";
+import type { RecreationalLocationSchema } from "~/server/database/schema";
+import { getUserQueryResultFromDatabase } from "~/server/database/user/query";
 import type { PromiseValue } from "~/utils/generics";
 
 export default function UserSearchBar(prop: {
-	setLocationResult: Setter<LocationApiResult | null>;
+	setLocationResult: Setter<RecreationalLocationSchema | null>;
 }) {
 	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
-	const { coords } = useGeolocation({ enableHighAccuracy: true });
+	// const { coords } = useGeolocation({ enableHighAccuracy: true });
 
 	// Cache previous results
-	const getRelevantDataFromJawgsApi = query(
-		_getRelevantDataFromJawgsApi,
-		"jawgs-autocomplete-api",
+	const getRelevantDataFromDb = query(
+		getUserQueryResultFromDatabase,
+		"db-search",
 	);
 
 	let lastValidApiResultCache:
-		| PromiseValue<ReturnType<typeof getRelevantDataFromJawgsApi>>
+		| PromiseValue<ReturnType<typeof getRelevantDataFromDb>>
 		| undefined;
 
 	const results = useThrottle(
 		createAsync(async () => {
-			const res = await getRelevantDataFromJawgsApi({
-				distance: 500,
-				latitude: coords().latitude,
-				longitude: coords().longitude,
-				query: input(),
-			});
+			const res = [...(await getRelevantDataFromDb(input()))];
 
 			if (res.length) {
 				lastValidApiResultCache = res;
@@ -112,7 +107,7 @@ export default function UserSearchBar(prop: {
 										setAreSuggestionsOpen(false);
 									}}
 								>
-									{park().label}
+									{park().title}
 								</A>
 							</li>
 						)}
