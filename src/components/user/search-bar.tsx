@@ -20,21 +20,9 @@ export default function UserSearchBar(prop: {
 		"db-search",
 	);
 
-	let lastValidApiResultCache:
-		| PromiseValue<ReturnType<typeof getRelevantDataFromDb>>
-		| undefined;
-
 	const results = useThrottle(
 		createAsync(async () => {
-			const res = [...(await getRelevantDataFromDb(input()))];
-
-			if (res.length) {
-				lastValidApiResultCache = res;
-
-				return res;
-			} else {
-				return lastValidApiResultCache ?? res;
-			}
+			return getRelevantDataFromDb(input());
 		}),
 		1000,
 	);
@@ -95,7 +83,7 @@ export default function UserSearchBar(prop: {
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
-						each={results()}
+						each={[...(results() ?? [])]}
 						fallback={<div class="px-3 py-2">No results found</div>}
 					>
 						{(park) => (
