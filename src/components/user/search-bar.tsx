@@ -1,11 +1,11 @@
-import { A, createAsync, query } from "@solidjs/router";
+import { A, createAsyncStore, query } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, type Setter, Show, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 import {
-	getUserQueryResultFromDatabase,
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
+	getUserQueryResultFromDatabase,
 } from "~/server/database/user/query";
 import type { PromiseValue } from "~/utils/generics";
 
@@ -17,22 +17,24 @@ export default function UserSearchBar(prop: {
 
 	// const { coords } = useGeolocation({ enableHighAccuracy: true });
 
-	// Cache previous results
-	const getSearchResultsFromDb = query(
+	// This would be more reliable:
+	const _getSearchResultsFromDb = query(
 		getUserQueryResultFromDatabase,
 		"db-user-query-search",
 	);
 
-	const basicSearchResults = useThrottle(
-		createAsync(async () => {
-			return getSearchResultsFromDb(input());
-		}),
+	const _throttledSearch = useThrottle(
+		() => _getSearchResultsFromDb(input()),
 		1000,
 	);
 
+	const basicSearchResults = createAsyncStore(async () => {
+		return _throttledSearch();
+	});
+
 	const getRecreationalLocationFromDatabaseById = query(
 		_getRecreationalLocationFromDatabaseById,
-		"db-location-query",
+		"db-location-data-query",
 	);
 
 	// Move ref declaration outside
@@ -49,11 +51,7 @@ export default function UserSearchBar(prop: {
 		<details
 			class="dropdown place-self-center lg:col-[1/3]"
 			open={areSuggestionsOpen()}
-			onFocusOut={(e) =>
-				//@ts-expect-error This works
-				!e.currentTarget.contains(e.relatedTarget) &&
-				setAreSuggestionsOpen(false)
-			}
+			onFocusOut={(e) => e}
 		>
 			<summary class="block">
 				{/* Search bar */}
@@ -94,7 +92,7 @@ export default function UserSearchBar(prop: {
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
-						each={[...(basicSearchResults() ?? [])]}
+						each={[...(basicSearchResults.latest ?? [])]}
 						fallback={<div class="px-3 py-2">No results found</div>}
 					>
 						{(park) => {
