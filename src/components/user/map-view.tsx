@@ -1,7 +1,6 @@
-import { Map, Marker } from "leaflet";
+import type { Map as LMap, Marker } from "leaflet";
 import MapPinIcon from "lucide-solid/icons/map-pin";
-import { on } from "solid-js";
-import { createEffect } from "solid-js";
+import { createEffect, on } from "solid-js";
 import { SolidLeafletMap } from "solidjs-leaflet";
 import { generateRandomUUID } from "~/utils/random";
 
@@ -21,7 +20,7 @@ export default function UserMapView(prop: {
 		MapPinIcon({ height: "32px", width: "32px" }) as SVGElement,
 	);
 
-	let mapRef: Map | undefined;
+	let mapRef: LMap | undefined;
 	let leafletRef: typeof import("leaflet") | undefined;
 	let markerRef: Marker | undefined;
 
@@ -39,7 +38,7 @@ export default function UserMapView(prop: {
 	);
 
 	return (
-		<section class="h-full rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3] overflow-auto">
+		<section class="h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
 			<SolidLeafletMap
 				center={[63.0, 13.0]}
 				id={mapId}
