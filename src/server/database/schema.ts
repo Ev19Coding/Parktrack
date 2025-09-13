@@ -100,7 +100,7 @@ const NullableStringSchema = v.optional(v.nullable(v.string()));
 export const RecreationalLocationSchema = v.pipe(
 	v.object({
 		/** Google's unique business ID (cid from the data) */
-		id: v.union([v.string(), v.number(), v.bigint()]),
+		id: v.union([v.string(), v.bigint()]),
 
 		/** Business name */
 		title: v.string(),

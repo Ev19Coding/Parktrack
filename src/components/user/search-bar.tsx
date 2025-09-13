@@ -1,9 +1,12 @@
 import { A, createAsync, query } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
-import { createSignal, Index, type Setter, Suspense } from "solid-js";
+import { createSignal, Index, type Setter, Show, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import { getUserQueryResultFromDatabase } from "~/server/database/user/query";
+import {
+	getUserQueryResultFromDatabase,
+	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
+} from "~/server/database/user/query";
 import type { PromiseValue } from "~/utils/generics";
 
 export default function UserSearchBar(prop: {
@@ -15,16 +18,21 @@ export default function UserSearchBar(prop: {
 	// const { coords } = useGeolocation({ enableHighAccuracy: true });
 
 	// Cache previous results
-	const getRelevantDataFromDb = query(
+	const getSearchResultsFromDb = query(
 		getUserQueryResultFromDatabase,
-		"db-search",
+		"db-user-query-search",
 	);
 
-	const results = useThrottle(
+	const basicSearchResults = useThrottle(
 		createAsync(async () => {
-			return getRelevantDataFromDb(input());
+			return getSearchResultsFromDb(input());
 		}),
 		1000,
+	);
+
+	const getRecreationalLocationFromDatabaseById = query(
+		_getRecreationalLocationFromDatabaseById,
+		"db-location-query",
 	);
 
 	// Move ref declaration outside
@@ -83,22 +91,40 @@ export default function UserSearchBar(prop: {
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
-						each={[...(results() ?? [])]}
+						each={[...(basicSearchResults() ?? [])]}
 						fallback={<div class="px-3 py-2">No results found</div>}
 					>
-						{(park) => (
-							<li>
-								<A
-									href="/user"
-									onClick={() => {
-										prop.setLocationResult(park());
-										setAreSuggestionsOpen(false);
-									}}
-								>
-									{park().title}
-								</A>
-							</li>
-						)}
+						{(park) => {
+							const getFullLocationData = createAsync(() =>
+							// Use a string so that the query can serialize the arguments
+								getRecreationalLocationFromDatabaseById(`${park().id}`),
+							);
+
+							return (
+								<li>
+									<A
+										class="flex justify-between"
+										href="/user"
+										onClick={() => {
+											const data = getFullLocationData();
+
+											if (data) {
+												prop.setLocationResult(data);
+												setAreSuggestionsOpen(false);
+											}
+										}}
+									>
+										{park().title}
+
+										<Show when={park().thumbnail}>
+											{(thumbnail) => (
+												<img alt={park().title} class="h-7 aspect-square" src={thumbnail()}  />
+											)}
+										</Show>
+									</A>
+								</li>
+							);
+						}}
 					</Index>
 				</Suspense>
 			</ul>

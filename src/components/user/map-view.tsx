@@ -10,19 +10,20 @@ function svgToDataUrl(svgElement: Element): string {
 	return `data:image/svg+xml;base64,${btoa(svgString)}`;
 }
 
-export default function UserMapView(prop: { label:string,
+export default function UserMapView(prop: {
+	label: string;
 	coords: [latitude: number, longitude: number] | null;
 }) {
 	const mapId = generateRandomUUID();
-	const zoomSize = 18
+	const zoomSize = 18;
 
 	const mapPinSvgString = svgToDataUrl(
 		MapPinIcon({ height: "32px", width: "32px" }) as SVGElement,
 	);
 
-	let mapRef: Map |undefined
-	let leafletRef:typeof import("leaflet") | undefined
-	let markerRef: Marker|undefined
+	let mapRef: Map | undefined;
+	let leafletRef: typeof import("leaflet") | undefined;
+	let markerRef: Marker | undefined;
 
 	createEffect(
 		on(
@@ -31,7 +32,7 @@ export default function UserMapView(prop: { label:string,
 				if (prop.coords) {
 					const [lat, lng] = prop.coords;
 					mapRef?.setView([lat, lng], zoomSize);
-					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label)
+					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label);
 				}
 			},
 		),
@@ -56,9 +57,9 @@ export default function UserMapView(prop: { label:string,
 						})
 						.addTo(map);
 
-					mapRef = map
-					leafletRef = leaflet
-					markerRef = marker
+					mapRef = map;
+					leafletRef = leaflet;
+					markerRef = marker;
 				}}
 			/>
 		</section>

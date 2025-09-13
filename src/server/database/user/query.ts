@@ -2,16 +2,34 @@
 
 import Fuse from "fuse.js";
 import * as v from "valibot";
-import { tryParse } from "~/utils/parse";
+import type { Satisfies } from "~/utils/generics";
+import { tryParseObject } from "~/utils/parse";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATION_LOCATION_TABLE } from "./constants";
 
+const NullableStringSchema = v.optional(v.nullable(v.string()));
+
+const LightweightRecreationalLocationSchema = v.object({
+	id: v.bigint(),
+	title: v.string(),
+	description: NullableStringSchema,
+	thumbnail: NullableStringSchema,
+	category: v.string(),
+	address: v.string(),
+});
+
+/** Since fetching all the data seems like a waste */
+type LightweightRecreationalLocationSchema = Satisfies<
+	v.InferOutput<typeof LightweightRecreationalLocationSchema>,
+	Partial<RecreationalLocationSchema>
+>;
+
 const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
-	data: RecreationalLocationSchema[];
-	fuseIndex: Fuse<RecreationalLocationSchema>;
+	data: LightweightRecreationalLocationSchema[];
+	fuseIndex: Fuse<LightweightRecreationalLocationSchema>;
 	cachedOn: Date;
 } = { cachedOn: new Date(0), data: [], fuseIndex: new Fuse([]) };
 
@@ -27,27 +45,17 @@ async function getAllRecreationalLocations() {
 			await (
 				await getParkTrackDatabaseConnection()
 			).streamAndReadAll(`
-         SELECT *
+         SELECT id, title, thumbnail, category, address
          FROM ${USER_RECREATION_LOCATION_TABLE}
          `)
 		)
 			.getRowObjects()
 			.map((rowObjectData) => {
-				let key: keyof typeof rowObjectData;
-
-				for (key in rowObjectData) {
-					const value = rowObjectData[key];
-
-					// Ensure we have a valid js value
-					rowObjectData[key] =
-						typeof value === "string" ? tryParse(value) : value;
-				}
-
 				try {
 					// Validate the data
 					const validatedData = v.parse(
-						RecreationalLocationSchema,
-						rowObjectData,
+						LightweightRecreationalLocationSchema,
+						tryParseObject(rowObjectData),
 						{ abortEarly: true },
 					);
 
@@ -88,7 +96,7 @@ async function getAllRecreationalLocations() {
 	return recreationalLocationsCache;
 }
 
-/** Returns a fuzzy searched result array of the recreation areas based off a user's search query */
+/** Returns a fuzzy searched result array of the recreation areas based off a user's search query. Only contains the id, title, and thumbnail to be as light as possible */
 export async function getUserQueryResultFromDatabase(
 	query: string,
 	maxResults = 10,
@@ -96,5 +104,48 @@ export async function getUserQueryResultFromDatabase(
 	const { fuseIndex } = await getAllRecreationalLocations();
 
 	const results = fuseIndex.search(query);
-	return results.slice(0, maxResults).map((result) => result.item);
+	return results.slice(0, maxResults).map((result) => {
+		const { id, title, thumbnail } = result.item;
+
+		return { id, title, thumbnail };
+	});
+}
+
+export async function getRecreationalLocationFromDatabaseById(
+	id: string | bigint,
+): Promise<RecreationalLocationSchema | undefined> {
+	const fetchedLocation = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+         SELECT *
+         FROM ${USER_RECREATION_LOCATION_TABLE}
+         WHERE id = ${id}
+         `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(
+					RecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	// Our data should be in the first index
+	return fetchedLocation[0];
 }
