@@ -52,7 +52,11 @@ export default function UserSearchBar(prop: {
 		<details
 			class="dropdown place-self-center lg:col-[1/3]"
 			open={areSuggestionsOpen()}
-			onFocusOut={(e) => e}
+			onFocusOut={(e) =>
+				//@ts-expect-error This works
+				!e.currentTarget.contains(e.relatedTarget) &&
+				setAreSuggestionsOpen(false)
+			}
 		>
 			<summary class="block">
 				{/* Search bar */}
