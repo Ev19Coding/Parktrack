@@ -1,6 +1,6 @@
 import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
-import { createSignal } from "solid-js";
+import { createMemo, createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
 import {
 	UserParkSection,
@@ -34,21 +34,20 @@ export default function Home() {
 	const [selectedArea, setSelectedArea] =
 		createSignal<RecreationalLocationSchema | null>(null);
 
+	const coords = createMemo(() => {
+		const area = selectedArea();
+		return area ? ([area.latitude, area.longitude] as [number, number]) : null;
+	});
+
+	const label = createMemo(() => selectedArea()?.title ?? "");
+
 	return (
 		<div class="grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
 			<Header />
 
 			<UserSearchBar setLocationResult={setSelectedArea} />
 
-			<UserMapView
-				coords={
-					selectedArea()
-						? // biome-ignore lint/style/noNonNullAssertion: <This is valid>
-							[selectedArea()!.latitude, selectedArea()!.longitude]
-						: null
-				}
-				label={selectedArea()?.title ?? ""}
-			/>
+			<UserMapView coords={coords()} label={label()} />
 
 			<UserParkSection />
 
