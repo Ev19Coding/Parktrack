@@ -6,7 +6,7 @@ import {
 	UserParkSection,
 	UserRestaurantSection,
 } from "~/components/user/park-restaurant";
-import type { LocationApiResult } from "~/location/types";
+import type { RecreationalLocationSchema } from "~/server/database/schema";
 
 // TODO: Move this out of here
 function Header() {
@@ -32,7 +32,7 @@ const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 export default function Home() {
 	const [selectedArea, setSelectedArea] =
-		createSignal<LocationApiResult | null>(null);
+		createSignal<RecreationalLocationSchema | null>(null);
 
 	return (
 		<div class="grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
@@ -47,7 +47,7 @@ export default function Home() {
 							[selectedArea()!.latitude, selectedArea()!.longitude]
 						: null
 				}
-				label={selectedArea()?.label ?? ""}
+				label={selectedArea()?.title ?? ""}
 			/>
 
 			<UserParkSection />
