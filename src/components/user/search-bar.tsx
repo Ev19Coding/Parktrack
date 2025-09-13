@@ -8,6 +8,7 @@ import {
 	getUserQueryResultFromDatabase,
 } from "~/server/database/user/query";
 import type { PromiseValue } from "~/utils/generics";
+import { getProxiedImageUrl } from "~/utils/image";
 
 export default function UserSearchBar(prop: {
 	setLocationResult: Setter<RecreationalLocationSchema | null>;
@@ -117,13 +118,19 @@ export default function UserSearchBar(prop: {
 										{park().title}
 
 										<Show when={park().thumbnail}>
-											{(thumbnail) => (
-												<img
-													alt={park().title}
-													class="aspect-square h-7"
-													src={thumbnail()}
-												/>
-											)}
+											{(thumbnail) => {
+												const proxiedImgUrl = () =>
+													getProxiedImageUrl(thumbnail());
+
+												return (
+													<img
+														alt={park().title}
+														class="aspect-square h-7"
+														src={proxiedImgUrl()}
+														loading="lazy"
+													/>
+												);
+											}}
 										</Show>
 									</A>
 								</li>
