@@ -1,7 +1,17 @@
 "use server";
 import * as v from "valibot";
 
-const UrlSchema = v.pipe(v.string(), v.url());
+const UrlSchema = v.pipe(
+	v.string(),
+	v.transform((url) => {
+		// Handle protocol-relative URLs by adding https:
+		if (url.startsWith("//")) {
+			return `https:${url}`;
+		}
+		return url;
+	}),
+	v.url(),
+);
 
 const ImageSchema = v.pipe(
 	v.object({
@@ -52,22 +62,22 @@ const OwnerSchema = v.pipe(
 	v.object({
 		id: v.string(),
 		name: v.string(),
-		link: UrlSchema,
+		link: v.union([v.pipe(UrlSchema), v.literal("")]),
 	}),
 	v.readonly(),
 );
 
-const CompleteAddressSchema = v.pipe(
-	v.object({
-		borough: v.optional(v.string()),
-		street: v.optional(v.string()),
-		city: v.string(),
-		postal_code: v.optional(v.string()),
-		state: v.string(),
-		country: v.string(),
-	}),
-	v.readonly(),
-);
+// const CompleteAddressSchema = v.pipe(
+// 	v.object({
+// 		borough: v.optional(v.string()),
+// 		street: v.optional(v.string()),
+// 		city: v.string(),
+// 		postal_code: v.optional(v.string()),
+// 		state: v.string(),
+// 		country: v.string(),
+// 	}),
+// 	v.readonly(),
+// );
 
 const AboutOptionSchema = v.pipe(
 	v.object({
@@ -86,28 +96,30 @@ const AboutCategorySchema = v.pipe(
 	v.readonly(),
 );
 
-const LocationSchema = v.pipe(
+const NullableStringSchema = v.optional(v.nullable(v.string()));
+
+export const RecreationalLocationSchema = v.pipe(
 	v.object({
 		/** Google's unique business ID (cid from the data) */
 		id: v.union([v.string(), v.number(), v.bigint()]),
 
 		/** Business name */
-		name: v.string(),
+		title: v.string(),
 
 		/** Primary category */
 		category: v.string(),
 
-		/** All categories this business belongs to */
-		categories: v.pipe(v.array(v.string()), v.readonly()),
+		// /** All categories this business belongs to */
+		// categories: v.pipe(v.array(v.string()), v.readonly()),
 
 		/** Full address string */
 		address: v.string(),
 
-		/** Detailed address breakdown */
-		completeAddress: CompleteAddressSchema,
+		// /** Detailed address breakdown */
+		// completeAddress: CompleteAddressSchema,
 
 		/** Direct URL to the business listing on Google Maps */
-		googleMapLink: UrlSchema,
+		link: UrlSchema,
 
 		/** Latitude coordinate */
 		latitude: v.number(),
@@ -116,7 +128,7 @@ const LocationSchema = v.pipe(
 		longitude: v.number(),
 
 		/** Main thumbnail image URL */
-		thumbnail: UrlSchema,
+		thumbnail: v.optional(v.nullable(UrlSchema)),
 
 		/** Array of categorized images */
 		images: v.pipe(v.array(ImageSchema), v.readonly()),
@@ -127,44 +139,56 @@ const LocationSchema = v.pipe(
 		/** Popular times data by day and hour e.g. { "Monday": { "0": 38, "1": 21, ... } } */
 		popularTimes: PopularTimesSchema,
 
-		/** Current business status */
-		status: v.string(),
+		// /** Current business status */
+		// status: v.string(),
 
 		/** Business description */
-		description: v.optional(v.string()),
+		description: NullableStringSchema,
 
 		/** Phone number */
-		phone: v.optional(v.string()),
+		phone: NullableStringSchema,
 
 		/** Website URL */
-		website: v.optional(v.string()), // Can be empty string in data
+		website: NullableStringSchema,
 
 		/** Email addresses */
 		emails: v.optional(v.nullable(v.array(v.pipe(v.string(), v.email())))),
 
-		/** Average rating (1-5 stars) */
-		rating: v.optional(v.pipe(v.number(), v.minValue(1), v.maxValue(5))),
+		/** Average rating (0-5 stars). 0 stars mean no reviews */
+		rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
+
+		/** Review rating (alternative field name) */
+		reviewRating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
 
 		/** Total number of reviews */
-		reviewCount: v.optional(v.pipe(v.number(), v.minValue(0))),
+		reviewCount: v.optional(
+			v.pipe(
+				v.unknown(),
+				v.transform((val) => Number(val)),
+				v.check((val) => !Number.isNaN(val)),
+			),
+		),
 
 		/** Breakdown of reviews by star rating */
 		reviewsBreakdown: v.optional(ReviewsBreakdownSchema),
 
+		/** Reviews per rating (alternative field name) */
+		reviewsPerRating: v.optional(ReviewsBreakdownSchema),
+
 		/** Price range as text (e.g., "₦₦₦", "₦25,000–30,000") */
-		priceRange: v.optional(v.string()),
+		priceRange: NullableStringSchema,
 
 		/** Timezone */
-		timezone: v.optional(v.string()),
+		timezone: NullableStringSchema,
 
 		/** Google Plus Code */
-		plusCode: v.optional(v.string()),
+		plusCode: NullableStringSchema,
 
 		/** Google's internal data ID */
-		dataId: v.optional(v.string()),
+		dataId: NullableStringSchema,
 
 		/** Link to reviews */
-		reviewsLink: v.optional(UrlSchema),
+		reviewsLink: v.optional(v.nullable(UrlSchema)),
 
 		/** Reservation links */
 		reservations: v.optional(v.nullable(v.array(ExternalLinkSchema))),
@@ -179,7 +203,9 @@ const LocationSchema = v.pipe(
 		owner: v.optional(OwnerSchema),
 
 		/** Detailed business features and amenities */
-		about: v.optional(v.pipe(v.array(AboutCategorySchema), v.readonly())),
+		about: v.optional(
+			v.nullable(v.pipe(v.array(AboutCategorySchema), v.readonly())),
+		),
 
 		/** TODO: User reviews array */
 		userReviews: v.optional(v.array(v.any())),
@@ -187,8 +213,10 @@ const LocationSchema = v.pipe(
 		/** TODO: Extended user reviews */
 		userReviewsExtended: v.optional(v.nullable(v.any())),
 
-		/** Input ID from scraping process */
-		inputId: v.optional(v.string()),
+		// /** Input ID from scraping process */
+		// inputId: NullableStringSchema,
+
+		// TODO
 
 		/** Date when location was created in our system */
 		createdAt: v.optional(v.date()),
@@ -202,4 +230,6 @@ const LocationSchema = v.pipe(
 	v.readonly(),
 );
 
-type LocationSchema = v.InferOutput<typeof LocationSchema>;
+export type RecreationalLocationSchema = v.InferOutput<
+	typeof RecreationalLocationSchema
+>;
