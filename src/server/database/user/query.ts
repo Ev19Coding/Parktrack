@@ -52,17 +52,14 @@ async function getAllRecreationalLocations() {
 
 					return validatedData;
 				} catch (e) {
-					console.log(
-						JSON.stringify(
+					throw new Error(
+						`Invalid recreational location data: ${JSON.stringify(
 							e,
 							(_, value) =>
 								typeof value === "bigint" ? value.toString() : value,
 							2,
-						),
+						)}`,
 					);
-
-					// biome-ignore lint/suspicious/noExplicitAny: <Yes I know this is an error>
-					return {} as any;
 				}
 			});
 
