@@ -87,7 +87,10 @@ export default function UserSearchBar(prop: {
 			</summary>
 
 			{/* Dropdown. It's z-index is 1001 so that it stays above the leaflet map buttons */}
-			<ul class="menu dropdown-content z-[1001] mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm">
+			<ul
+				class="menu dropdown-content mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm"
+				style={{ "z-index": 1001 }}
+			>
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
