@@ -1,5 +1,5 @@
 import { createAsync, query, useNavigate } from "@solidjs/router";
-import { Index, type JSXElement } from "solid-js";
+import { Index, type JSXElement, Suspense } from "solid-js";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
 	getParkRecreationalLocationsFromDatabaseAtRandom,
@@ -9,11 +9,10 @@ import type { PromiseValue } from "~/utils/generics";
 import { getProxiedImageUrl } from "~/utils/image";
 
 function DataSection(prop: {
-	data:
-		| PromiseValue<
-				ReturnType<typeof getParkRecreationalLocationsFromDatabaseAtRandom>
-		  >
-		| undefined;
+	data: PromiseValue<
+		ReturnType<typeof getParkRecreationalLocationsFromDatabaseAtRandom>
+	>;
+
 	header: JSXElement;
 	class: string;
 }) {
@@ -69,11 +68,13 @@ export function UserParkSection() {
 	);
 
 	return (
-		<DataSection
-			class="lg:col-[1/2] lg:row-span-2"
-			data={randomParks()}
-			header="Parks for You"
-		/>
+		<Suspense>
+			<DataSection
+				class="lg:col-[1/2] lg:row-span-2"
+				data={randomParks() ?? []}
+				header="Parks for You"
+			/>
+		</Suspense>
 	);
 }
 
@@ -83,10 +84,12 @@ export function UserRestaurantSection() {
 	);
 
 	return (
-		<DataSection
-			class="lg:col-[2/3] lg:row-span-2"
-			data={randomRestaurants()}
-			header="Restaurants for You"
-		/>
+		<Suspense>
+			<DataSection
+				class="lg:col-[2/3] lg:row-span-2"
+				data={randomRestaurants() ?? []}
+				header="Restaurants for You"
+			/>
+		</Suspense>
 	);
 }
