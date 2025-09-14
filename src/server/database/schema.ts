@@ -1,4 +1,5 @@
 import * as v from "valibot";
+import PlaceholderImg from "~/assets/img/placeholder.webp";
 
 const UrlSchema = v.pipe(
 	v.string(),
@@ -95,7 +96,11 @@ const AboutCategorySchema = v.pipe(
 	v.readonly(),
 );
 
-const NullableStringSchema = v.optional(v.nullable(v.string()));
+const NullishStringSchema = v.nullish(v.string()),
+	ImageUrlWithDefaultSchema = v.nullish(
+		v.union([UrlSchema, v.literal(PlaceholderImg)]),
+		PlaceholderImg,
+	);
 
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({
@@ -127,7 +132,7 @@ export const RecreationalLocationSchema = v.pipe(
 		longitude: v.number(),
 
 		/** Main thumbnail image URL */
-		thumbnail: v.optional(v.nullable(UrlSchema)),
+		thumbnail: ImageUrlWithDefaultSchema,
 
 		/** Array of categorized images */
 		images: v.pipe(v.array(ImageSchema), v.readonly()),
@@ -142,16 +147,16 @@ export const RecreationalLocationSchema = v.pipe(
 		// status: v.string(),
 
 		/** Business description */
-		description: NullableStringSchema,
+		description: NullishStringSchema,
 
 		/** Phone number */
-		phone: NullableStringSchema,
+		phone: NullishStringSchema,
 
 		/** Website URL */
-		website: NullableStringSchema,
+		website: NullishStringSchema,
 
 		/** Email addresses */
-		emails: v.optional(v.nullable(v.array(v.pipe(v.string(), v.email())))),
+		emails: v.nullish(v.array(v.pipe(v.string(), v.email()))),
 
 		/** Average rating (0-5 stars). 0 stars mean no reviews */
 		rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
@@ -175,25 +180,25 @@ export const RecreationalLocationSchema = v.pipe(
 		reviewsPerRating: v.optional(ReviewsBreakdownSchema),
 
 		/** Price range as text (e.g., "₦₦₦", "₦25,000–30,000") */
-		priceRange: NullableStringSchema,
+		priceRange: NullishStringSchema,
 
 		/** Timezone */
-		timezone: NullableStringSchema,
+		timezone: NullishStringSchema,
 
 		/** Google Plus Code */
-		plusCode: NullableStringSchema,
+		plusCode: NullishStringSchema,
 
 		/** Google's internal data ID */
-		dataId: NullableStringSchema,
+		dataId: NullishStringSchema,
 
 		/** Link to reviews */
-		reviewsLink: v.optional(v.nullable(UrlSchema)),
+		reviewsLink: v.nullish(UrlSchema),
 
 		/** Reservation links */
-		reservations: v.optional(v.nullable(v.array(ExternalLinkSchema))),
+		reservations: v.nullish(v.array(ExternalLinkSchema)),
 
 		/** Online ordering links */
-		orderOnline: v.optional(v.nullable(v.array(ExternalLinkSchema))),
+		orderOnline: v.nullish(v.array(ExternalLinkSchema)),
 
 		/** Menu information */
 		menu: v.optional(MenuSchema),
@@ -202,15 +207,13 @@ export const RecreationalLocationSchema = v.pipe(
 		owner: v.optional(OwnerSchema),
 
 		/** Detailed business features and amenities */
-		about: v.optional(
-			v.nullable(v.pipe(v.array(AboutCategorySchema), v.readonly())),
-		),
+		about: v.nullish(v.pipe(v.array(AboutCategorySchema), v.readonly())),
 
 		/** TODO: User reviews array */
 		userReviews: v.optional(v.array(v.any())),
 
 		/** TODO: Extended user reviews */
-		userReviewsExtended: v.optional(v.nullable(v.any())),
+		userReviewsExtended: v.nullish(v.any()),
 
 		// /** Input ID from scraping process */
 		// inputId: NullableStringSchema,

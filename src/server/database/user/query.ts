@@ -2,19 +2,36 @@
 
 import Fuse from "fuse.js";
 import * as v from "valibot";
+import PlaceholderImg from "~/assets/img/placeholder.webp";
 import type { Satisfies } from "~/utils/generics";
 import { tryParseObject } from "~/utils/parse";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATION_LOCATION_TABLE } from "./constants";
 
-const NullableStringSchema = v.optional(v.nullable(v.string()));
+const UrlSchema = v.pipe(
+	v.string(),
+	v.transform((url) => {
+		// Handle protocol-relative URLs by adding https:
+		if (url.startsWith("//")) {
+			return `https:${url}`;
+		}
+		return url;
+	}),
+	v.url(),
+);
+
+const NullishStringSchema = v.nullish(v.string()),
+	ImageUrlWithDefaultSchema = v.nullish(
+		v.union([UrlSchema, v.literal(PlaceholderImg)]),
+		PlaceholderImg,
+	);
 
 const LightweightRecreationalLocationSchema = v.object({
 	id: v.bigint(),
 	title: v.string(),
-	description: NullableStringSchema,
-	thumbnail: NullableStringSchema,
+	description: NullishStringSchema,
+	thumbnail: ImageUrlWithDefaultSchema,
 	category: v.string(),
 	address: v.string(),
 });
@@ -28,7 +45,7 @@ type LightweightRecreationalLocationSchema = Satisfies<
 const BareMinimumRecreationalLocationSchema = v.object({
 	id: v.bigint(),
 	title: v.string(),
-	thumbnail: NullableStringSchema,
+	thumbnail: ImageUrlWithDefaultSchema,
 });
 
 type BareMinimumRecreationalLocationSchema = Satisfies<
