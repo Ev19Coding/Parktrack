@@ -25,6 +25,7 @@
 		"fuse.js": "^7.1.0",
 		"leaflet": "^1.9.4",
 		"lucide-solid": "^0.543.0",
+		"quick-lru": "^7.1.0",
 		"solid-js": "^1.9.9",
 		"solid-leaflet": "^0.0.1",
 		"solidjs-leaflet": "^1.0.2",
