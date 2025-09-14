@@ -2,7 +2,7 @@
 
 import Fuse from "fuse.js";
 import * as v from "valibot";
-import PlaceholderImg from "~/assets/img/placeholder.webp";
+import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/utils/generics";
 import { tryParseObject } from "~/utils/parse";
 import { RecreationalLocationSchema } from "../schema";
@@ -23,8 +23,8 @@ const UrlSchema = v.pipe(
 
 const NullishStringSchema = v.nullish(v.string()),
 	ImageUrlWithDefaultSchema = v.nullish(
-		v.union([UrlSchema, v.literal(PlaceholderImg)]),
-		PlaceholderImg,
+		v.union([UrlSchema, v.literal(PLACEHOLDER_IMG)]),
+		PLACEHOLDER_IMG,
 	);
 
 const LightweightRecreationalLocationSchema = v.object({

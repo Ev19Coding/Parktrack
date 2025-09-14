@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import PlaceholderImg from "~/assets/img/placeholder.webp";
+import { PLACEHOLDER_IMG } from "~/shared/constants";
 
 const UrlSchema = v.pipe(
 	v.string(),
@@ -98,8 +98,8 @@ const AboutCategorySchema = v.pipe(
 
 const NullishStringSchema = v.nullish(v.string()),
 	ImageUrlWithDefaultSchema = v.nullish(
-		v.union([UrlSchema, v.literal(PlaceholderImg)]),
-		PlaceholderImg,
+		v.union([UrlSchema, v.literal(PLACEHOLDER_IMG)]),
+		PLACEHOLDER_IMG,
 	);
 
 export const RecreationalLocationSchema = v.pipe(
