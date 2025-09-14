@@ -177,3 +177,83 @@ export async function getRecreationalLocationFromDatabaseById(
 	// Our data should be in the first index
 	return fetchedLocation[0];
 }
+
+export async function getParkRecreationalLocationsFromDatabaseAtRandom(
+	maxResults = 10,
+): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+	const fetchedParks = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+          SELECT id, title, thumbnail
+          FROM ${USER_RECREATION_LOCATION_TABLE}
+          WHERE category LIKE '%Park%' OR title LIKE '%Park%'
+          ORDER BY RANDOM()
+          LIMIT ${maxResults}
+          `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(
+					BareMinimumRecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedParks;
+}
+
+export async function getRestaurantRecreationalLocationsFromDatabaseAtRandom(
+	maxResults = 10,
+): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+	const fetchedRestaurants = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+          SELECT id, title, thumbnail
+          FROM ${USER_RECREATION_LOCATION_TABLE}
+          WHERE category LIKE '%Restaurant%' OR title LIKE '%Restaurant%'
+          ORDER BY RANDOM()
+          LIMIT ${maxResults}
+          `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(
+					BareMinimumRecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedRestaurants;
+}
