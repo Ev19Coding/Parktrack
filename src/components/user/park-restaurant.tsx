@@ -24,39 +24,41 @@ function DataSection(prop: {
 	);
 
 	return (
-		<section class={`space-y-2 overflow-auto ${prop.class}`}>
-			<h2 class="font-bold text-xl">{prop.header}</h2>
+		<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
+			<h2 class="shrink font-bold text-xl">{prop.header}</h2>
 
-			<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
-				<Index each={prop.data}>
-					{(baseLocationData) => (
-						<button
-							type="button"
-							class="relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44"
-							onClick={async () => {
-								const data = await getRecreationalLocationFromDatabaseById(
-									// Use a string so the query can be serialized and cached
-									`${baseLocationData().id}`,
-								);
+			<div class="overflow-auto">
+				<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
+					<Index each={prop.data}>
+						{(baseLocationData) => (
+							<button
+								type="button"
+								class="relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44"
+								onClick={async () => {
+									const data = await getRecreationalLocationFromDatabaseById(
+										// Use a string so the query can be serialized and cached
+										`${baseLocationData().id}`,
+									);
 
-								if (data) {
-									// Navigate to the info route and set the data to
-									navigate("/info", { state: data });
-								}
-							}}
-						>
-							<img
-								src={getProxiedImageUrl(baseLocationData().thumbnail)}
-								alt={baseLocationData().title}
-								class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
-							/>
+									if (data) {
+										// Navigate to the info route and set the data to
+										navigate("/info", { state: data });
+									}
+								}}
+							>
+								<img
+									src={getProxiedImageUrl(baseLocationData().thumbnail)}
+									alt={baseLocationData().title}
+									class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
+								/>
 
-							<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
-								{baseLocationData().title}
-							</div>
-						</button>
-					)}
-				</Index>
+								<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
+									{baseLocationData().title}
+								</div>
+							</button>
+						)}
+					</Index>
+				</div>
 			</div>
 		</section>
 	);
