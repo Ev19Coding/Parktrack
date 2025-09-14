@@ -25,6 +25,17 @@ type LightweightRecreationalLocationSchema = Satisfies<
 	Partial<RecreationalLocationSchema>
 >;
 
+const BareMinimumRecreationalLocationSchema = v.object({
+	id: v.bigint(),
+	title: v.string(),
+	thumbnail: NullableStringSchema,
+});
+
+type BareMinimumRecreationalLocationSchema = Satisfies<
+	v.InferOutput<typeof BareMinimumRecreationalLocationSchema>,
+	Partial<LightweightRecreationalLocationSchema>
+>;
+
 const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
@@ -100,7 +111,7 @@ async function getAllRecreationalLocations() {
 export async function getUserQueryResultFromDatabase(
 	query: string,
 	maxResults = 10,
-) {
+): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
 	const { fuseIndex } = await getAllRecreationalLocations();
 
 	const results = fuseIndex.search(query);
