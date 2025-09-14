@@ -5,7 +5,7 @@ import {
 	getParkRecreationalLocationsFromDatabaseAtRandom,
 	getRestaurantRecreationalLocationsFromDatabaseAtRandom,
 } from "~/server/database/user/query";
-import type { PromiseValue } from "~/utils/generics";
+import { PromiseValue } from "~/types/generics";
 import { getProxiedImageUrl } from "~/utils/image";
 
 function DataSection(prop: {
