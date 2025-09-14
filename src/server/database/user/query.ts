@@ -1,6 +1,7 @@
 "use server";
 
 import Fuse from "fuse.js";
+import QuickLRU from "quick-lru";
 import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/utils/generics";
@@ -139,9 +140,18 @@ export async function getUserQueryResultFromDatabase(
 	});
 }
 
+const recreationalLocationLruCache = new QuickLRU<
+	string | bigint,
+	RecreationalLocationSchema | undefined
+>({ maxAge: CACHE_DURATION_IN_MS, maxSize: 100 });
+
 export async function getRecreationalLocationFromDatabaseById(
 	id: string | bigint,
 ): Promise<RecreationalLocationSchema | undefined> {
+	const possiblyCachedLocation = recreationalLocationLruCache.get(id);
+
+	if (possiblyCachedLocation) return possiblyCachedLocation;
+
 	const fetchedLocation = (
 		await (
 			await getParkTrackDatabaseConnection()
@@ -175,7 +185,7 @@ export async function getRecreationalLocationFromDatabaseById(
 		});
 
 	// Our data should be in the first index
-	return fetchedLocation[0];
+	return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
 }
 
 export async function getParkRecreationalLocationsFromDatabaseAtRandom(
