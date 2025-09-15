@@ -4,7 +4,7 @@ import Fuse from "fuse.js";
 import QuickLRU from "quick-lru";
 import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
-import type { Satisfies } from "~/utils/generics";
+import type { Satisfies } from "~/types/generics";
 import { tryParseObject } from "~/utils/parse";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
@@ -28,8 +28,10 @@ const NullishStringSchema = v.nullish(v.string()),
 		PLACEHOLDER_IMG,
 	);
 
+const ForceStringSchema = v.pipe(v.unknown(), v.transform(String));
+
 const LightweightRecreationalLocationSchema = v.object({
-	id: v.bigint(),
+	id: ForceStringSchema,
 	title: v.string(),
 	description: NullishStringSchema,
 	thumbnail: ImageUrlWithDefaultSchema,
@@ -44,7 +46,7 @@ type LightweightRecreationalLocationSchema = Satisfies<
 >;
 
 const BareMinimumRecreationalLocationSchema = v.object({
-	id: v.bigint(),
+	id: ForceStringSchema,
 	title: v.string(),
 	thumbnail: ImageUrlWithDefaultSchema,
 });
@@ -146,7 +148,7 @@ const recreationalLocationLruCache = new QuickLRU<
 >({ maxAge: CACHE_DURATION_IN_MS, maxSize: 100 });
 
 export async function getRecreationalLocationFromDatabaseById(
-	id: string | bigint,
+	id: string,
 ): Promise<RecreationalLocationSchema | undefined> {
 	const possiblyCachedLocation = recreationalLocationLruCache.get(id);
 

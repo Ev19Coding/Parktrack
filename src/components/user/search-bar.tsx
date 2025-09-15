@@ -110,8 +110,7 @@ export default function UserSearchBar(prop: {
 										onClick={async () => {
 											const data =
 												await getRecreationalLocationFromDatabaseById(
-													// Use a string so the query can be serialized and cached
-													`${park().id}`,
+													park().id,
 												);
 
 											if (data) {

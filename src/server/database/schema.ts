@@ -104,8 +104,8 @@ const NullishStringSchema = v.nullish(v.string()),
 
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({
-		/** Google's unique business ID (cid from the data) */
-		id: v.union([v.string(), v.bigint()]),
+		/** Id of the entry in the database (converted to ) */
+		id: v.pipe(v.union([v.string(), v.bigint()]), v.transform(String)),
 
 		/** Business name */
 		title: v.string(),
