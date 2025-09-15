@@ -5,4 +5,5 @@ export default defineConfig({
 	vite: {
 		plugins: [tailwindcss()],
 	},
+	server: { compressPublicAssets: true },
 });

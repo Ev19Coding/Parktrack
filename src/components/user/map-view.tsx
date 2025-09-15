@@ -1,7 +1,6 @@
-import { Map, Marker } from "leaflet";
+import type { Map as LMap, Marker } from "leaflet";
 import MapPinIcon from "lucide-solid/icons/map-pin";
-import { on } from "solid-js";
-import { createEffect } from "solid-js";
+import { createEffect, on } from "solid-js";
 import { SolidLeafletMap } from "solidjs-leaflet";
 import { generateRandomUUID } from "~/utils/random";
 
@@ -10,19 +9,20 @@ function svgToDataUrl(svgElement: Element): string {
 	return `data:image/svg+xml;base64,${btoa(svgString)}`;
 }
 
-export default function UserMapView(prop: { label:string,
+export default function UserMapView(prop: {
+	label: string;
 	coords: [latitude: number, longitude: number] | null;
 }) {
 	const mapId = generateRandomUUID();
-	const zoomSize = 18
+	const zoomSize = 18;
 
 	const mapPinSvgString = svgToDataUrl(
 		MapPinIcon({ height: "32px", width: "32px" }) as SVGElement,
 	);
 
-	let mapRef: Map |undefined
-	let leafletRef:typeof import("leaflet") | undefined
-	let markerRef: Marker|undefined
+	let mapRef: LMap | undefined;
+	let leafletRef: typeof import("leaflet") | undefined;
+	let markerRef: Marker | undefined;
 
 	createEffect(
 		on(
@@ -31,16 +31,16 @@ export default function UserMapView(prop: { label:string,
 				if (prop.coords) {
 					const [lat, lng] = prop.coords;
 					mapRef?.setView([lat, lng], zoomSize);
-					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label)
+					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label);
 				}
 			},
 		),
 	);
 
 	return (
-		<section class="h-full rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3] overflow-auto">
+		<section class="h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
 			<SolidLeafletMap
-				center={[63.0, 13.0]}
+				center={[prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0]}
 				id={mapId}
 				zoom={zoomSize}
 				height="100%"
@@ -51,14 +51,14 @@ export default function UserMapView(prop: { label:string,
 						// shadowUrl: "/marker-shadow.png",
 					});
 					const marker = leaflet
-						.marker([63.0, 13.0], {
+						.marker([prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0], {
 							icon,
 						})
 						.addTo(map);
 
-					mapRef = map
-					leafletRef = leaflet
-					markerRef = marker
+					mapRef = map;
+					leafletRef = leaflet;
+					markerRef = marker;
 				}}
 			/>
 		</section>

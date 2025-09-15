@@ -1,12 +1,8 @@
 import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
-import { createSignal } from "solid-js";
+import { createMemo, createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
-import {
-	UserParkSection,
-	UserRestaurantSection,
-} from "~/components/user/park-restaurant";
-import type { LocationApiResult } from "~/location/types";
+import type { RecreationalLocationSchema } from "~/server/database/schema";
 
 // TODO: Move this out of here
 function Header() {
@@ -29,10 +25,27 @@ function Header() {
 
 const UserSearchBar = clientOnly(() => import("~/components/user/search-bar"));
 const UserMapView = clientOnly(() => import("~/components/user/map-view"));
+const UserParkSection = clientOnly(() =>
+	import("~/components/user/park-restaurant").then((module) => ({
+		default: module.UserParkSection,
+	})),
+);
+const UserRestaurantSection = clientOnly(() =>
+	import("~/components/user/park-restaurant").then((module) => ({
+		default: module.UserRestaurantSection,
+	})),
+);
 
 export default function Home() {
 	const [selectedArea, setSelectedArea] =
-		createSignal<LocationApiResult | null>(null);
+		createSignal<RecreationalLocationSchema | null>(null);
+
+	const coords = createMemo(() => {
+		const area = selectedArea();
+		return area ? ([area.latitude, area.longitude] as [number, number]) : null;
+	});
+
+	const label = createMemo(() => selectedArea()?.title ?? "");
 
 	return (
 		<div class="grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
@@ -40,15 +53,7 @@ export default function Home() {
 
 			<UserSearchBar setLocationResult={setSelectedArea} />
 
-			<UserMapView
-				coords={
-					selectedArea()
-						? // biome-ignore lint/style/noNonNullAssertion: <This is valid>
-							[selectedArea()!.latitude, selectedArea()!.longitude]
-						: null
-				}
-				label={selectedArea()?.label ?? ""}
-			/>
+			<UserMapView coords={coords()} label={label()} />
 
 			<UserParkSection />
 

@@ -1,42 +1,42 @@
-import { A, createAsync, query } from "@solidjs/router";
+import { A, createAsyncStore, query, useNavigate } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
-import { createSignal, Index, type Setter, Suspense } from "solid-js";
+import { createSignal, Index, type Setter, Show, Suspense } from "solid-js";
 import { useGeolocation, useThrottle } from "solidjs-use";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import { getUserQueryResultFromDatabase } from "~/server/database/user/query";
-import type { PromiseValue } from "~/utils/generics";
+import {
+	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
+	getUserQueryResultFromDatabase,
+} from "~/server/database/user/query";
+import { getProxiedImageUrl } from "~/utils/image";
 
 export default function UserSearchBar(prop: {
 	setLocationResult: Setter<RecreationalLocationSchema | null>;
 }) {
+	const navigate = useNavigate();
+
 	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
 	// const { coords } = useGeolocation({ enableHighAccuracy: true });
 
-	// Cache previous results
-	const getRelevantDataFromDb = query(
+	// This would be more reliable:
+	const _getSearchResultsFromDb = query(
 		getUserQueryResultFromDatabase,
-		"db-search",
+		"db-user-query-search",
 	);
 
-	let lastValidApiResultCache:
-		| PromiseValue<ReturnType<typeof getRelevantDataFromDb>>
-		| undefined;
-
-	const results = useThrottle(
-		createAsync(async () => {
-			const res = [...(await getRelevantDataFromDb(input()))];
-
-			if (res.length) {
-				lastValidApiResultCache = res;
-
-				return res;
-			} else {
-				return lastValidApiResultCache ?? res;
-			}
-		}),
+	const _throttledSearch = useThrottle(
+		() => _getSearchResultsFromDb(input()),
 		1000,
+	);
+
+	const basicSearchResults = createAsyncStore(async () => {
+		return _throttledSearch();
+	});
+
+	const getRecreationalLocationFromDatabaseById = query(
+		_getRecreationalLocationFromDatabaseById,
+		"db-location-data-query",
 	);
 
 	// Move ref declaration outside
@@ -91,26 +91,58 @@ export default function UserSearchBar(prop: {
 			</summary>
 
 			{/* Dropdown. It's z-index is 1001 so that it stays above the leaflet map buttons */}
-			<ul class="menu dropdown-content z-[1001] mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm">
+			<ul
+				class="menu dropdown-content mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm"
+				style={{ "z-index": 1001 }}
+			>
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
-						each={results()}
+						each={[...(basicSearchResults.latest ?? [])]}
 						fallback={<div class="px-3 py-2">No results found</div>}
 					>
-						{(park) => (
-							<li>
-								<A
-									href="/user"
-									onClick={() => {
-										prop.setLocationResult(park());
-										setAreSuggestionsOpen(false);
-									}}
-								>
-									{park().title}
-								</A>
-							</li>
-						)}
+						{(park) => {
+							return (
+								<li>
+									<button
+										type="button"
+										class="flex justify-between"
+										onClick={async () => {
+											const data =
+												await getRecreationalLocationFromDatabaseById(
+													park().id,
+												);
+
+											if (data) {
+												prop.setLocationResult(data);
+												setAreSuggestionsOpen(false);
+
+												// Navigate to the info route and set the data to
+												navigate("/info", { state: data });
+											}
+										}}
+									>
+										{park().title}
+
+										<Show when={park().thumbnail}>
+											{(thumbnail) => {
+												const proxiedImgUrl = () =>
+													getProxiedImageUrl(thumbnail());
+
+												return (
+													<img
+														alt={park().title}
+														class="aspect-square h-7"
+														src={proxiedImgUrl()}
+														loading="lazy"
+													/>
+												);
+											}}
+										</Show>
+									</button>
+								</li>
+							);
+						}}
 					</Index>
 				</Suspense>
 			</ul>

@@ -7,7 +7,7 @@ export default function App() {
 	return (
 		<Router
 			root={(props) => (
-				<div class="w-screen h-screen overflow-clip">
+				<div class="h-screen w-screen overflow-clip">
 					<Suspense>{props.children}</Suspense>
 				</div>
 			)}
