@@ -390,6 +390,7 @@ export default function InformationRoute() {
 	const [locationData, setLocationData] = createSignal<v.InferOutput<
 		typeof RecreationalLocationSchema
 	> | null>(null);
+	// TODO: Remove this
 	const [hasError, setHasError] = createSignal(false);
 
 	onMount(() => {
