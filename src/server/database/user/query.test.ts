@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 describe("database query functions", () => {
 	it("should export query functions", async () => {
@@ -6,7 +6,11 @@ describe("database query functions", () => {
 
 		expect(module.getUserQueryResultFromDatabase).toBeDefined();
 		expect(module.getRecreationalLocationFromDatabaseById).toBeDefined();
-		expect(module.getParkRecreationalLocationsFromDatabaseAtRandom).toBeDefined();
-		expect(module.getRestaurantRecreationalLocationsFromDatabaseAtRandom).toBeDefined();
+		expect(
+			module.getParkRecreationalLocationsFromDatabaseAtRandom,
+		).toBeDefined();
+		expect(
+			module.getRestaurantRecreationalLocationsFromDatabaseAtRandom,
+		).toBeDefined();
 	});
 });

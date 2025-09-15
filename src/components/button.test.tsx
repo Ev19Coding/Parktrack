@@ -27,11 +27,7 @@ describe("GenericButton", () => {
 
 describe("TooltipButton", () => {
 	it("should render button with tooltip text", () => {
-		render(() => (
-			<TooltipButton tooltipText="Help text">
-				Help
-			</TooltipButton>
-		));
+		render(() => <TooltipButton tooltipText="Help text">Help</TooltipButton>);
 
 		expect(screen.getByRole("button")).toHaveTextContent("Help");
 		expect(screen.getByText("Help text")).toBeInTheDocument();
@@ -48,11 +44,7 @@ describe("TooltipButton", () => {
 	});
 
 	it("should default to top direction", () => {
-		render(() => (
-			<TooltipButton tooltipText="Help">
-				Button
-			</TooltipButton>
-		));
+		render(() => <TooltipButton tooltipText="Help">Button</TooltipButton>);
 
 		expect(document.querySelector(".tooltip-top")).toBeInTheDocument();
 	});

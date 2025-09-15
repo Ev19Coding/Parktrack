@@ -29,7 +29,9 @@ describe("image proxy API", () => {
 			headers: new Map([["Content-Type", "image/jpeg"]]),
 		});
 
-		const request = new Request(`http://localhost/api/image-proxy?url=${encodeURIComponent(imageUrl)}`);
+		const request = new Request(
+			`http://localhost/api/image-proxy?url=${encodeURIComponent(imageUrl)}`,
+		);
 		const event = { request } as any;
 
 		const response = await GET(event);
@@ -42,7 +44,9 @@ describe("image proxy API", () => {
 	it("should return 500 for fetch errors", async () => {
 		mockFetch.mockRejectedValueOnce(new Error("Network error"));
 
-		const request = new Request("http://localhost/api/image-proxy?url=https://bad-url.com/image.jpg");
+		const request = new Request(
+			"http://localhost/api/image-proxy?url=https://bad-url.com/image.jpg",
+		);
 		const event = { request } as any;
 
 		const response = await GET(event);

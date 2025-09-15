@@ -11,12 +11,16 @@ describe("getProxiedImageUrl", () => {
 	it("should proxy external URLs", () => {
 		const externalUrl = "https://example.com/image.jpg";
 		const result = getProxiedImageUrl(externalUrl);
-		expect(result).toBe(`/api/image-proxy?url=${encodeURIComponent(externalUrl)}`);
+		expect(result).toBe(
+			`/api/image-proxy?url=${encodeURIComponent(externalUrl)}`,
+		);
 	});
 
 	it("should handle URLs with special characters", () => {
 		const urlWithSpaces = "https://example.com/image with spaces.jpg";
 		const result = getProxiedImageUrl(urlWithSpaces);
-		expect(result).toBe(`/api/image-proxy?url=${encodeURIComponent(urlWithSpaces)}`);
+		expect(result).toBe(
+			`/api/image-proxy?url=${encodeURIComponent(urlWithSpaces)}`,
+		);
 	});
 });

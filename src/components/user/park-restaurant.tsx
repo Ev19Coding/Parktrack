@@ -35,7 +35,8 @@ function DataSection(prop: {
 								type="button"
 								class="relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44"
 								onClick={async () => {
-									const data = await getRecreationalLocationFromDatabaseById(baseLocationData().id
+									const data = await getRecreationalLocationFromDatabaseById(
+										baseLocationData().id,
 									);
 
 									if (data) {
