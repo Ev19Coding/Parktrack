@@ -3,7 +3,7 @@ import { parkdata } from "~/data/parkdata";
 
 export default function ParkDetails() {
 	const params = useParams();
-	const park = parkdata.find((p: { id: number }) => p.id === Number(params.id));
+	const park = parkdata.find((p: { id: number }) => p.id === Number(params["id"]));
 
 	if (!park) return <p>Park not found</p>;
 
