@@ -74,19 +74,6 @@ export default function UserSearchBar(prop: {
 						class="flex-1 p-2 outline-none"
 						ref={inputRef}
 					/>
-					<p class="label">
-						<span class="text-xs sm:text-sm">
-							Powered by{" "}
-							<a
-								href="https://www.jawg.io/"
-								class="link link-primary"
-								target="_blank"
-								rel="noopener"
-							>
-								Jawg
-							</a>
-						</span>
-					</p>
 				</label>
 			</summary>
 
