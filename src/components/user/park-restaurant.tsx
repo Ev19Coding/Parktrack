@@ -1,4 +1,9 @@
-import { createAsync, query, useNavigate } from "@solidjs/router";
+import {
+	createAsync,
+	createAsyncStore,
+	query,
+	useNavigate,
+} from "@solidjs/router";
 import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
@@ -96,9 +101,9 @@ function DataSection(prop: {
 }
 
 export function UserParkSection() {
-	const randomParks = createAsync(
+	const randomParks = createAsyncStore(
 		() => getParkRecreationalLocationsFromDatabaseAtRandom(),
-		{ initialValue: [] },
+		{ initialValue: [], reconcile: { merge: true } },
 	);
 
 	return (
@@ -111,9 +116,9 @@ export function UserParkSection() {
 }
 
 export function UserRestaurantSection() {
-	const randomRestaurants = createAsync(
+	const randomRestaurants = createAsyncStore(
 		() => getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
-		{ initialValue: [] },
+		{ initialValue: [], reconcile: { merge: true } },
 	);
 
 	return (
