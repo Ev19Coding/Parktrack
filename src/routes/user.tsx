@@ -2,6 +2,10 @@ import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createMemo, createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
+import {
+	UserParkSection,
+	UserRestaurantSection,
+} from "~/components/user/park-restaurant";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 
 // TODO: Move this out of here
@@ -25,16 +29,6 @@ function Header() {
 
 const UserSearchBar = clientOnly(() => import("~/components/user/search-bar"));
 const UserMapView = clientOnly(() => import("~/components/user/map-view"));
-const UserParkSection = clientOnly(() =>
-	import("~/components/user/park-restaurant").then((module) => ({
-		default: module.UserParkSection,
-	})),
-);
-const UserRestaurantSection = clientOnly(() =>
-	import("~/components/user/park-restaurant").then((module) => ({
-		default: module.UserRestaurantSection,
-	})),
-);
 
 export default function Home() {
 	const [selectedArea, setSelectedArea] =
