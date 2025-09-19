@@ -96,31 +96,31 @@ function DataSection(prop: {
 }
 
 export function UserParkSection() {
-	const randomParks = createAsync(() =>
-		getParkRecreationalLocationsFromDatabaseAtRandom(),
+	const randomParks = createAsync(
+		() => getParkRecreationalLocationsFromDatabaseAtRandom(),
+		{ initialValue: [] },
 	);
 
 	return (
 		<DataSection
 			class="lg:col-[1/2] lg:row-span-2"
-			data={randomParks() ?? []}
+			data={randomParks()}
 			header="Parks for You"
 		/>
 	);
 }
 
 export function UserRestaurantSection() {
-	const randomRestaurants = createAsync(() =>
-		getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
+	const randomRestaurants = createAsync(
+		() => getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
+		{ initialValue: [] },
 	);
 
 	return (
-		<Suspense>
-			<DataSection
-				class="lg:col-[2/3] lg:row-span-2"
-				data={randomRestaurants() ?? []}
-				header="Restaurants for You"
-			/>
-		</Suspense>
+		<DataSection
+			class="lg:col-[2/3] lg:row-span-2"
+			data={randomRestaurants() ?? []}
+			header="Restaurants for You"
+		/>
 	);
 }
