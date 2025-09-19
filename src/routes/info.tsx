@@ -57,7 +57,7 @@ function BackButton() {
 	return (
 		<GenericButton
 			onClick={handleBack}
-			class="btn-ghost btn-sm absolute gap-2"
+			class="btn-ghost btn-sm absolute z-10 gap-2"
 			aria-label="Go back"
 		>
 			<ArrowLeftIcon size={16} />
