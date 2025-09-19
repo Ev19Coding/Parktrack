@@ -6,6 +6,7 @@ import {
 	UserParkSection,
 	UserRestaurantSection,
 } from "~/components/user/park-restaurant";
+import UserSearchBar from "~/components/user/search-bar";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 
 // TODO: Move this out of here
@@ -27,7 +28,6 @@ function Header() {
 	);
 }
 
-const UserSearchBar = clientOnly(() => import("~/components/user/search-bar"));
 const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 export default function Home() {
