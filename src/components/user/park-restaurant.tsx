@@ -1,5 +1,5 @@
 import { createAsync, query, useNavigate } from "@solidjs/router";
-import { Index, type JSXElement, Suspense } from "solid-js";
+import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
 	getParkRecreationalLocationsFromDatabaseAtRandom,
@@ -7,6 +7,7 @@ import {
 } from "~/server/database/user/query";
 import type { PromiseValue } from "~/types/generics";
 import { getProxiedImageUrl } from "~/utils/image";
+import LoadingSpinner from "../loading-spinner";
 
 function DataSection(prop: {
 	data: PromiseValue<
@@ -23,6 +24,11 @@ function DataSection(prop: {
 		"db-location-data-query",
 	);
 
+	const [
+		isLoadingRecreationalLocationInfo,
+		setIsLoadingRecreationalLocationInfo,
+	] = createSignal(false);
+
 	const buttonStyle =
 		"relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44";
 
@@ -31,48 +37,61 @@ function DataSection(prop: {
 	}
 
 	return (
-		<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
-			<h2 class="shrink font-bold text-xl">{prop.header}</h2>
+		<>
+			<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
+				<h2 class="shrink font-bold text-xl">{prop.header}</h2>
 
-			<div class="overflow-auto">
-				<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
-					<Suspense
-						fallback={
-							<Index each={Array(5)}>{(_) => <SkeletonLoaderFallback />}</Index>
-						}
-					>
-						<Index each={prop.data}>
-							{(baseLocationData) => (
-								<button
-									type="button"
-									class={buttonStyle}
-									onClick={async () => {
-										const data = await getRecreationalLocationFromDatabaseById(
-											baseLocationData().id,
-										);
+				<div class="overflow-auto">
+					<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
+						<Suspense
+							fallback={
+								<Index each={Array(5)}>
+									{(_) => <SkeletonLoaderFallback />}
+								</Index>
+							}
+						>
+							<Index each={prop.data}>
+								{(baseLocationData) => (
+									<button
+										type="button"
+										class={buttonStyle}
+										onClick={async () => {
+											setIsLoadingRecreationalLocationInfo(true);
 
-										if (data) {
-											// Navigate to the info route and set the data to
-											navigate("/info", { state: data });
-										}
-									}}
-								>
-									<img
-										src={getProxiedImageUrl(baseLocationData().thumbnail)}
-										alt={baseLocationData().title}
-										class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
-									/>
+											const data =
+												await getRecreationalLocationFromDatabaseById(
+													baseLocationData().id,
+												);
 
-									<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
-										{baseLocationData().title}
-									</div>
-								</button>
-							)}
-						</Index>
-					</Suspense>
+											setIsLoadingRecreationalLocationInfo(false);
+
+											if (data) {
+												// Navigate to the info route and set the data to
+												navigate("/info", { state: data });
+											}
+										}}
+									>
+										<img
+											src={getProxiedImageUrl(baseLocationData().thumbnail)}
+											alt={baseLocationData().title}
+											class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
+										/>
+
+										<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
+											{baseLocationData().title}
+										</div>
+									</button>
+								)}
+							</Index>
+						</Suspense>
+					</div>
 				</div>
-			</div>
-		</section>
+			</section>
+
+			<Show when={isLoadingRecreationalLocationInfo()}>
+				<LoadingSpinner />
+			</Show>
+		</>
 	);
 }
 
