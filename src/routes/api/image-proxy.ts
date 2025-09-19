@@ -81,8 +81,7 @@ export async function GET({ request }: APIEvent) {
 				"Last-Modified": lastModified,
 			},
 		});
-	} catch (error) {
-		console.error("Image proxy error:", error);
+	} catch {
 		return new Response("Failed to fetch image", { status: 500 });
 	}
 }
