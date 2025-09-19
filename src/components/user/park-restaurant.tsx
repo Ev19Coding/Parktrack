@@ -74,7 +74,7 @@ function DataSection(prop: {
 										<img
 											src={getProxiedImageUrl(baseLocationData().thumbnail)}
 											alt={baseLocationData().title}
-											class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
+											class="size-full object-cover brightness-90 transition-all hover:scale-105 hover:brightness-105"
 										/>
 
 										<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
