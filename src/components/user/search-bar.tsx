@@ -50,7 +50,7 @@ export default function UserSearchBar(prop: {
 	function setInputWithValue() {
 		if ((inputRef?.value.length ?? 0) >= 2) {
 			//@ts-expect-error inputRef will be defined when this is called
-			setInput(inputRef.value);
+			setInput(inputRef.value.trim());
 		}
 	}
 
