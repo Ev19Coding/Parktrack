@@ -52,6 +52,7 @@
 		"@vitest/coverage-v8": "^3.2.4",
 		"@vitest/ui": "^3.2.4",
 		"daisyui": "^5.1.9",
+		"dotenv": "^17.2.2",
 		"jsdom": "^26.1.0",
 		"tailwindcss": "^4.1.13",
 		"vite-plugin-solid": "^2.11.8",

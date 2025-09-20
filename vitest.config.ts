@@ -20,6 +20,7 @@ export default defineConfig({
 			},
 		},
 	},
+	envDir: ".",
 	resolve: {
 		conditions: ["development", "browser"],
 		alias: {
