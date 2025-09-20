@@ -299,6 +299,7 @@ function ImageGallery(props: {
 			<GenericModal
 				modalId={localProp.modalId}
 				class="h-screen max-h-[75dvh] w-screen max-w-[75dvw]"
+				z-index={999_999}
 			>
 				<div class="size-full overflow-auto">
 					<Image
