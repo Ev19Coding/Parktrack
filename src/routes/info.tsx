@@ -302,7 +302,7 @@ function ImageGallery(props: {
 			>
 				<div class="size-full overflow-auto">
 					<Image
-						class="m-auto aspect-square size-full h-[70dvh] w-auto max-w-[70dvh] sm:h-auto sm:max-h-[70dvw] sm:w-[70dvw]"
+						class="m-auto aspect-square size-full h-[80dvh] w-auto max-w-[80dvh] object-contain sm:h-auto sm:max-h-[90dvw] sm:w-[90dvw]"
 						src={localProp.src}
 					></Image>
 				</div>
