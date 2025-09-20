@@ -50,7 +50,7 @@ export default function UserSearchBar(prop: {
 	function setInputWithValue() {
 		if ((inputRef?.value.length ?? 0) >= 2) {
 			//@ts-expect-error inputRef will be defined when this is called
-			setInput(inputRef.value);
+			setInput(inputRef.value.trim());
 		}
 	}
 
@@ -59,11 +59,12 @@ export default function UserSearchBar(prop: {
 			<details
 				class="dropdown place-self-center lg:col-[1/3]"
 				open={areSuggestionsOpen()}
-				onFocusOut={(e) =>
-					//@ts-expect-error This works
-					!e.currentTarget.contains(e.relatedTarget) &&
-					setAreSuggestionsOpen(false)
-				}
+				onFocusOut={(e) => {
+					// Close the dropdown if focus moves to an element outside of the current dropdown.
+					if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+						setAreSuggestionsOpen(false);
+					}
+				}}
 			>
 				<summary class="block">
 					{/* Search bar */}
@@ -73,7 +74,8 @@ export default function UserSearchBar(prop: {
 							type="search"
 							placeholder="Search parks..."
 							value={input()}
-							onClick={(_) => setAreSuggestionsOpen(true)}
+							onFocus={() => setAreSuggestionsOpen(true)}
+							onClick={() => setAreSuggestionsOpen(true)}
 							// Update query but keep dropdown open
 							onInput={setInputWithValue}
 							onKeyPress={({ key }) => key === "Enter" && setInputWithValue()}

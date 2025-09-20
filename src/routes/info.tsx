@@ -20,8 +20,10 @@ import {
 } from "solid-js";
 import * as v from "valibot";
 import { GenericButton } from "~/components/button";
+import { GenericModal, showModal } from "~/components/generic-modal";
 import { RecreationalLocationSchema } from "~/server/database/schema";
 import { getProxiedImageUrl } from "~/utils/image";
+import { generateRandomUUID } from "~/utils/random";
 
 const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
@@ -277,6 +279,37 @@ function ImageGallery(props: {
 			props.location.thumbnail,
 	);
 
+	function Image(localProp: {
+		class: string;
+		src: string;
+		alt?: string | undefined;
+	}) {
+		return (
+			<img
+				src={getProxiedImageUrl(localProp.src)}
+				alt={localProp.alt || props.location.title}
+				class={localProp.class}
+				loading="lazy"
+			/>
+		);
+	}
+
+	function ImageZoomModal(localProp: { modalId: string; src: string }) {
+		return (
+			<GenericModal
+				modalId={localProp.modalId}
+				class="h-screen max-h-[75dvh] w-screen max-w-[75dvw]"
+			>
+				<div class="size-full overflow-auto">
+					<Image
+						class="m-auto aspect-square size-full h-[70dvh] w-auto max-w-[70dvh] sm:h-auto sm:max-h-[70dvw] sm:w-[70dvw]"
+						src={localProp.src}
+					></Image>
+				</div>
+			</GenericModal>
+		);
+	}
+
 	return (
 		<Show when={hasImages()}>
 			<InfoCard>
@@ -284,16 +317,24 @@ function ImageGallery(props: {
 
 				<div class="space-y-4">
 					<Show when={props.location.thumbnail}>
-						{(thumbnail) => (
-							<div class="aspect-video w-full overflow-hidden rounded-lg bg-base-200">
-								<img
-									src={getProxiedImageUrl(thumbnail())}
-									alt={props.location.title}
-									class="h-full w-full object-cover"
-									loading="lazy"
-								/>
-							</div>
-						)}
+						{(thumbnail) => {
+							const modalId = generateRandomUUID();
+
+							return (
+								<button
+									type="button"
+									class="aspect-video w-full overflow-hidden rounded-lg bg-base-200"
+									onClick={(_) => showModal(modalId)}
+								>
+									<Image
+										class="h-full w-full object-cover"
+										src={thumbnail()}
+									></Image>
+
+									<ImageZoomModal modalId={modalId} src={thumbnail()} />
+								</button>
+							);
+						}}
 					</Show>
 
 					<Show
@@ -302,16 +343,28 @@ function ImageGallery(props: {
 						<div class="overflow-x-auto">
 							<div class="grid min-w-[280px] grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
 								<For each={props.location.images}>
-									{(image) => (
-										<div class="aspect-square overflow-hidden rounded-lg bg-base-200">
-											<img
-												src={getProxiedImageUrl(image.image)}
-												alt={image.title || props.location.title}
-												class="h-full w-full cursor-pointer object-cover transition-transform hover:scale-105"
-												loading="lazy"
-											/>
-										</div>
-									)}
+									{(imageData) => {
+										const modalId = generateRandomUUID();
+
+										return (
+											<button
+												type="button"
+												class="aspect-square overflow-hidden rounded-lg bg-base-200"
+												onClick={(_) => showModal(modalId)}
+											>
+												<Image
+													class="h-full w-full cursor-pointer object-cover transition-transform hover:scale-105"
+													src={imageData.image}
+													alt={imageData.title}
+												/>
+
+												<ImageZoomModal
+													modalId={modalId}
+													src={imageData.image}
+												/>
+											</button>
+										);
+									}}
 								</For>
 							</div>
 						</div>

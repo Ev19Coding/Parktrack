@@ -1,4 +1,9 @@
-import { createAsync, query, useNavigate } from "@solidjs/router";
+import {
+	createAsync,
+	createAsyncStore,
+	query,
+	useNavigate,
+} from "@solidjs/router";
 import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
@@ -74,7 +79,7 @@ function DataSection(prop: {
 										<img
 											src={getProxiedImageUrl(baseLocationData().thumbnail)}
 											alt={baseLocationData().title}
-											class="size-full object-cover brightness-90 hover:scale-105 hover:brightness-105"
+											class="size-full object-cover brightness-90 transition-all hover:scale-105 hover:brightness-105"
 										/>
 
 										<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
@@ -96,31 +101,31 @@ function DataSection(prop: {
 }
 
 export function UserParkSection() {
-	const randomParks = createAsync(() =>
-		getParkRecreationalLocationsFromDatabaseAtRandom(),
+	const randomParks = createAsyncStore(
+		() => getParkRecreationalLocationsFromDatabaseAtRandom(),
+		{ initialValue: [], reconcile: { merge: true } },
 	);
 
 	return (
 		<DataSection
 			class="lg:col-[1/2] lg:row-span-2"
-			data={randomParks() ?? []}
+			data={randomParks()}
 			header="Parks for You"
 		/>
 	);
 }
 
 export function UserRestaurantSection() {
-	const randomRestaurants = createAsync(() =>
-		getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
+	const randomRestaurants = createAsyncStore(
+		() => getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
+		{ initialValue: [], reconcile: { merge: true } },
 	);
 
 	return (
-		<Suspense>
-			<DataSection
-				class="lg:col-[2/3] lg:row-span-2"
-				data={randomRestaurants() ?? []}
-				header="Restaurants for You"
-			/>
-		</Suspense>
+		<DataSection
+			class="lg:col-[2/3] lg:row-span-2"
+			data={randomRestaurants() ?? []}
+			header="Restaurants for You"
+		/>
 	);
 }
