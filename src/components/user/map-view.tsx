@@ -1,96 +1,64 @@
-import { onMount } from "solid-js";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { useNavigate } from "@solidjs/router";
-import { parkdata } from "~/data/parkdata";
+import type { Map as LMap, Marker } from "leaflet";
+import { createEffect, createSignal, on, onMount, Show } from "solid-js";
+import { SolidLeafletMap } from "solidjs-leaflet";
+import mapMarkerStr from "~/assets/map-maker.svg";
+import { generateRandomUUID } from "~/utils/random";
 
-export default function ParkMap() {
-  let map: L.Map | undefined;
-  const navigate = useNavigate();
+export default function UserMapView(prop: {
+	label: string;
+	coords: [latitude: number, longitude: number] | null;
+}) {
+	const mapId = generateRandomUUID();
+	const zoomSize = 18;
 
-  // Add marker safely
-  function safeAddMarker(lat: number, lng: number, popupHTML: string) {
-    if (!map) return null;
+	let mapRef: LMap | undefined;
+	// let leafletRef: typeof import("leaflet") | undefined;
+	let markerRef: Marker | undefined;
 
-    const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupHTML);
-    return marker;
-  }
+	// SSR workaround
+	const [loadMap, setLoadMap] = createSignal(false);
 
-  // Add parks from dataset
-  function addParks() {
-    parkdata.forEach((park) => {
-      const { lat, lng, name, address, entryFee, phone, id } = park;
-      const popupHTML = `
-        <div class="w-50">
-          <strong>${name}</strong><br/>
-          <em>${address}</em><br/>
-          Entry Fee: ${entryFee}<br/>
-          Phone: ${phone}
-        </div>
-      `;
+	onMount(() => setLoadMap(true));
 
-      const marker = safeAddMarker(lat, lng, popupHTML);
-      if (marker) {
-        // Hover tooltip with name only
-        marker.bindTooltip(name, { permanent: false, direction: "top" });
+	createEffect(
+		on(
+			() => prop.coords,
+			() => {
+				if (prop.coords) {
+					const [lat, lng] = prop.coords;
+					mapRef?.setView([lat, lng], zoomSize);
+					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label);
+				}
+			},
+		),
+	);
 
-        // Navigate to info page on click
-        marker.on("click", () => {
-          navigate(`/parks/${id}`, { state: park });
-        });
-      }
-    });
-  }
+	return (
+		<section class="relative h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
+			<Show when={loadMap()} fallback={<div class="skeleton size-full"></div>}>
+				<SolidLeafletMap
+					center={[prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0]}
+					id={mapId}
+					zoom={zoomSize}
+					height="100%"
+					width="100%"
+					onMapReady={(leaflet, map) => {
+						const icon = leaflet.icon({
+							iconUrl: mapMarkerStr,
+							// shadowUrl: "/marker-shadow.png",
+						});
+						const marker = leaflet
+							.marker([prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0], {
+								icon,
+							})
+							.addTo(map);
 
-  // Add user location
-  function addUserLocation() {
-    if (!map) return;
-
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          const userMarker = L.marker([latitude, longitude], {
-            icon: L.icon({
-              iconUrl:
-                "https://cdn-icons-png.flaticon.com/512/64/64113.png", // blue marker icon
-              iconSize: [30, 30],
-              iconAnchor: [15, 30],
-            }),
-          })
-            .addTo(map)
-            .bindPopup("📍 You are here");
-
-          // Optional: tooltip on hover for user marker
-          userMarker.bindTooltip("You are here", {
-            permanent: false,
-            direction: "top",
-          });
-
-          map.setView([latitude, longitude], 13);
-        },
-        (err) => {
-          console.error("Geolocation error:", err);
-        }
-      );
-    }
-  }
-
-  onMount(() => {
-    map = L.map("map").setView([9.05785, 7.49508], 12); // default Abuja coords
-
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "&copy; OpenStreetMap contributors",
-    }).addTo(map);
-
-    addParks();
-    addUserLocation();
-  });
-
-  return (
-    <div
-      id="map"
-      class="w-full h-[500px] rounded-lg shadow border border-gray-200"
-    />
-  );
+						mapRef = map;
+						// leafletRef = leaflet;
+						markerRef = marker;
+					}}
+				/>
+			</Show>
+		</section>
+	);
 }

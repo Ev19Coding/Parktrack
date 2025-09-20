@@ -1,5 +1,5 @@
 import { render, screen } from "@solidjs/testing-library";
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { GenericButton, TooltipButton } from "./button";
 
 describe("GenericButton", () => {
