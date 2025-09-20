@@ -1,66 +1,96 @@
-import type { Map as LMap, Marker } from "leaflet";
-import MapPinIcon from "lucide-solid/icons/map-pin";
-import { createEffect, on } from "solid-js";
-import { SolidLeafletMap } from "solidjs-leaflet";
-import { generateRandomUUID } from "~/utils/random";
+import { onMount } from "solid-js";
+import L from "leaflet";
+import "leaflet/dist/leaflet.css";
+import { useNavigate } from "@solidjs/router";
+import { parkdata } from "~/data/parkdata";
 
-function svgToDataUrl(svgElement: Element): string {
-	const svgString = svgElement.outerHTML;
-	return `data:image/svg+xml;base64,${btoa(svgString)}`;
-}
+export default function ParkMap() {
+  let map: L.Map | undefined;
+  const navigate = useNavigate();
 
-export default function UserMapView(prop: {
-	label: string;
-	coords: [latitude: number, longitude: number] | null;
-}) {
-	const mapId = generateRandomUUID();
-	const zoomSize = 18;
+  // Add marker safely
+  function safeAddMarker(lat: number, lng: number, popupHTML: string) {
+    if (!map) return null;
 
-	const mapPinSvgString = svgToDataUrl(
-		MapPinIcon({ height: "32px", width: "32px" }) as SVGElement,
-	);
+    const marker = L.marker([lat, lng]).addTo(map).bindPopup(popupHTML);
+    return marker;
+  }
 
-	let mapRef: LMap | undefined;
-	let leafletRef: typeof import("leaflet") | undefined;
-	let markerRef: Marker | undefined;
+  // Add parks from dataset
+  function addParks() {
+    parkdata.forEach((park) => {
+      const { lat, lng, name, address, entryFee, phone, id } = park;
+      const popupHTML = `
+        <div class="w-50">
+          <strong>${name}</strong><br/>
+          <em>${address}</em><br/>
+          Entry Fee: ${entryFee}<br/>
+          Phone: ${phone}
+        </div>
+      `;
 
-	createEffect(
-		on(
-			() => prop.coords,
-			() => {
-				if (prop.coords) {
-					const [lat, lng] = prop.coords;
-					mapRef?.setView([lat, lng], zoomSize);
-					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label);
-				}
-			},
-		),
-	);
+      const marker = safeAddMarker(lat, lng, popupHTML);
+      if (marker) {
+        // Hover tooltip with name only
+        marker.bindTooltip(name, { permanent: false, direction: "top" });
 
-	return (
-		<section class="h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
-			<SolidLeafletMap
-				center={[prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0]}
-				id={mapId}
-				zoom={zoomSize}
-				height="100%"
-				width="100%"
-				onMapReady={(leaflet, map) => {
-					const icon = leaflet.icon({
-						iconUrl: mapPinSvgString,
-						// shadowUrl: "/marker-shadow.png",
-					});
-					const marker = leaflet
-						.marker([prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0], {
-							icon,
-						})
-						.addTo(map);
+        // Navigate to info page on click
+        marker.on("click", () => {
+          navigate(`/parks/${id}`, { state: park });
+        });
+      }
+    });
+  }
 
-					mapRef = map;
-					leafletRef = leaflet;
-					markerRef = marker;
-				}}
-			/>
-		</section>
-	);
+  // Add user location
+  function addUserLocation() {
+    if (!map) return;
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          const userMarker = L.marker([latitude, longitude], {
+            icon: L.icon({
+              iconUrl:
+                "https://cdn-icons-png.flaticon.com/512/64/64113.png", // blue marker icon
+              iconSize: [30, 30],
+              iconAnchor: [15, 30],
+            }),
+          })
+            .addTo(map)
+            .bindPopup("📍 You are here");
+
+          // Optional: tooltip on hover for user marker
+          userMarker.bindTooltip("You are here", {
+            permanent: false,
+            direction: "top",
+          });
+
+          map.setView([latitude, longitude], 13);
+        },
+        (err) => {
+          console.error("Geolocation error:", err);
+        }
+      );
+    }
+  }
+
+  onMount(() => {
+    map = L.map("map").setView([9.05785, 7.49508], 12); // default Abuja coords
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "&copy; OpenStreetMap contributors",
+    }).addTo(map);
+
+    addParks();
+    addUserLocation();
+  });
+
+  return (
+    <div
+      id="map"
+      class="w-full h-[500px] rounded-lg shadow border border-gray-200"
+    />
+  );
 }
