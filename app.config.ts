@@ -5,5 +5,8 @@ export default defineConfig({
 	vite: {
 		plugins: [tailwindcss()],
 	},
-	server: { compressPublicAssets: true },
+	server: {
+		compressPublicAssets: true,
+		prerender: { routes: ["/", "/user", "/info"] },
+	},
 });
