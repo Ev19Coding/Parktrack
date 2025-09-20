@@ -2,6 +2,7 @@ import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createMemo, createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
+import UserMapView from "~/components/user/map-view";
 import {
 	UserParkSection,
 	UserRestaurantSection,
@@ -27,8 +28,6 @@ function Header() {
 		</header>
 	);
 }
-
-const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 export default function Home() {
 	const [selectedArea, setSelectedArea] =
