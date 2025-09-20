@@ -300,7 +300,12 @@ function ImageGallery(props: {
 				modalId={localProp.modalId}
 				class="h-screen max-h-[75dvh] w-screen max-w-[75dvw]"
 			>
-				<Image class="h-full w-full object-cover" src={localProp.src}></Image>
+				<div class="size-full overflow-auto">
+					<Image
+						class="m-auto aspect-square size-full h-[70dvh] w-auto max-w-[70dvh] sm:h-auto sm:max-h-[70dvw] sm:w-[70dvw]"
+						src={localProp.src}
+					></Image>
+				</div>
 			</GenericModal>
 		);
 	}
