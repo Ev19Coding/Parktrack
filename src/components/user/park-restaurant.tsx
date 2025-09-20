@@ -94,7 +94,10 @@ function DataSection(prop: {
 			</section>
 
 			<Show when={isLoadingRecreationalLocationInfo()}>
-				<LoadingSpinner />
+				{/* Let the spinner cover the entire screen */}
+				<div class="fixed z-[999999] h-screen w-screen">
+					<LoadingSpinner />
+				</div>
 			</Show>
 		</>
 	);
