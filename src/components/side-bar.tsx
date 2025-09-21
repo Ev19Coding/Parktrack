@@ -1,14 +1,24 @@
 import SettingsIcon from "lucide-solid/icons/menu";
 import { onCleanup } from "solid-js";
 import { makeElementDraggable } from "~/utils/draggable";
+import { generateRandomUUID } from "~/utils/random";
 import { TooltipButton } from "./button";
 
 export default function SideBar() {
+	const drawerId = generateRandomUUID();
+
+	let drawerToggle$!: HTMLInputElement;
+
 	return (
 		<div class="drawer">
-			<input id="my-drawer" type="checkbox" class="drawer-toggle" />
+			<input
+				id={drawerId}
+				type="checkbox"
+				class="drawer-toggle"
+				ref={drawerToggle$}
+			/>
 			<div class="drawer-content">
-				<label for="my-drawer" class="drawer-button">
+				<label for={drawerId} class="drawer-button">
 					<TooltipButton
 						tooltipText="Sidebar"
 						tooltipDir="right"
@@ -24,17 +34,22 @@ export default function SideBar() {
 								});
 							});
 						}}
+						onClick={(_) => {
+							drawerToggle$.checked = !drawerToggle$.checked;
+						}}
 					>
 						<SettingsIcon class="size-8 text-base-content/50" />
 					</TooltipButton>
 				</label>
 			</div>
-			<div class="drawer-side">
+
+			<div class="drawer-side z-[99999]">
 				<label
-					for="my-drawer"
+					for={drawerId}
 					aria-label="close sidebar"
 					class="drawer-overlay"
 				></label>
+
 				<ul class="menu min-h-full w-80 bg-base-200 p-4 text-base-content">
 					<li>
 						<a>Sidebar Item 1</a>
