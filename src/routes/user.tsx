@@ -1,4 +1,3 @@
-import { clientOnly } from "@solidjs/start";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createMemo, createSignal } from "solid-js";
 import { TooltipButton } from "~/components/button";
