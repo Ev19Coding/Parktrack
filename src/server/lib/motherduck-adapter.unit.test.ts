@@ -103,6 +103,74 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			);
 		});
 
+		it("should handle Better Auth operators (eq, neq, gt, etc.)", () => {
+			const whereConditions = [
+				{ field: "email", value: "test@example.com", operator: "eq" },
+				{ field: "age", value: 25, operator: "gt" },
+				{ field: "status", value: "inactive", operator: "neq" },
+				{ field: "score", value: 90, operator: "gte" },
+				{ field: "points", value: 50, operator: "lt" },
+				{ field: "rating", value: 4.5, operator: "lte" },
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe(
+				"WHERE email = 'test@example.com' AND age > 25 AND status != 'inactive' AND score >= 90 AND points < 50 AND rating <= 4.5",
+			);
+		});
+
+		it("should handle IN and NOT IN operators", () => {
+			const whereConditions = [
+				{ field: "status", value: ["active", "pending"], operator: "in" },
+				{ field: "role", value: ["banned", "suspended"], operator: "nin" },
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe(
+				"WHERE status IN ('active', 'pending') AND role NOT IN ('banned', 'suspended')",
+			);
+		});
+
+		it("should handle LIKE and ILIKE operators", () => {
+			const whereConditions = [
+				{ field: "name", value: "John%", operator: "like" },
+				{ field: "email", value: "%@gmail.com", operator: "ilike" },
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe(
+				"WHERE name LIKE 'John%' AND email ILIKE '%@gmail.com'",
+			);
+		});
+
+		it("should handle IS and IS NOT operators", () => {
+			const whereConditions = [
+				{ field: "deletedAt", value: null, operator: "is" },
+				{ field: "archivedAt", value: null, operator: "isNot" },
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe("WHERE deletedAt IS NULL AND archivedAt IS NOT NULL");
+		});
+
+		it("should default to eq operator when not specified", () => {
+			const whereConditions = [
+				{ field: "id", value: "123" }, // no operator specified
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe("WHERE id = '123'");
+		});
+
+		it("should handle unknown operators by passing them through", () => {
+			const whereConditions = [
+				{ field: "custom_field", value: "test", operator: "CUSTOM_OP" },
+			];
+
+			const result = buildWhereClause(whereConditions);
+			expect(result).toBe("WHERE custom_field CUSTOM_OP 'test'");
+		});
+
 		it("should return empty string for empty conditions", () => {
 			const whereConditions: Array<{
 				field: string;
@@ -498,12 +566,49 @@ function buildWhereClause(
 ): string {
 	if (!where || where.length === 0) return "";
 
+	// Map Better Auth operators to SQL operators
+	const operatorMap: Record<string, string> = {
+		eq: "=",
+		neq: "!=",
+		gt: ">",
+		gte: ">=",
+		lt: "<",
+		lte: "<=",
+		like: "LIKE",
+		ilike: "ILIKE",
+		in: "IN",
+		nin: "NOT IN",
+		is: "IS",
+		isNot: "IS NOT",
+	};
+
 	const conditions = where
-		.map(({ field, value, operator = "=" }) => {
+		.map(({ field, value, operator = "eq" }) => {
+			const sqlOperator = operatorMap[operator] || operator;
+
+			if (value === null && (sqlOperator === "IS" || operator === "is")) {
+				return `${field} IS NULL`;
+			}
+
+			if (
+				value === null &&
+				(sqlOperator === "IS NOT" || operator === "isNot")
+			) {
+				return `${field} IS NOT NULL`;
+			}
+
 			if (value === null) {
 				return `${field} IS NULL`;
 			}
-			return `${field} ${operator} ${escapeValue(value)}`;
+
+			if (sqlOperator === "IN" || sqlOperator === "NOT IN") {
+				const valueList = Array.isArray(value)
+					? value.map(escapeValue).join(", ")
+					: escapeValue(value);
+				return `${field} ${sqlOperator} (${valueList})`;
+			}
+
+			return `${field} ${sqlOperator} ${escapeValue(value)}`;
 		})
 		.join(" AND ");
 

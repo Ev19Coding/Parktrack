@@ -56,12 +56,49 @@ export const motherDuckAdapter = (
 			): string => {
 				if (!where || where.length === 0) return "";
 
+				// Map Better Auth operators to SQL operators
+				const operatorMap: Record<string, string> = {
+					eq: "=",
+					neq: "!=",
+					gt: ">",
+					gte: ">=",
+					lt: "<",
+					lte: "<=",
+					like: "LIKE",
+					ilike: "ILIKE",
+					in: "IN",
+					nin: "NOT IN",
+					is: "IS",
+					isNot: "IS NOT",
+				};
+
 				const conditions = where
-					.map(({ field, value, operator = "=" }) => {
+					.map(({ field, value, operator = "eq" }) => {
+						const sqlOperator = operatorMap[operator] || operator;
+
+						if (value === null && (sqlOperator === "IS" || operator === "is")) {
+							return `${field} IS NULL`;
+						}
+
+						if (
+							value === null &&
+							(sqlOperator === "IS NOT" || operator === "isNot")
+						) {
+							return `${field} IS NOT NULL`;
+						}
+
 						if (value === null) {
 							return `${field} IS NULL`;
 						}
-						return `${field} ${operator} ${escapeValue(value)}`;
+
+						if (sqlOperator === "IN" || sqlOperator === "NOT IN") {
+							const valueList = Array.isArray(value)
+								? value.map(escapeValue).join(", ")
+								: escapeValue(value);
+							return `${field} ${sqlOperator} (${valueList})`;
+						}
+
+						return `${field} ${sqlOperator} ${escapeValue(value)}`;
 					})
 					.join(" AND ");
 
