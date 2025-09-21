@@ -1,6 +1,4 @@
-import SettingsIcon from "lucide-solid/icons/menu";
 import { createMemo, createSignal } from "solid-js";
-import { TooltipButton } from "~/components/button";
 import UserMapView from "~/components/user/map-view";
 import {
 	UserParkSection,
@@ -12,18 +10,10 @@ import type { RecreationalLocationSchema } from "~/server/database/schema";
 // TODO: Move this out of here
 function Header() {
 	return (
-		<header class="flex items-center justify-around gap-4 text-2xl lg:col-[1/3]">
+		<header class="flex items-center justify-around text-2xl lg:col-[1/3]">
 			<h1 class="text-center font-bold">
 				Parks {"&"} Restaurants in AMAC, Abuja
 			</h1>
-
-			<TooltipButton
-				tooltipText="Settings"
-				tooltipDir="left"
-				class="btn-square p-2"
-			>
-				<SettingsIcon class="size-8 text-base-content/50" />
-			</TooltipButton>
 		</header>
 	);
 }
