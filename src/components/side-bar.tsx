@@ -33,7 +33,7 @@ export default function SideBar() {
 							});
 						}}
 						onClick={(_) => {
-							drawerToggle$.checked = !drawerToggle$.checked;
+							drawerToggle$.click();
 						}}
 					>
 						<SettingsIcon class="size-8 text-base-content/50" />
