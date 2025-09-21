@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from "@solidjs/router";
-import { clientOnly } from "@solidjs/start";
 import ArrowLeftIcon from "lucide-solid/icons/arrow-left";
 import CalendarIcon from "lucide-solid/icons/calendar";
 import ClockIcon from "lucide-solid/icons/clock";
@@ -21,11 +20,10 @@ import {
 import * as v from "valibot";
 import { GenericButton } from "~/components/button";
 import { GenericModal, showModal } from "~/components/generic-modal";
+import UserMapView from "~/components/user/map-view";
 import { RecreationalLocationSchema } from "~/server/database/schema";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-
-const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -444,15 +442,11 @@ export default function InformationRoute() {
 	const [locationData, setLocationData] = createSignal<v.InferOutput<
 		typeof RecreationalLocationSchema
 	> | null>(null);
-	// TODO: Remove this
-	const [hasError, setHasError] = createSignal(false);
 
 	onMount(() => {
 		const result = v.safeParse(RecreationalLocationSchema, location.state);
 		if (result.success) {
 			setLocationData(result.output);
-		} else {
-			setHasError(true);
 		}
 	});
 
@@ -486,11 +480,6 @@ export default function InformationRoute() {
 									<UserMapView
 										coords={[location().latitude, location().longitude]}
 										label={location().title}
-										fallback={
-											<div class="flex h-full w-full items-center justify-center rounded-box bg-base-200">
-												<span class="loading loading-spinner loading-lg"></span>
-											</div>
-										}
 									/>
 								</div>
 
