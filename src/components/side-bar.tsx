@@ -1,3 +1,4 @@
+import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { onCleanup } from "solid-js";
 import { makeElementDraggable } from "~/utils/draggable";
@@ -48,12 +49,17 @@ export default function SideBar() {
 					class="drawer-overlay"
 				></label>
 
-				<ul class="menu min-h-full w-48 bg-base-200 p-4 text-base-content md:w-64">
+				<ul class="menu min-h-full w-48 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 					<li>
-						<a>Sidebar Item 1</a>
+						<button type="button">
+							<LogOutIcon /> Log Out
+						</button>
 					</li>
 					<li>
-						<a>Sidebar Item 2</a>
+						<button type="button">
+							<SettingsIcon />
+							Settings
+						</button>
 					</li>
 				</ul>
 			</div>
