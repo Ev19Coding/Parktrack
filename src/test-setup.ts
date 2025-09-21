@@ -1,4 +1,8 @@
 import "@testing-library/jest-dom";
+import { config } from "dotenv";
+
+// Load environment variables from .env file for tests
+config();
 
 // Simple crypto polyfill for Node.js environment
 if (!globalThis.crypto?.randomUUID) {
