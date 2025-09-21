@@ -124,10 +124,10 @@ describe("MotherDuck Adapter Configuration Tests", () => {
 
 		it("should handle multiple instantiations", () => {
 			const adapters = Array.from({ length: 10 }, (_, i) =>
-				motherDuckAdapter({ debugLogs: i % 2 === 0 })
+				motherDuckAdapter({ debugLogs: i % 2 === 0 }),
 			);
 
-			adapters.forEach(adapter => {
+			adapters.forEach((adapter) => {
 				expect(adapter).toBeDefined();
 				expect(typeof adapter).toBe("function");
 			});
@@ -192,8 +192,8 @@ describe("MotherDuck Adapter Configuration Tests", () => {
 				motherDuckAdapter({ debugLogs: false, usePlural: false }),
 			];
 
-			const types = adapters.map(adapter => typeof adapter);
-			const allSameType = types.every(type => type === types[0]);
+			const types = adapters.map((adapter) => typeof adapter);
+			const allSameType = types.every((type) => type === types[0]);
 
 			expect(allSameType).toBe(true);
 			expect(types[0]).toBe("function");

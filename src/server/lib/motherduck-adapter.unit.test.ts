@@ -14,7 +14,10 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			// We can't directly test the escapeValue function since it's not exported
 			// but we can verify the behavior through the adapter
 			const adapter = createTestAdapter();
-			const query = adapter.buildTestQuery("INSERT INTO test (name) VALUES (?)", [testValue]);
+			const query = adapter.buildTestQuery(
+				"INSERT INTO test (name) VALUES (?)",
+				[testValue],
+			);
 
 			expect(query).toContain(expectedEscaped);
 		});
@@ -24,7 +27,10 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const expectedEscaped = "'Test''''s ''''quoted'''' content'";
 
 			const adapter = createTestAdapter();
-			const query = adapter.buildTestQuery("INSERT INTO test (name) VALUES (?)", [testValue]);
+			const query = adapter.buildTestQuery(
+				"INSERT INTO test (name) VALUES (?)",
+				[testValue],
+			);
 
 			expect(query).toContain(expectedEscaped);
 		});
@@ -34,7 +40,10 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const expectedEscaped = "''";
 
 			const adapter = createTestAdapter();
-			const query = adapter.buildTestQuery("INSERT INTO test (name) VALUES (?)", [testValue]);
+			const query = adapter.buildTestQuery(
+				"INSERT INTO test (name) VALUES (?)",
+				[testValue],
+			);
 
 			expect(query).toContain(expectedEscaped);
 		});
@@ -44,7 +53,10 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const expectedEscaped = "'   \n\t  '";
 
 			const adapter = createTestAdapter();
-			const query = adapter.buildTestQuery("INSERT INTO test (name) VALUES (?)", [testValue]);
+			const query = adapter.buildTestQuery(
+				"INSERT INTO test (name) VALUES (?)",
+				[testValue],
+			);
 
 			expect(query).toContain(expectedEscaped);
 		});
@@ -52,9 +64,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 
 	describe("WHERE clause building", () => {
 		it("should build simple WHERE clause", () => {
-			const whereConditions = [
-				{ field: "id", value: "123" }
-			];
+			const whereConditions = [{ field: "id", value: "123" }];
 
 			const result = buildWhereClause(whereConditions);
 			expect(result).toBe("WHERE id = '123'");
@@ -64,17 +74,17 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const whereConditions = [
 				{ field: "id", value: "123" },
 				{ field: "active", value: true },
-				{ field: "score", value: 95.5 }
+				{ field: "score", value: 95.5 },
 			];
 
 			const result = buildWhereClause(whereConditions);
-			expect(result).toBe("WHERE id = '123' AND active = true AND score = 95.5");
+			expect(result).toBe(
+				"WHERE id = '123' AND active = true AND score = 95.5",
+			);
 		});
 
 		it("should handle NULL values in WHERE clause", () => {
-			const whereConditions = [
-				{ field: "deletedAt", value: null }
-			];
+			const whereConditions = [{ field: "deletedAt", value: null }];
 
 			const result = buildWhereClause(whereConditions);
 			expect(result).toBe("WHERE deletedAt IS NULL");
@@ -84,15 +94,21 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const whereConditions = [
 				{ field: "name", value: "John%", operator: "LIKE" },
 				{ field: "age", value: 18, operator: ">=" },
-				{ field: "status", value: "active", operator: "!=" }
+				{ field: "status", value: "active", operator: "!=" },
 			];
 
 			const result = buildWhereClause(whereConditions);
-			expect(result).toBe("WHERE name LIKE 'John%' AND age >= 18 AND status != 'active'");
+			expect(result).toBe(
+				"WHERE name LIKE 'John%' AND age >= 18 AND status != 'active'",
+			);
 		});
 
 		it("should return empty string for empty conditions", () => {
-			const whereConditions: Array<{ field: string; value: unknown; operator?: string }> = [];
+			const whereConditions: Array<{
+				field: string;
+				value: unknown;
+				operator?: string;
+			}> = [];
 
 			const result = buildWhereClause(whereConditions);
 			expect(result).toBe("");
@@ -104,7 +120,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				{ field: "numberField", value: 42 },
 				{ field: "booleanField", value: false },
 				{ field: "dateField", value: new Date("2024-01-01T00:00:00Z") },
-				{ field: "nullField", value: null }
+				{ field: "nullField", value: null },
 			];
 
 			const result = buildWhereClause(whereConditions);
@@ -121,7 +137,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const updateData = {
 				name: "John Doe",
 				age: 30,
-				active: true
+				active: true,
 			};
 
 			const result = buildSetClause(updateData);
@@ -132,7 +148,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const updateData = {
 				name: "John",
 				deletedAt: null,
-				active: false
+				active: false,
 			};
 
 			const result = buildSetClause(updateData);
@@ -144,19 +160,23 @@ describe("MotherDuck Adapter Unit Tests", () => {
 		it("should handle JSON objects in SET clause", () => {
 			const updateData = {
 				metadata: { role: "admin", permissions: ["read", "write"] },
-				settings: { theme: "dark", notifications: true }
+				settings: { theme: "dark", notifications: true },
 			};
 
 			const result = buildSetClause(updateData);
-			expect(result).toContain("metadata = '{\"role\":\"admin\",\"permissions\":[\"read\",\"write\"]}'");
-			expect(result).toContain("settings = '{\"theme\":\"dark\",\"notifications\":true}'");
+			expect(result).toContain(
+				'metadata = \'{"role":"admin","permissions":["read","write"]}\'',
+			);
+			expect(result).toContain(
+				'settings = \'{"theme":"dark","notifications":true}\'',
+			);
 		});
 
 		it("should handle Date objects in SET clause", () => {
 			const testDate = new Date("2024-01-01T12:00:00Z");
 			const updateData = {
 				updatedAt: testDate,
-				name: "Test"
+				name: "Test",
 			};
 
 			const result = buildSetClause(updateData);
@@ -171,7 +191,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				id: "123",
 				name: "John Doe",
 				age: 30,
-				active: true
+				active: true,
 			};
 
 			const result = buildInsertValues(insertData);
@@ -184,7 +204,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				id: "123",
 				name: "John",
 				deletedAt: null,
-				metadata: null
+				metadata: null,
 			};
 
 			const result = buildInsertValues(insertData);
@@ -198,7 +218,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				createdAt: new Date("2024-01-01T00:00:00Z"),
 				metadata: { role: "user", active: true },
 				tags: ["javascript", "typescript"],
-				score: 95.5
+				score: 95.5,
 			};
 
 			const result = buildInsertValues(insertData);
@@ -214,7 +234,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const insertData = {
 				zField: "last",
 				aField: "first",
-				mField: "middle"
+				mField: "middle",
 			};
 
 			const result = buildInsertValues(insertData);
@@ -232,7 +252,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				{ input: "simple string", expected: "'simple string'" },
 				{ input: "string with 'quotes'", expected: "'string with ''quotes'''" },
 				{ input: "", expected: "''" },
-				{ input: "multi\nline\tstring", expected: "'multi\nline\tstring'" }
+				{ input: "multi\nline\tstring", expected: "'multi\nline\tstring'" },
 			];
 
 			testCases.forEach(({ input, expected }) => {
@@ -248,8 +268,14 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				{ input: 3.14159, expected: "3.14159" },
 				{ input: 0, expected: "0" },
 				{ input: -0, expected: "0" },
-				{ input: Number.MAX_SAFE_INTEGER, expected: String(Number.MAX_SAFE_INTEGER) },
-				{ input: Number.MIN_SAFE_INTEGER, expected: String(Number.MIN_SAFE_INTEGER) }
+				{
+					input: Number.MAX_SAFE_INTEGER,
+					expected: String(Number.MAX_SAFE_INTEGER),
+				},
+				{
+					input: Number.MIN_SAFE_INTEGER,
+					expected: String(Number.MIN_SAFE_INTEGER),
+				},
 			];
 
 			testCases.forEach(({ input, expected }) => {
@@ -278,24 +304,24 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const testCases = [
 				{
 					input: { name: "test", count: 5 },
-					expected: `'{"name":"test","count":5}'`
+					expected: `'{"name":"test","count":5}'`,
 				},
 				{
 					input: ["a", "b", "c"],
-					expected: `'["a","b","c"]'`
+					expected: `'["a","b","c"]'`,
 				},
 				{
 					input: { nested: { deep: "value" } },
-					expected: `'{"nested":{"deep":"value"}}'`
+					expected: `'{"nested":{"deep":"value"}}'`,
 				},
 				{
 					input: {},
-					expected: "'{}'"
+					expected: "'{}'",
 				},
 				{
 					input: [],
-					expected: "'[]'"
-				}
+					expected: "'[]'",
+				},
 			];
 
 			testCases.forEach(({ input, expected }) => {
@@ -314,7 +340,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const testCases = [
 				{ input: Infinity, expected: "'Infinity'" },
 				{ input: -Infinity, expected: "'-Infinity'" },
-				{ input: NaN, expected: "'NaN'" }
+				{ input: NaN, expected: "'NaN'" },
 			];
 
 			testCases.forEach(({ input, expected }) => {
@@ -331,12 +357,12 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				"' OR '1'='1",
 				"'; DELETE FROM users WHERE id = '1'; --",
 				"' UNION SELECT * FROM admin_users; --",
-				"'; UPDATE users SET role = 'admin' WHERE id = '1'; --"
+				"'; UPDATE users SET role = 'admin' WHERE id = '1'; --",
 			];
 
-			maliciousInputs.forEach(input => {
+			maliciousInputs.forEach((input) => {
 				const escaped = escapeValue(input);
-				expect(escaped.startsWith("'") && escaped.endsWith("'")).toBe(true)
+				expect(escaped.startsWith("'") && escaped.endsWith("'")).toBe(true);
 				// Verify quotes are properly escaped - any single quotes in the original
 				// should be doubled in the escaped version
 				const innerContent = escaped.slice(1, -1);
@@ -350,11 +376,21 @@ describe("MotherDuck Adapter Unit Tests", () => {
 
 		it("should handle SQL keywords as values", () => {
 			const sqlKeywords = [
-				"SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "CREATE",
-				"ALTER", "TRUNCATE", "UNION", "JOIN", "WHERE", "ORDER BY"
+				"SELECT",
+				"INSERT",
+				"UPDATE",
+				"DELETE",
+				"DROP",
+				"CREATE",
+				"ALTER",
+				"TRUNCATE",
+				"UNION",
+				"JOIN",
+				"WHERE",
+				"ORDER BY",
 			];
 
-			sqlKeywords.forEach(keyword => {
+			sqlKeywords.forEach((keyword) => {
 				const escaped = escapeValue(keyword);
 				expect(escaped).toBe(`'${keyword}'`);
 			});
@@ -366,7 +402,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const model = "users";
 			const whereConditions = [
 				{ field: "active", value: true },
-				{ field: "role", value: "admin" }
+				{ field: "role", value: "admin" },
 			];
 			const selectFields = ["id", "name", "email"];
 
@@ -374,19 +410,26 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const selectClause = selectFields.join(", ");
 			const query = `SELECT ${selectClause} FROM ${model} ${whereClause} LIMIT 1`;
 
-			expect(query).toBe("SELECT id, name, email FROM users WHERE active = true AND role = 'admin' LIMIT 1");
+			expect(query).toBe(
+				"SELECT id, name, email FROM users WHERE active = true AND role = 'admin' LIMIT 1",
+			);
 		});
 
 		it("should build complete UPDATE query", () => {
 			const model = "users";
-			const updateData = { name: "John Updated", updatedAt: new Date("2024-01-01T00:00:00Z") };
+			const updateData = {
+				name: "John Updated",
+				updatedAt: new Date("2024-01-01T00:00:00Z"),
+			};
 			const whereConditions = [{ field: "id", value: "123" }];
 
 			const setClause = buildSetClause(updateData);
 			const whereClause = buildWhereClause(whereConditions);
 			const query = `UPDATE ${model} SET ${setClause} ${whereClause} RETURNING *`;
 
-			expect(query).toBe("UPDATE users SET name = 'John Updated', updatedAt = '2024-01-01T00:00:00.000Z' WHERE id = '123' RETURNING *");
+			expect(query).toBe(
+				"UPDATE users SET name = 'John Updated', updatedAt = '2024-01-01T00:00:00.000Z' WHERE id = '123' RETURNING *",
+			);
 		});
 
 		it("should build complete INSERT query", () => {
@@ -396,26 +439,30 @@ describe("MotherDuck Adapter Unit Tests", () => {
 				name: "John Doe",
 				email: "john@example.com",
 				active: true,
-				createdAt: new Date("2024-01-01T00:00:00Z")
+				createdAt: new Date("2024-01-01T00:00:00Z"),
 			};
 
 			const { columns, values } = buildInsertValues(insertData);
 			const query = `INSERT INTO ${model} (${columns}) VALUES (${values}) RETURNING *`;
 
-			expect(query).toBe("INSERT INTO users (id, name, email, active, createdAt) VALUES ('123', 'John Doe', 'john@example.com', true, '2024-01-01T00:00:00.000Z') RETURNING *");
+			expect(query).toBe(
+				"INSERT INTO users (id, name, email, active, createdAt) VALUES ('123', 'John Doe', 'john@example.com', true, '2024-01-01T00:00:00.000Z') RETURNING *",
+			);
 		});
 
 		it("should build complete DELETE query", () => {
 			const model = "users";
 			const whereConditions = [
 				{ field: "active", value: false },
-				{ field: "deletedAt", value: null }
+				{ field: "deletedAt", value: null },
 			];
 
 			const whereClause = buildWhereClause(whereConditions);
 			const query = `DELETE FROM ${model} ${whereClause}`;
 
-			expect(query).toBe("DELETE FROM users WHERE active = false AND deletedAt IS NULL");
+			expect(query).toBe(
+				"DELETE FROM users WHERE active = false AND deletedAt IS NULL",
+			);
 		});
 	});
 });
@@ -446,7 +493,9 @@ function escapeValue(value: unknown): string {
 	return `'${String(value).replace(/'/g, "''")}'`;
 }
 
-function buildWhereClause(where: Array<{ field: string; value: unknown; operator?: string }>): string {
+function buildWhereClause(
+	where: Array<{ field: string; value: unknown; operator?: string }>,
+): string {
 	if (!where || where.length === 0) return "";
 
 	const conditions = where
@@ -480,6 +529,6 @@ function createTestAdapter() {
 				const value = values.shift();
 				return escapeValue(value);
 			});
-		}
+		},
 	};
 }

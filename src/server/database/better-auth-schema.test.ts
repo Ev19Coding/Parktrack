@@ -85,10 +85,18 @@ describe("Better Auth Schema Integration Tests", () => {
 
 	afterAll(async () => {
 		// Clean up test tables
-		await connection.streamAndReadAll(`DROP TABLE IF EXISTS ${testTablePrefix}verification`);
-		await connection.streamAndReadAll(`DROP TABLE IF EXISTS ${testTablePrefix}account`);
-		await connection.streamAndReadAll(`DROP TABLE IF EXISTS ${testTablePrefix}session`);
-		await connection.streamAndReadAll(`DROP TABLE IF EXISTS ${testTablePrefix}user`);
+		await connection.streamAndReadAll(
+			`DROP TABLE IF EXISTS ${testTablePrefix}verification`,
+		);
+		await connection.streamAndReadAll(
+			`DROP TABLE IF EXISTS ${testTablePrefix}account`,
+		);
+		await connection.streamAndReadAll(
+			`DROP TABLE IF EXISTS ${testTablePrefix}session`,
+		);
+		await connection.streamAndReadAll(
+			`DROP TABLE IF EXISTS ${testTablePrefix}user`,
+		);
 	});
 
 	describe("Schema Constants", () => {
@@ -275,7 +283,9 @@ describe("Better Auth Schema Integration Tests", () => {
 			};
 
 			const validatedVerification = validateVerification(verificationData);
-			expect(validatedVerification.identifier).toBe(verificationData.identifier);
+			expect(validatedVerification.identifier).toBe(
+				verificationData.identifier,
+			);
 			expect(validatedVerification.value).toBe(verificationData.value);
 		});
 
@@ -454,8 +464,12 @@ describe("Better Auth Schema Integration Tests", () => {
 
 			const validatedAccount = validateAccount({
 				...row,
-				accessTokenExpiresAt: row["accessTokenExpiresAt"] ? new Date(row["accessTokenExpiresAt"] as string) : undefined,
-				refreshTokenExpiresAt: row["refreshTokenExpiresAt"] ? new Date(row["refreshTokenExpiresAt"] as string) : undefined,
+				accessTokenExpiresAt: row["accessTokenExpiresAt"]
+					? new Date(row["accessTokenExpiresAt"] as string)
+					: undefined,
+				refreshTokenExpiresAt: row["refreshTokenExpiresAt"]
+					? new Date(row["refreshTokenExpiresAt"] as string)
+					: undefined,
 				idToken: row["idToken"] || undefined,
 				password: row["password"] || undefined,
 				createdAt: new Date(row["createdAt"] as string),
@@ -506,7 +520,10 @@ describe("Better Auth Schema Integration Tests", () => {
 
 			expect(validatedVerification.identifier).toBe(identifier);
 			expect(validatedVerification.value).toBe(value);
-			expect(validatedVerification.expiresAt.getTime()).toBeCloseTo(expiresAt.getTime(), -3);
+			expect(validatedVerification.expiresAt.getTime()).toBeCloseTo(
+				expiresAt.getTime(),
+				-3,
+			);
 		});
 	});
 

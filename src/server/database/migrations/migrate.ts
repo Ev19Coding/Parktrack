@@ -45,7 +45,7 @@ function generateChecksum(content: string): string {
 	let hash = 0;
 	for (let i = 0; i < content.length; i++) {
 		const char = content.charCodeAt(i);
-		hash = ((hash << 5) - hash) + char;
+		hash = (hash << 5) - hash + char;
 		hash = hash & hash; // Convert to 32-bit integer
 	}
 	return Math.abs(hash).toString(16);
@@ -55,11 +55,14 @@ function generateChecksum(content: string): string {
  * Load all migration files from the migrations directory
  */
 export async function loadMigrations(): Promise<Migration[]> {
-	const migrationsDir = path.join(process.cwd(), "src/server/database/migrations");
+	const migrationsDir = path.join(
+		process.cwd(),
+		"src/server/database/migrations",
+	);
 
 	try {
 		const files = await fs.readdir(migrationsDir);
-		const sqlFiles = files.filter(file => file.endsWith(".sql")).sort();
+		const sqlFiles = files.filter((file) => file.endsWith(".sql")).sort();
 
 		const migrations: Migration[] = [];
 
@@ -68,7 +71,7 @@ export async function loadMigrations(): Promise<Migration[]> {
 			const sql = await fs.readFile(filePath, "utf-8");
 
 			// Extract migration ID from filename (e.g., "001_better_auth_core_schema.sql" -> "001")
-			const id = file.split("_")[0] ??""
+			const id = file.split("_")[0] ?? "";
 			const name = file.replace(/^\d+_/, "").replace(/\.sql$/, "");
 
 			migrations.push({
@@ -100,7 +103,7 @@ export async function getAppliedMigrations(): Promise<MigrationRecord[]> {
 		ORDER BY id ASC
 	`);
 
-	return result.getRowObjects().map(row => ({
+	return result.getRowObjects().map((row) => ({
 		id: row["id"] as string,
 		name: row["name"] as string,
 		appliedAt: new Date(row["appliedAt"] as string),
@@ -133,8 +136,8 @@ async function runMigration(migration: Migration): Promise<void> {
 		// Split SQL by semicolons and execute each statement
 		const statements = migration.sql
 			.split(";")
-			.map(stmt => stmt.trim())
-			.filter(stmt => stmt.length > 0);
+			.map((stmt) => stmt.trim())
+			.filter((stmt) => stmt.length > 0);
 
 		for (const statement of statements) {
 			await connection.streamAndReadAll(statement);
@@ -159,8 +162,8 @@ export async function runMigrations(): Promise<void> {
 		getAppliedMigrations(),
 	]);
 
-	const appliedIds = new Set(appliedMigrations.map(m => m.id));
-	const pendingMigrations = allMigrations.filter(m => !appliedIds.has(m.id));
+	const appliedIds = new Set(appliedMigrations.map((m) => m.id));
+	const pendingMigrations = allMigrations.filter((m) => !appliedIds.has(m.id));
 
 	if (pendingMigrations.length === 0) {
 		console.log("✓ No pending migrations found. Database is up to date.");
@@ -168,7 +171,7 @@ export async function runMigrations(): Promise<void> {
 	}
 
 	console.log(`Found ${pendingMigrations.length} pending migration(s):`);
-	pendingMigrations.forEach(m => console.log(`  - ${m.id}: ${m.name}`));
+	pendingMigrations.forEach((m) => console.log(`  - ${m.id}: ${m.name}`));
 
 	for (const migration of pendingMigrations) {
 		await runMigration(migration);
@@ -186,21 +189,25 @@ export async function validateMigrations(): Promise<boolean> {
 		getAppliedMigrations(),
 	]);
 
-	const migrationMap = new Map(allMigrations.map(m => [m.id, m]));
+	const migrationMap = new Map(allMigrations.map((m) => [m.id, m]));
 	let isValid = true;
 
 	for (const applied of appliedMigrations) {
 		const migration = migrationMap.get(applied.id);
 
 		if (!migration) {
-			console.error(`✗ Applied migration ${applied.id} not found in migration files`);
+			console.error(
+				`✗ Applied migration ${applied.id} not found in migration files`,
+			);
 			isValid = false;
 			continue;
 		}
 
 		const currentChecksum = generateChecksum(migration.sql);
 		if (currentChecksum !== applied.checksum) {
-			console.error(`✗ Migration ${applied.id} checksum mismatch. Migration file may have been modified after being applied.`);
+			console.error(
+				`✗ Migration ${applied.id} checksum mismatch. Migration file may have been modified after being applied.`,
+			);
 			isValid = false;
 		}
 	}
@@ -231,14 +238,14 @@ export async function getMigrationStatus(): Promise<{
 		getAppliedMigrations(),
 	]);
 
-	const appliedMap = new Map(appliedMigrations.map(m => [m.id, m]));
+	const appliedMap = new Map(appliedMigrations.map((m) => [m.id, m]));
 
-	const migrations = allMigrations.map(migration => {
+	const migrations = allMigrations.map((migration) => {
 		const applied = appliedMap.get(migration.id);
 		return {
 			id: migration.id,
 			name: migration.name,
-			status: applied ? "applied" as const : "pending" as const,
+			status: applied ? ("applied" as const) : ("pending" as const),
 			appliedAt: applied?.appliedAt ?? new Date(0),
 		};
 	});
@@ -262,7 +269,13 @@ export async function resetDatabase(): Promise<void> {
 	const connection = await getParkTrackDatabaseConnection();
 
 	// Drop tables in reverse order to handle foreign key constraints
-	const tablesToDrop = ["verification", "account", "session", "user", "_migrations"];
+	const tablesToDrop = [
+		"verification",
+		"account",
+		"session",
+		"user",
+		"_migrations",
+	];
 
 	for (const table of tablesToDrop) {
 		try {
@@ -312,10 +325,17 @@ export async function checkTablesExist(): Promise<{
 /**
  * Create a new migration file
  */
-export async function createMigration(name: string, sql: string): Promise<string> {
+export async function createMigration(
+	name: string,
+	sql: string,
+): Promise<string> {
 	const timestamp = new Date().toISOString().replace(/[-:T]/g, "").slice(0, 14);
 	const filename = `${timestamp}_${name.toLowerCase().replace(/\s+/g, "_")}.sql`;
-	const filePath = path.join(process.cwd(), "src/server/database/migrations", filename);
+	const filePath = path.join(
+		process.cwd(),
+		"src/server/database/migrations",
+		filename,
+	);
 
 	const migrationContent = `-- Migration: ${filename}
 -- Description: ${name}

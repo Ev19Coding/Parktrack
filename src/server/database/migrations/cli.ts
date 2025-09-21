@@ -65,18 +65,22 @@ program
 				console.log("Migration Details:");
 				console.log("------------------");
 
-				status.migrations.forEach(migration => {
+				status.migrations.forEach((migration) => {
 					const statusIcon = migration.status === "applied" ? "✅" : "⏳";
 					const appliedText = migration.appliedAt
-						? ` (applied: ${migration.appliedAt.toISOString().split('T')[0]})`
+						? ` (applied: ${migration.appliedAt.toISOString().split("T")[0]})`
 						: "";
 
-					console.log(`${statusIcon} ${migration.id}: ${migration.name}${appliedText}`);
+					console.log(
+						`${statusIcon} ${migration.id}: ${migration.name}${appliedText}`,
+					);
 				});
 			}
 
 			if (status.pending > 0) {
-				console.log(`\n💡 Run 'bun run migrate up' to apply ${status.pending} pending migration(s)`);
+				console.log(
+					`\n💡 Run 'bun run migrate up' to apply ${status.pending} pending migration(s)`,
+				);
 			} else {
 				console.log("\n✨ Database is up to date!");
 			}
@@ -127,19 +131,21 @@ program
 
 			const tableNames = Object.keys(tables) as Array<keyof typeof tables>;
 
-			tableNames.forEach(tableName => {
+			tableNames.forEach((tableName) => {
 				const exists = tables[tableName];
 				const icon = exists ? "✅" : "❌";
 				const status = exists ? "EXISTS" : "MISSING";
 				console.log(`${icon} ${tableName} table: ${status}`);
 			});
 
-			const allExist = Object.values(tables).every(exists => exists);
+			const allExist = Object.values(tables).every((exists) => exists);
 
 			if (allExist) {
 				console.log("\n✅ All Better Auth tables are present!");
 			} else {
-				console.log("\n⚠️  Some tables are missing. Run 'bun run migrate up' to create them.");
+				console.log(
+					"\n⚠️  Some tables are missing. Run 'bun run migrate up' to create them.",
+				);
 			}
 
 			process.exit(0);
@@ -163,7 +169,9 @@ program
 
 				// In a real CLI, you'd want to use a proper prompt library
 				// For now, we'll just require the --force flag
-				console.log("To confirm this action, run the command with --force flag:");
+				console.log(
+					"To confirm this action, run the command with --force flag:",
+				);
 				console.log("bun run migrate reset --force");
 				process.exit(1);
 			}
@@ -192,7 +200,9 @@ program
 			console.log("📝 Creating New Migration");
 			console.log("=========================\n");
 
-			const sql = options.sql || `-- Add your SQL here
+			const sql =
+				options.sql ||
+				`-- Add your SQL here
 -- Example:
 -- ALTER TABLE "user" ADD COLUMN newField VARCHAR;
 `;
@@ -200,7 +210,9 @@ program
 			const filePath = await createMigration(name, sql);
 
 			console.log(`\n✅ Migration created: ${filePath}`);
-			console.log("\n💡 Edit the file to add your SQL, then run 'bun run migrate up'");
+			console.log(
+				"\n💡 Edit the file to add your SQL, then run 'bun run migrate up'",
+			);
 
 			process.exit(0);
 		} catch (error) {

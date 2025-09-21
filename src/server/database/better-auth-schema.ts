@@ -201,7 +201,8 @@ export const OAUTH_PROVIDERS = {
 	APPLE: "apple",
 } as const;
 
-export type OAuthProvider = typeof OAUTH_PROVIDERS[keyof typeof OAUTH_PROVIDERS];
+export type OAuthProvider =
+	(typeof OAUTH_PROVIDERS)[keyof typeof OAUTH_PROVIDERS];
 
 // Credential provider for email/password
 export const CREDENTIAL_PROVIDER = "credential" as const;

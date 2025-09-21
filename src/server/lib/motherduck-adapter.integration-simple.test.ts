@@ -95,16 +95,16 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 
 	describe("CREATE operations", () => {
 		it("should insert a new record with all data types", async () => {
-      const testData = {
-        id: "test_001",
-        name: "John Doe",
-        email: "john@example.com",
-        active: true,
-        score: 95.5,
-        metadata: { role: "admin", permissions: ["read", "write"] },
-        createdAt: new Date("2024-01-01T10:00:00Z"),
-        updatedAt: new Date("2024-01-01T10:00:00Z")
-      } as const satisfies TestRecord;
+			const testData = {
+				id: "test_001",
+				name: "John Doe",
+				email: "john@example.com",
+				active: true,
+				score: 95.5,
+				metadata: { role: "admin", permissions: ["read", "write"] },
+				createdAt: new Date("2024-01-01T10:00:00Z"),
+				updatedAt: new Date("2024-01-01T10:00:00Z"),
+			} as const satisfies TestRecord;
 
 			const { columns, values } = buildInsertValues(testData);
 			const query = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
@@ -128,7 +128,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				email: "null_test@example.com",
 				active: false,
 				score: null,
-				metadata: null
+				metadata: null,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
@@ -148,7 +148,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				id: "test_injection_001",
 				name: "'; DROP TABLE users; --",
 				email: "injection@example.com",
-				active: true
+				active: true,
 			};
 
 			const { columns, values } = buildInsertValues(maliciousData);
@@ -162,7 +162,9 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			expect(inserted["name"]).toBe("'; DROP TABLE users; --");
 
 			// Verify table still exists
-			const tableCheck = await connection.streamAndReadAll(`SELECT COUNT(*) as count FROM ${testTable}`);
+			const tableCheck = await connection.streamAndReadAll(
+				`SELECT COUNT(*) as count FROM ${testTable}`,
+			);
 			const countRows = tableCheck.getRowObjects();
 			expect(Number(countRows[0]?.["count"])).toBeGreaterThan(0);
 		});
@@ -176,12 +178,12 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				name: "Original Name",
 				email: "update_test@example.com",
 				active: false,
-				score: 50
+				score: 50,
 			};
 
 			const { columns, values } = buildInsertValues(originalData);
 			await connection.streamAndReadAll(
-				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 			);
 
 			// Update the record
@@ -189,11 +191,13 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				name: "Updated Name",
 				active: true,
 				score: 95,
-				updatedAt: new Date()
+				updatedAt: new Date(),
 			};
 
 			const setClause = buildSetClause(updateData);
-			const whereClause = buildWhereClause([{ field: "id", value: "test_update_001" }]);
+			const whereClause = buildWhereClause([
+				{ field: "id", value: "test_update_001" },
+			]);
 
 			const updateQuery = `UPDATE ${testTable} SET ${setClause} ${whereClause} RETURNING *`;
 			const result = await connection.streamAndReadAll(updateQuery);
@@ -212,19 +216,19 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				id: "test_multi_where_001",
 				name: "Multi Where Test",
 				email: "multi_where@example.com",
-				active: true
+				active: true,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
 			await connection.streamAndReadAll(
-				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 			);
 
 			const updateData = { name: "Updated Multi Where" };
 			const setClause = buildSetClause(updateData);
 			const whereClause = buildWhereClause([
 				{ field: "id", value: "test_multi_where_001" },
-				{ field: "active", value: true }
+				{ field: "active", value: true },
 			]);
 
 			const updateQuery = `UPDATE ${testTable} SET ${setClause} ${whereClause} RETURNING *`;
@@ -245,21 +249,21 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 					name: "Find Test 1",
 					email: "find1@example.com",
 					active: true,
-					score: 80
+					score: 80,
 				},
 				{
 					id: "find_002",
 					name: "Find Test 2",
 					email: "find2@example.com",
 					active: false,
-					score: 60
-				}
+					score: 60,
+				},
 			];
 
 			for (const record of testRecords) {
 				const { columns, values } = buildInsertValues(record);
 				await connection.streamAndReadAll(
-					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 				);
 			}
 
@@ -270,7 +274,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const result = await connection.streamAndReadAll(selectQuery);
 			const rows = result.getRowObjects();
 
-			const activeRecords = rows.filter(row => row["active"] === true);
+			const activeRecords = rows.filter((row) => row["active"] === true);
 			expect(activeRecords.length).toBeGreaterThanOrEqual(1);
 		});
 
@@ -279,16 +283,16 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				id: "like_test_001",
 				name: "LIKE Test User",
 				email: "like_test@example.com",
-				active: true
+				active: true,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
 			await connection.streamAndReadAll(
-				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 			);
 
 			const whereClause = buildWhereClause([
-				{ field: "name", value: "LIKE Test%", operator: "LIKE" }
+				{ field: "name", value: "LIKE Test%", operator: "LIKE" },
 			]);
 			const selectQuery = `SELECT * FROM ${testTable} ${whereClause}`;
 
@@ -302,15 +306,33 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 		it("should handle ordering and limits", async () => {
 			// Insert multiple records for sorting
 			const testRecords = [
-				{ id: "sort_c", name: "Charlie", email: "charlie@example.com", active: true, score: 70 },
-				{ id: "sort_a", name: "Alice", email: "alice@example.com", active: true, score: 90 },
-				{ id: "sort_b", name: "Bob", email: "bob@example.com", active: true, score: 80 }
+				{
+					id: "sort_c",
+					name: "Charlie",
+					email: "charlie@example.com",
+					active: true,
+					score: 70,
+				},
+				{
+					id: "sort_a",
+					name: "Alice",
+					email: "alice@example.com",
+					active: true,
+					score: 90,
+				},
+				{
+					id: "sort_b",
+					name: "Bob",
+					email: "bob@example.com",
+					active: true,
+					score: 80,
+				},
 			];
 
 			for (const record of testRecords) {
 				const { columns, values } = buildInsertValues(record);
 				await connection.streamAndReadAll(
-					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 				);
 			}
 
@@ -332,16 +354,18 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				id: "delete_test_001",
 				name: "Delete Test",
 				email: "delete_test@example.com",
-				active: true
+				active: true,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
 			await connection.streamAndReadAll(
-				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+				`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 			);
 
 			// Delete the record
-			const whereClause = buildWhereClause([{ field: "id", value: "delete_test_001" }]);
+			const whereClause = buildWhereClause([
+				{ field: "id", value: "delete_test_001" },
+			]);
 			const deleteQuery = `DELETE FROM ${testTable} ${whereClause}`;
 
 			await connection.streamAndReadAll(deleteQuery);
@@ -357,21 +381,31 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 		it("should delete multiple records", async () => {
 			// Insert test records
 			const testRecords = [
-				{ id: "batch_delete_001", name: "Batch Delete 1", email: "batch1@example.com", active: false },
-				{ id: "batch_delete_002", name: "Batch Delete 2", email: "batch2@example.com", active: false }
+				{
+					id: "batch_delete_001",
+					name: "Batch Delete 1",
+					email: "batch1@example.com",
+					active: false,
+				},
+				{
+					id: "batch_delete_002",
+					name: "Batch Delete 2",
+					email: "batch2@example.com",
+					active: false,
+				},
 			];
 
 			for (const record of testRecords) {
 				const { columns, values } = buildInsertValues(record);
 				await connection.streamAndReadAll(
-					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 				);
 			}
 
 			// Delete all inactive records
 			const whereClause = buildWhereClause([
 				{ field: "active", value: false },
-				{ field: "name", value: "Batch Delete%", operator: "LIKE" }
+				{ field: "name", value: "Batch Delete%", operator: "LIKE" },
 			]);
 			const deleteQuery = `DELETE FROM ${testTable} ${whereClause}`;
 
@@ -390,15 +424,30 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 		it("should count records correctly", async () => {
 			// Insert test records
 			const testRecords = [
-				{ id: "count_001", name: "Count Test 1", email: "count1@example.com", active: true },
-				{ id: "count_002", name: "Count Test 2", email: "count2@example.com", active: true },
-				{ id: "count_003", name: "Count Test 3", email: "count3@example.com", active: false }
+				{
+					id: "count_001",
+					name: "Count Test 1",
+					email: "count1@example.com",
+					active: true,
+				},
+				{
+					id: "count_002",
+					name: "Count Test 2",
+					email: "count2@example.com",
+					active: true,
+				},
+				{
+					id: "count_003",
+					name: "Count Test 3",
+					email: "count3@example.com",
+					active: false,
+				},
 			];
 
 			for (const record of testRecords) {
 				const { columns, values } = buildInsertValues(record);
 				await connection.streamAndReadAll(
-					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`
+					`INSERT INTO ${testTable} (${columns}) VALUES (${values})`,
 				);
 			}
 
@@ -430,14 +479,14 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 					notifications: {
 						email: true,
 						push: false,
-						frequency: "daily"
-					}
+						frequency: "daily",
+					},
 				},
 				permissions: ["read", "write", "admin"],
 				stats: {
 					login_count: 25,
-					last_login: "2024-01-01T10:00:00Z"
-				}
+					last_login: "2024-01-01T10:00:00Z",
+				},
 			};
 
 			const testData = {
@@ -445,7 +494,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				name: "JSON Test User",
 				email: "json_test@example.com",
 				active: true,
-				metadata: complexMetadata
+				metadata: complexMetadata,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
@@ -478,7 +527,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				email: "date_test@example.com",
 				active: true,
 				createdAt: testDate,
-				updatedAt: testDate
+				updatedAt: testDate,
 			};
 
 			const { columns, values } = buildInsertValues(testData);
@@ -504,9 +553,10 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				email: "special@example.com",
 				active: true,
 				metadata: {
-					description: "Contains 'quotes', \"double quotes\", and\nnewlines\ttabs",
-					symbols: "!@#$%^&*()_+-=[]{}|;:,.<>?"
-				}
+					description:
+						"Contains 'quotes', \"double quotes\", and\nnewlines\ttabs",
+					symbols: "!@#$%^&*()_+-=[]{}|;:,.<>?",
+				},
 			};
 
 			const { columns, values } = buildInsertValues(testData);
@@ -528,8 +578,8 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				active: true,
 				metadata: {
 					languages: ["English", "中文", "Español", "العربية", "русский"],
-					emoji: "🎉🔥💎🚀🌟⭐🎯💡🔑🏆"
-				}
+					emoji: "🎉🔥💎🚀🌟⭐🎯💡🔑🏆",
+				},
 			};
 
 			const { columns, values } = buildInsertValues(testData);

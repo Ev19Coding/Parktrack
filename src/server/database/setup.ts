@@ -1,4 +1,8 @@
-import { runMigrations, checkTablesExist, getMigrationStatus } from "./migrations/migrate.js";
+import {
+	runMigrations,
+	checkTablesExist,
+	getMigrationStatus,
+} from "./migrations/migrate.js";
 import { getParkTrackDatabaseConnection } from "./util.js";
 
 /**
@@ -21,17 +25,17 @@ export async function setupDevelopmentDatabase(): Promise<void> {
 		const tables = await checkTablesExist();
 
 		const tableNames = Object.keys(tables) as Array<keyof typeof tables>;
-		const existingTables = tableNames.filter(name => tables[name]);
-		const missingTables = tableNames.filter(name => !tables[name]);
+		const existingTables = tableNames.filter((name) => tables[name]);
+		const missingTables = tableNames.filter((name) => !tables[name]);
 
 		if (existingTables.length > 0) {
 			console.log("   Existing tables:");
-			existingTables.forEach(table => console.log(`   ✅ ${table}`));
+			existingTables.forEach((table) => console.log(`   ✅ ${table}`));
 		}
 
 		if (missingTables.length > 0) {
 			console.log("   Missing tables:");
-			missingTables.forEach(table => console.log(`   ❌ ${table}`));
+			missingTables.forEach((table) => console.log(`   ❌ ${table}`));
 		}
 
 		console.log();
@@ -54,7 +58,7 @@ export async function setupDevelopmentDatabase(): Promise<void> {
 		// Verify setup
 		console.log("5. Verifying setup...");
 		const finalTables = await checkTablesExist();
-		const allTablesExist = Object.values(finalTables).every(exists => exists);
+		const allTablesExist = Object.values(finalTables).every((exists) => exists);
 
 		if (allTablesExist) {
 			console.log("✅ All Better Auth tables are present and ready!\n");
@@ -73,7 +77,6 @@ export async function setupDevelopmentDatabase(): Promise<void> {
 		} else {
 			throw new Error("Some tables are still missing after migration");
 		}
-
 	} catch (error) {
 		console.error("\n❌ Database setup failed:");
 		console.error(error instanceof Error ? error.message : String(error));
@@ -81,7 +84,9 @@ export async function setupDevelopmentDatabase(): Promise<void> {
 		console.log("\n🔧 Troubleshooting tips:");
 		console.log("1. Ensure MotherDuck token is set in environment variables");
 		console.log("2. Check database connection and permissions");
-		console.log("3. Verify migration files are present in src/server/database/migrations/");
+		console.log(
+			"3. Verify migration files are present in src/server/database/migrations/",
+		);
 		console.log("4. Try running migrations manually: bun run migrate:up");
 
 		throw error;
@@ -113,12 +118,11 @@ export async function checkDatabaseHealth(): Promise<{
 
 		// Check tables
 		tables = await checkTablesExist();
-		tablesExist = Object.values(tables).every(exists => exists);
+		tablesExist = Object.values(tables).every((exists) => exists);
 
 		// Check migrations
 		migrationStatus = await getMigrationStatus();
 		migrationsApplied = migrationStatus.pending === 0;
-
 	} catch (error) {
 		console.error("Database health check failed:", error);
 		// Initialize default values for failed check
@@ -126,7 +130,7 @@ export async function checkDatabaseHealth(): Promise<{
 			total: 0,
 			applied: 0,
 			pending: 0,
-			migrations: []
+			migrations: [],
 		};
 	}
 
@@ -136,8 +140,8 @@ export async function checkDatabaseHealth(): Promise<{
 		migrationsApplied,
 		details: {
 			tables,
-			migrationStatus
-		}
+			migrationStatus,
+		},
 	};
 }
 
@@ -202,7 +206,7 @@ export async function createSampleData(): Promise<void> {
 			name: "Admin User",
 			email: "admin@example.com",
 			emailVerified: true,
-		}
+		},
 	];
 
 	console.log("Creating sample users...");
@@ -237,7 +241,6 @@ export async function runDevelopmentSetup(): Promise<void> {
 		console.log("\n📝 Would you like to create sample development data?");
 		console.log("(This creates test users for development purposes)");
 		console.log("Run: bun run dev:sample-data");
-
 	} catch (error) {
 		console.error("Development setup failed:", error);
 		process.exit(1);
@@ -258,7 +261,9 @@ if (import.meta.main) {
 			console.log("=====================");
 			console.log(`Connected: ${health.connected ? "✅" : "❌"}`);
 			console.log(`Tables Exist: ${health.tablesExist ? "✅" : "❌"}`);
-			console.log(`Migrations Applied: ${health.migrationsApplied ? "✅" : "❌"}`);
+			console.log(
+				`Migrations Applied: ${health.migrationsApplied ? "✅" : "❌"}`,
+			);
 			break;
 		case "sample-data":
 			await createSampleData();
@@ -267,7 +272,9 @@ if (import.meta.main) {
 			await initializeProductionSchema();
 			break;
 		default:
-			console.log("Usage: bun run setup.ts [setup|health|sample-data|production]");
+			console.log(
+				"Usage: bun run setup.ts [setup|health|sample-data|production]",
+			);
 			console.log("  setup        - Full development setup");
 			console.log("  health       - Check database health");
 			console.log("  sample-data  - Create sample development data");

@@ -7,7 +7,9 @@ interface MotherDuckAdapterConfig {
 	usePlural?: boolean;
 }
 
-export const motherDuckAdapter = (config: MotherDuckAdapterConfig | null | undefined = {}) =>
+export const motherDuckAdapter = (
+	config: MotherDuckAdapterConfig | null | undefined = {},
+) =>
 	createAdapterFactory({
 		config: {
 			adapterId: "motherduck-adapter",
