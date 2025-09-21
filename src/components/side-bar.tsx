@@ -29,9 +29,7 @@ export default function SideBar() {
 							const listeners = makeElementDraggable(ref);
 
 							onCleanup(() => {
-								listeners.forEach((listener) => {
-									listener();
-								});
+								listeners();
 							});
 						}}
 						onClick={(_) => {
