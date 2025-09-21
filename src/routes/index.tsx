@@ -2,16 +2,22 @@ import { createSignal, Show } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { GenericButton } from "~/components/button";
+import { Switch } from "solid-js";
+import { Match } from "solid-js";
 
 export default function LoginPage() {
 	const [email, setEmail] = createSignal("");
 	const [password, setPassword] = createSignal("");
+	const [username, setUsername] = createSignal("");
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
+	const [loginMode, setLoginMode] = createSignal<"sign-up" | "sign-in">(
+		"sign-in",
+	);
 
 	const navigate = useNavigate();
 
-	const handleLogin = async (e: Event) => {
+	const handleSignIn = async (e: Event) => {
 		e.preventDefault();
 		setIsLoading(true);
 		setError(null);
@@ -23,7 +29,31 @@ export default function LoginPage() {
 			});
 
 			if (result.error) {
-				setError(result.error.message || "Login failed");
+				setError(result.error.message || "Sign in failed");
+			} else {
+				navigate("/user");
+			}
+		} catch (err) {
+			setError("An unexpected error occurred. Please try again.");
+		} finally {
+			setIsLoading(false);
+		}
+	};
+
+	const handleSignUp = async (e: Event) => {
+		e.preventDefault();
+		setIsLoading(true);
+		setError(null);
+
+		try {
+			const result = await AUTH_CLIENT.signUp.email({
+				name: username(),
+				email: email(),
+				password: password(),
+			});
+
+			if (result.error) {
+				setError(result.error.message || "Sign up failed");
 			} else {
 				navigate("/user");
 			}
@@ -48,9 +78,37 @@ export default function LoginPage() {
 					</div>
 
 					<div class="card w-full max-w-sm shrink-0 bg-base-200 shadow-2xl">
-						<form class="card-body" onSubmit={handleLogin}>
+						<form
+							class="card-body"
+							onSubmit={(e) => {
+								if (loginMode() === "sign-in") {
+									handleSignIn(e);
+								} else {
+									handleSignUp(e);
+								}
+							}}
+						>
+							<Show when={loginMode() === "sign-up"}>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">
+										Username <span class="text-error">*</span>
+									</legend>
+
+									<input
+										type="text"
+										placeholder="Enter your username"
+										class="input"
+										value={username()}
+										onInput={(e) => setUsername(e.currentTarget.value)}
+										required
+									/>
+								</fieldset>
+							</Show>
+
 							<fieldset class="fieldset">
-								<legend class="fieldset-legend">Email</legend>
+								<legend class="fieldset-legend">
+									Email <span class="text-error">*</span>
+								</legend>
 
 								<input
 									type="email"
@@ -63,7 +121,9 @@ export default function LoginPage() {
 							</fieldset>
 
 							<fieldset class="fieldset">
-								<legend class="fieldset-legend">Password</legend>
+								<legend class="fieldset-legend">
+									Password <span class="text-error">*</span>
+								</legend>
 								<input
 									type="password"
 									placeholder="Enter your password"
@@ -72,11 +132,13 @@ export default function LoginPage() {
 									onInput={(e) => setPassword(e.currentTarget.value)}
 									required
 								/>
-								<p class="label">
-									<A href="#" class="label-text-alt link link-hover">
-										Forgot password?
-									</A>
-								</p>
+								<Show when={loginMode() === "sign-in"}>
+									<p class="label">
+										<A href="#" class="label-text-alt link link-hover">
+											Forgot password?
+										</A>
+									</p>
+								</Show>
 							</fieldset>
 
 							<Show when={error()}>
@@ -91,10 +153,16 @@ export default function LoginPage() {
 									class="btn-primary"
 									disabled={isLoading()}
 								>
-									<Show when={isLoading()} fallback="Sign In">
-										<span class="loading loading-spinner loading-sm"></span>
-										Signing In...
-									</Show>
+									<Switch>
+										<Match when={isLoading()}>
+											<span class="loading loading-spinner loading-sm"></span>
+											Signing In...
+										</Match>
+
+										<Match when={loginMode() === "sign-in"}>Sign In</Match>
+
+										<Match when={loginMode() === "sign-up"}>Sign Up</Match>
+									</Switch>
 								</GenericButton>
 							</div>
 
@@ -134,10 +202,30 @@ export default function LoginPage() {
 							</div>
 
 							<div class="text-center">
-								<span class="text-sm">Don't have an account? </span>
-								<A href="#" class="link link-primary text-sm">
-									Sign up here
-								</A>
+								<Show
+									when={loginMode() === "sign-in"}
+									fallback={
+										<>
+											<span class="text-sm">Already have an account? </span>
+											<button
+												type="button"
+												class="link link-primary text-sm"
+												onClick={(_) => setLoginMode("sign-in")}
+											>
+												Sign in here
+											</button>
+										</>
+									}
+								>
+									<span class="text-sm">Don't have an account? </span>
+									<button
+										type="button"
+										class="link link-primary text-sm"
+										onClick={(_) => setLoginMode("sign-up")}
+									>
+										Sign up here
+									</button>
+								</Show>
 							</div>
 						</form>
 					</div>
