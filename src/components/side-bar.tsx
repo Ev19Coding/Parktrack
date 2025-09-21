@@ -22,7 +22,7 @@ export default function SideBar() {
 					<TooltipButton
 						tooltipText="Sidebar"
 						tooltipDir="right"
-						class="btn-square z-[999999] m-2 p-2 hover:shadow-md hover:shadow-primary/50"
+						class="btn-square z-[99999] m-2 p-2 hover:shadow-md hover:shadow-primary/50"
 						// Make a draggable button
 						style={{ position: "fixed" }}
 						ref={(ref) => {
@@ -50,7 +50,7 @@ export default function SideBar() {
 					class="drawer-overlay"
 				></label>
 
-				<ul class="menu min-h-full w-80 bg-base-200 p-4 text-base-content">
+				<ul class="menu min-h-full w-48 bg-base-200 p-4 text-base-content md:w-64">
 					<li>
 						<a>Sidebar Item 1</a>
 					</li>
