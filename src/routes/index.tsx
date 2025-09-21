@@ -9,7 +9,7 @@ export default function LoginPage() {
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
 
-	const naviaget = useNavigate();
+	const navigate = useNavigate();
 
 	const handleLogin = async (e: Event) => {
 		e.preventDefault();
@@ -25,8 +25,7 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Login failed");
 			} else {
-				// Redirect to user dashboard on successful login
-				window.location.href = "/user";
+				navigate("/user");
 			}
 		} catch (err) {
 			setError("An unexpected error occurred. Please try again.");
