@@ -6,7 +6,7 @@ interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
 
 function Button(prop: ButtonProps) {
 	return (
-		<button {...prop} class={`btn ${prop.class}`} type="button">
+		<button {...prop} class={`btn ${prop.class}`} type={prop.type ?? "button"}>
 			{prop.children}
 		</button>
 	);
