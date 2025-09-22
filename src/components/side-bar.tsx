@@ -61,7 +61,7 @@ export default function SideBar() {
 						class="drawer-overlay"
 					></label>
 
-					<ul class="menu min-h-full w-48 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
+					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 						<li>
 							{(() => {
 								const isGuest = createAsync(() => isUserGuest(), {
