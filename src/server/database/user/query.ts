@@ -10,6 +10,8 @@ import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATION_LOCATION_TABLE } from "./constants";
 
+const DEFAULT_MAX_RESULTS = 10;
+
 const UrlSchema = v.pipe(
 	v.string(),
 	v.transform((url) => {
@@ -130,7 +132,7 @@ async function getAllRecreationalLocations() {
 /** Returns a fuzzy searched result array of the recreation areas based off a user's search query. Only contains the id, title, and thumbnail to be as light as possible */
 export async function getUserQueryResultFromDatabase(
 	query: string,
-	maxResults = 10,
+	maxResults = DEFAULT_MAX_RESULTS,
 ): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
 	const { fuseIndex } = await getAllRecreationalLocations();
 
@@ -191,7 +193,7 @@ export async function getRecreationalLocationFromDatabaseById(
 }
 
 export async function getParkRecreationalLocationsFromDatabaseAtRandom(
-	maxResults = 10,
+	maxResults = DEFAULT_MAX_RESULTS,
 ): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
 	const fetchedParks = (
 		await (
@@ -231,7 +233,7 @@ export async function getParkRecreationalLocationsFromDatabaseAtRandom(
 }
 
 export async function getRestaurantRecreationalLocationsFromDatabaseAtRandom(
-	maxResults = 10,
+	maxResults = DEFAULT_MAX_RESULTS,
 ): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
 	const fetchedRestaurants = (
 		await (
@@ -268,4 +270,66 @@ export async function getRestaurantRecreationalLocationsFromDatabaseAtRandom(
 		});
 
 	return fetchedRestaurants;
+}
+
+/**
+ *
+ * @param lat latitude
+ * @param long longitude
+ * @param range (optional) distance in km
+ */
+export async function getRecreationalLocationsCloseToCoords(arg: {
+	lat: number;
+	long: number;
+	range?: number;
+	maxResults?: number;
+}): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+	const { lat, long, maxResults = DEFAULT_MAX_RESULTS, range = 10 } = arg;
+
+	if (lat === Infinity || long === Infinity) return [];
+
+	// First load the spatial extension
+	const connection = await getParkTrackDatabaseConnection();
+	await connection.streamAndReadAll("INSTALL spatial; LOAD spatial;");
+
+	const fetchedLocations = (
+		await connection.streamAndReadAll(`
+			SELECT id, title, thumbnail
+			FROM ${USER_RECREATION_LOCATION_TABLE}
+			WHERE ST_DWithin_Spheroid(
+				ST_Point2D(latitude, longitude),
+				ST_Point2D(${lat}, ${long}),
+				${range * 1000}
+			)
+			ORDER BY ST_Distance_Spheroid(
+				ST_Point2D(latitude, longitude),
+				ST_Point2D(${lat}, ${long})
+			)
+			LIMIT ${maxResults};
+		`)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(
+					BareMinimumRecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedLocations;
 }
