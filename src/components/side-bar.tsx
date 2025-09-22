@@ -1,4 +1,5 @@
-import { createAsync, useLocation, useNavigate } from "@solidjs/router";
+import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
+import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createSignal, onCleanup, Show } from "solid-js";
@@ -100,6 +101,12 @@ export default function SideBar() {
 									</button>
 								);
 							})()}
+						</li>
+
+						<li>
+							<A href="/user">
+								<HomePageIcon /> Homepage
+							</A>
 						</li>
 
 						<li>
