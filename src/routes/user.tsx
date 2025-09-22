@@ -1,4 +1,4 @@
-import { createMemo, createSignal } from "solid-js";
+import { createMemo } from "solid-js";
 import { useGeolocation } from "solidjs-use";
 import UserMapView from "~/components/map-view";
 import {
@@ -6,7 +6,6 @@ import {
 	UserRestaurantSection,
 } from "~/components/user/park-restaurant";
 import UserSearchBar from "~/components/user/search-bar";
-import type { RecreationalLocationSchema } from "~/server/database/schema";
 
 // TODO: Move this out of here
 function Header() {
@@ -20,21 +19,26 @@ function Header() {
 }
 
 export default function Home() {
-  const {coords} = useGeolocation()
+	const { coords } = useGeolocation();
 
-  const latAndLong = createMemo(()=>{
-    const {latitude,longitude} = coords()
+	const latAndLong = createMemo(() => {
+		const { latitude, longitude } = coords();
 
-    return [latitude, longitude] as const
-  })
+		return [latitude, longitude] as const;
+	});
 
 	return (
 		<div class="relative grid size-full grid-rows-[1fr_1fr_minmax(13.5rem,3.25fr)_minmax(12rem,3fr)_minmax(12rem,3fr)] gap-4 overflow-auto p-4 lg:grid-cols-2 lg:grid-rows-[1fr_1fr_minmax(12.5rem,3.25fr)_minmax(11rem,3fr)_minmax(11rem,3fr)]">
 			<Header />
 
-			<UserSearchBar/>
+			<UserSearchBar />
 
-      <UserMapView coords={latAndLong()} label="You" zoom={16} showNearby={true} />
+			<UserMapView
+				coords={latAndLong()}
+				label="You"
+				zoom={16}
+				showNearby={true}
+			/>
 
 			<UserParkSection />
 
