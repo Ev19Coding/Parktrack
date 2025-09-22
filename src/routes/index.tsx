@@ -1,9 +1,7 @@
-import { createSignal, Show } from "solid-js";
 import { A, useNavigate } from "@solidjs/router";
-import { AUTH_CLIENT } from "~/server/lib/auth-client";
+import { createSignal, Match, Show, Switch } from "solid-js";
 import { GenericButton } from "~/components/button";
-import { Switch } from "solid-js";
-import { Match } from "solid-js";
+import { AUTH_CLIENT } from "~/server/lib/auth-client";
 
 export default function LoginPage() {
 	const [email, setEmail] = createSignal("");
@@ -65,11 +63,11 @@ export default function LoginPage() {
 	};
 
 	return (
-		<div class="overflow-auto size-full">
+		<div class="size-full overflow-auto">
 			<div class="hero min-h-screen bg-base-100">
-				<div class="hero-content flex-col gap-4 lg:gap-8 lg:flex-row-reverse">
-					<div class="text-center lg:text-left lg:max-w-2/5">
-						<h1 class="text-5xl font-bold text-primary">ParkTrack</h1>
+				<div class="hero-content flex-col gap-4 lg:flex-row-reverse lg:gap-8">
+					<div class="text-center lg:max-w-2/5 lg:text-left">
+						<h1 class="font-bold text-5xl text-primary">ParkTrack</h1>
 						<p class="py-6 text-lg">
 							Discover and explore parks & restaurants in AMAC, Abuja. Sign in
 							to access personalized recommendations and save your favorite
@@ -147,7 +145,7 @@ export default function LoginPage() {
 								</div>
 							</Show>
 
-							<div class="flex justify-center items-center mt-2">
+							<div class="mt-2 flex items-center justify-center">
 								<GenericButton
 									type="submit"
 									class="btn-primary"
@@ -169,7 +167,7 @@ export default function LoginPage() {
 							{/* Extensible section for future OAuth providers */}
 							<div class="divider">OR</div>
 
-							<div class="flex justify-center items-center">
+							<div class="flex items-center justify-center">
 								<GenericButton
 									type="button"
 									class="btn-neutral"
@@ -178,7 +176,7 @@ export default function LoginPage() {
 										setError("Google Sign In coming soon!");
 									}}
 								>
-									<svg class="w-5 h-5 mr-2" viewBox="0 0 24 24">
+									<svg class="mr-2 h-5 w-5" viewBox="0 0 24 24">
 										<title>Google Icon</title>
 										<path
 											fill="currentColor"
