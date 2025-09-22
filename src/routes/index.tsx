@@ -3,6 +3,7 @@ import AnonymousIcon from "lucide-solid/icons/hat-glasses";
 import { createSignal, Match, Show, Switch } from "solid-js";
 import { GenericButton } from "~/components/button";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
+import { revalidateUserLoginData } from "~/utils/user";
 
 export default function LoginPage() {
 	const [email, setEmail] = createSignal("");
@@ -30,6 +31,8 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
+				await revalidateUserLoginData();
+
 				navigate("/user");
 			}
 		} catch {
@@ -54,6 +57,8 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign up failed");
 			} else {
+				await revalidateUserLoginData();
+
 				navigate("/user");
 			}
 		} catch {
@@ -198,10 +203,18 @@ export default function LoginPage() {
 									Continue with Google
 								</GenericButton>
 
-								<A class="btn btn-accent" href="/user">
+								<button
+									type="button"
+									class="btn btn-accent"
+									onClick={async () => {
+										await revalidateUserLoginData();
+
+										navigate("/user");
+									}}
+								>
 									<AnonymousIcon />
 									Continue as Guest
-								</A>
+								</button>
 							</div>
 
 							<div class="text-center">

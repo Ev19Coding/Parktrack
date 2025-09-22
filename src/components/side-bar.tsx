@@ -4,9 +4,10 @@ import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createSignal, onCleanup, Show } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
+import { isUserGuest } from "~/server/user";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
-import { isUserGuest } from "~/utils/user";
+import { revalidateUserLoginData } from "~/utils/user";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 
@@ -71,7 +72,7 @@ export default function SideBar() {
 								return (
 									<button
 										type="button"
-										onClick={(_) => {
+										onClick={async (_) => {
 											setIsSigningOut(true);
 
 											if (!isGuest()) {
@@ -81,15 +82,19 @@ export default function SideBar() {
 															setIsSigningOut(false);
 														},
 														onSuccess() {
-															// Move to the log out page
-															navigate("/");
+															revalidateUserLoginData().then(() => {
+																// Move to the log out page
+																navigate("/");
 
-															// Close the side bar
-															drawerToggle$.click();
+																// Close the side bar
+																drawerToggle$.click();
+															});
 														},
 													},
 												});
 											} else {
+												await revalidateUserLoginData();
+
 												// Move to the log out page
 												navigate("/");
 
