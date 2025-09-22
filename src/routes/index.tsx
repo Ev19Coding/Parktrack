@@ -32,7 +32,7 @@ export default function LoginPage() {
 			} else {
 				navigate("/user");
 			}
-		} catch (err) {
+		} catch {
 			setError("An unexpected error occurred. Please try again.");
 		} finally {
 			setIsLoading(false);
@@ -56,7 +56,7 @@ export default function LoginPage() {
 			} else {
 				navigate("/user");
 			}
-		} catch (err) {
+		} catch {
 			setError("An unexpected error occurred. Please try again.");
 		} finally {
 			setIsLoading(false);
