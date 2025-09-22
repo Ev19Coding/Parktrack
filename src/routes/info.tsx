@@ -1,5 +1,4 @@
 import { useLocation, useNavigate } from "@solidjs/router";
-import { clientOnly } from "@solidjs/start";
 import ArrowLeftIcon from "lucide-solid/icons/arrow-left";
 import CalendarIcon from "lucide-solid/icons/calendar";
 import ClockIcon from "lucide-solid/icons/clock";
@@ -21,11 +20,11 @@ import {
 import * as v from "valibot";
 import { GenericButton } from "~/components/button";
 import { GenericModal, showModal } from "~/components/generic-modal";
+import UserMapView from "~/components/user/map-view";
 import { RecreationalLocationSchema } from "~/server/database/schema";
+import { DEFAULTS } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-
-const UserMapView = clientOnly(() => import("~/components/user/map-view"));
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -438,81 +437,80 @@ function BusinessDetails(props: {
 
 /** Shows extra details about a recreational location the user selected */
 export default function InformationRoute() {
+	const { STRING, NUMBER } = DEFAULTS;
 	const location = useLocation();
 
 	// Use onMount to ensure this only runs on the client
-	const [locationData, setLocationData] = createSignal<v.InferOutput<
-		typeof RecreationalLocationSchema
-	> | null>(null);
-	// TODO: Remove this
-	const [hasError, setHasError] = createSignal(false);
+	const [locationData, setLocationData] = createSignal<
+		v.InferOutput<typeof RecreationalLocationSchema>
+	>({
+		address: STRING,
+		category: STRING,
+		id: STRING,
+		title: STRING,
+		latitude: NUMBER,
+		longitude: NUMBER,
+		link: STRING,
+		thumbnail: STRING,
+		images: [],
+		openHours: {},
+		popularTimes: {},
+		isActive: true,
+	});
 
 	onMount(() => {
 		const result = v.safeParse(RecreationalLocationSchema, location.state);
 		if (result.success) {
 			setLocationData(result.output);
-		} else {
-			setHasError(true);
 		}
 	});
 
 	return (
-		<Show when={locationData()}>
-			{(location) => {
-				return (
-					<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
-						<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
-							{/* Back Button */}
-							<BackButton />
+		<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
+			<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
+				{/* Back Button */}
+				<BackButton />
 
-							{/* Header Section */}
-							<div class="hero rounded-box bg-base-100 shadow-md">
-								<div class="hero-content px-4 py-6 text-center">
-									<div class="max-w-full">
-										<h1 class="mb-2 break-words font-bold text-xl sm:text-2xl">
-											{location().title}
-										</h1>
-										<p class="break-words text-base-content/70 text-xs sm:text-sm">
-											{location().category} • {location().address}
-										</p>
-									</div>
-								</div>
-							</div>
-
-							{/* Main Content Grid */}
-							<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-								{/* Map Section - Full width on mobile, spans 2 cols on desktop */}
-								<div class="h-48 min-w-0 sm:h-64 lg:col-span-2 lg:h-full">
-									<UserMapView
-										coords={[location().latitude, location().longitude]}
-										label={location().title}
-										fallback={
-											<div class="flex h-full w-full items-center justify-center rounded-box bg-base-200">
-												<span class="loading loading-spinner loading-lg"></span>
-											</div>
-										}
-									/>
-								</div>
-
-								{/* Contact Info - Always visible in sidebar on desktop */}
-								<div class="min-w-0 space-y-4 sm:space-y-6">
-									<ContactInfo location={location()} />
-									<RatingInfo location={location()} />
-									<OpeningHours location={location()} />
-								</div>
-
-								{/* Full width sections */}
-								<div class="min-w-0 space-y-4 sm:space-y-6 lg:col-span-3">
-									<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-										<BusinessDetails location={location()} />
-										<ImageGallery location={location()} />
-									</div>
-								</div>
-							</div>
+				{/* Header Section */}
+				<div class="hero rounded-box bg-base-100 shadow-md">
+					<div class="hero-content px-4 py-6 text-center">
+						<div class="max-w-full">
+							<h1 class="mb-2 break-words font-bold text-xl sm:text-2xl">
+								{locationData().title}
+							</h1>
+							<p class="break-words text-base-content/70 text-xs sm:text-sm">
+								{locationData().category} • {locationData().address}
+							</p>
 						</div>
 					</div>
-				);
-			}}
-		</Show>
+				</div>
+
+				{/* Main Content Grid */}
+				<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+					{/* Map Section - Full width on mobile, spans 2 cols on desktop */}
+					<div class="h-48 min-w-0 sm:h-64 lg:col-span-2 lg:h-full">
+						<UserMapView
+							coords={[locationData().latitude, locationData().longitude]}
+							label={locationData().title}
+						/>
+					</div>
+
+					{/* Contact Info - Always visible in sidebar on desktop */}
+					<div class="min-w-0 space-y-4 sm:space-y-6">
+						<ContactInfo location={locationData()} />
+						<RatingInfo location={locationData()} />
+						<OpeningHours location={locationData()} />
+					</div>
+
+					{/* Full width sections */}
+					<div class="min-w-0 space-y-4 sm:space-y-6 lg:col-span-3">
+						<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+							<BusinessDetails location={locationData()} />
+							<ImageGallery location={locationData()} />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
 	);
 }
