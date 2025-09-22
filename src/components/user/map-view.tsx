@@ -7,9 +7,10 @@ import { generateRandomUUID } from "~/utils/random";
 export default function UserMapView(prop: {
 	label: string;
 	coords: readonly [latitude: number, longitude: number] | null;
+	zoom?: number;
 }) {
 	const mapId = generateRandomUUID();
-	const zoomSize = 18;
+	const ZOOM_SIZE = 18;
 
 	let mapRef: LMap | undefined;
 	// let leafletRef: typeof import("leaflet") | undefined;
@@ -26,7 +27,7 @@ export default function UserMapView(prop: {
 			() => {
 				if (prop.coords) {
 					const [lat, lng] = prop.coords;
-					mapRef?.setView([lat, lng], zoomSize);
+					mapRef?.setView([lat, lng], prop.zoom ?? ZOOM_SIZE);
 					markerRef?.setLatLng([lat, lng]).bindPopup(prop.label);
 				}
 			},
@@ -39,7 +40,7 @@ export default function UserMapView(prop: {
 				<SolidLeafletMap
 					center={[prop.coords?.[0] ?? 63.0, prop.coords?.[1] ?? 13.0]}
 					id={mapId}
-					zoom={zoomSize}
+					zoom={prop.zoom ?? ZOOM_SIZE}
 					height="100%"
 					width="100%"
 					onMapReady={(leaflet, map) => {
