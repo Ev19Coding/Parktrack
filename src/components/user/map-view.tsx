@@ -6,7 +6,7 @@ import { generateRandomUUID } from "~/utils/random";
 
 export default function UserMapView(prop: {
 	label: string;
-	coords: [latitude: number, longitude: number] | null;
+	coords: readonly [latitude: number, longitude: number] | null;
 }) {
 	const mapId = generateRandomUUID();
 	const zoomSize = 18;
