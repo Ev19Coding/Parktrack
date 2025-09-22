@@ -41,6 +41,15 @@ async function isUserRegular() {
 	return ensureUserIsLoggedIn();
 }
 
+//TODO
+export const isUserGuest = async () => {
+	const session = await getSession();
+
+	if (session) return false;
+
+	return true;
+};
+
 // These need to be wrapped with query to handle redirects properly
 export const getOwnerData = query(async () => {
 	if (await isUserOwner()) return {};

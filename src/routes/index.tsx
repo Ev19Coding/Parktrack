@@ -1,4 +1,5 @@
 import { A, useNavigate } from "@solidjs/router";
+import AnonymousIcon from "lucide-solid/icons/hat-glasses";
 import { createSignal, Match, Show, Switch } from "solid-js";
 import { GenericButton } from "~/components/button";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
@@ -167,9 +168,8 @@ export default function LoginPage() {
 							{/* Extensible section for future OAuth providers */}
 							<div class="divider">OR</div>
 
-							<div class="flex items-center justify-center">
+							<div class="m-auto flex w-fit flex-col items-center justify-center gap-4 *:w-full">
 								<GenericButton
-									type="button"
 									class="btn-neutral"
 									onClick={() => {
 										// TODO: Implement Google OAuth
@@ -197,6 +197,11 @@ export default function LoginPage() {
 									</svg>
 									Continue with Google
 								</GenericButton>
+
+								<A class="btn btn-accent" href="/user">
+									<AnonymousIcon />
+									Continue as Guest
+								</A>
 							</div>
 
 							<div class="text-center">

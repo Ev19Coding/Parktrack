@@ -1,10 +1,11 @@
-import { useLocation, useNavigate } from "@solidjs/router";
+import { createAsync, useLocation, useNavigate } from "@solidjs/router";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
 import { createSignal, onCleanup, Show } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
+import { isUserGuest } from "~/utils/user";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 
@@ -61,29 +62,44 @@ export default function SideBar() {
 
 					<ul class="menu min-h-full w-48 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 						<li>
-							<button
-								type="button"
-								onClick={(_) => {
-									setIsSigningOut(true);
+							{(() => {
+								const isGuest = createAsync(() => isUserGuest(), {
+									initialValue: true,
+								});
 
-									AUTH_CLIENT.signOut({
-										fetchOptions: {
-											onResponse() {
-												setIsSigningOut(false);
-											},
-											onSuccess() {
+								return (
+									<button
+										type="button"
+										onClick={(_) => {
+											setIsSigningOut(true);
+
+											if (!isGuest()) {
+												AUTH_CLIENT.signOut({
+													fetchOptions: {
+														onResponse() {
+															setIsSigningOut(false);
+														},
+														onSuccess() {
+															// Move to the log out page
+															navigate("/");
+
+															// Close the side bar
+															drawerToggle$.click();
+														},
+													},
+												});
+											} else {
 												// Move to the log out page
 												navigate("/");
 
-												// Close the side bar
-												drawerToggle$.click();
-											},
-										},
-									});
-								}}
-							>
-								<LogOutIcon /> Log Out
-							</button>
+												setIsSigningOut(false);
+											}
+										}}
+									>
+										<LogOutIcon /> {isGuest() ? "Back to Login" : "Log Out"}
+									</button>
+								);
+							})()}
 						</li>
 
 						<li>
