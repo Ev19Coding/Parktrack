@@ -20,7 +20,7 @@ import {
 import * as v from "valibot";
 import { GenericButton } from "~/components/button";
 import { GenericModal, showModal } from "~/components/generic-modal";
-import UserMapView from "~/components/user/map-view";
+import UserMapView from "~/components/map-view";
 import { RecreationalLocationSchema } from "~/server/database/schema";
 import { DEFAULTS } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";

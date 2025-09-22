@@ -17,7 +17,7 @@ import {
 } from "~/server/database/user/query";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import LoadingSpinner from "../loading-spinner";
+import LoadingSpinner from "./loading-spinner";
 
 export default function UserMapView(prop: {
 	label: string;

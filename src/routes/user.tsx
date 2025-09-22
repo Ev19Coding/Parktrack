@@ -1,6 +1,6 @@
 import { createMemo, createSignal } from "solid-js";
 import { useGeolocation } from "solidjs-use";
-import UserMapView from "~/components/user/map-view";
+import UserMapView from "~/components/map-view";
 import {
 	UserParkSection,
 	UserRestaurantSection,
@@ -36,8 +36,8 @@ export default function Home() {
 
       <UserMapView coords={latAndLong()} label="You" zoom={16} showNearby={true} />
 
-			<UserParkSection /> 
-			
+			<UserParkSection />
+
 			<UserRestaurantSection />
 		</div>
 	);
