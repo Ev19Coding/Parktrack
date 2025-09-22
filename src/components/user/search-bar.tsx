@@ -1,8 +1,7 @@
-import { A, createAsyncStore, query, useNavigate } from "@solidjs/router";
+import { createAsyncStore, query, useNavigate } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
-import { createSignal, Index, type Setter, Show, Suspense } from "solid-js";
-import { useGeolocation, useThrottle } from "solidjs-use";
-import type { RecreationalLocationSchema } from "~/server/database/schema";
+import { createSignal, Index, Show, Suspense } from "solid-js";
+import { useThrottle } from "solidjs-use";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
 	getUserQueryResultFromDatabase,
@@ -10,9 +9,7 @@ import {
 import { getProxiedImageUrl } from "~/utils/image";
 import LoadingSpinner from "../loading-spinner";
 
-export default function UserSearchBar(prop: {
-	setLocationResult: Setter<RecreationalLocationSchema | null>;
-}) {
+export default function UserSearchBar() {
 	const navigate = useNavigate();
 
 	const [input, setInput] = createSignal("");
@@ -113,7 +110,6 @@ export default function UserSearchBar(prop: {
 												setIsLoadingRecreationalLocationInfo(false);
 
 												if (data) {
-													prop.setLocationResult(data);
 													setAreSuggestionsOpen(false);
 
 													// Navigate to the info route and set the data to
