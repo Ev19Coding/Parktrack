@@ -68,12 +68,12 @@ function DataSection(prop: {
 													baseLocationData().id,
 												);
 
-											setIsLoadingRecreationalLocationInfo(false);
-
 											if (data) {
 												// Navigate to the info route and set the data to
 												navigate("/info", { state: data });
 											}
+
+											setIsLoadingRecreationalLocationInfo(false);
 										}}
 									>
 										<img
