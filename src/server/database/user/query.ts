@@ -58,6 +58,17 @@ type BareMinimumRecreationalLocationSchema = Satisfies<
 	Partial<LightweightRecreationalLocationSchema>
 >;
 
+const BareMinimumRecreationalLocationPlusCoordsSchema = v.object({
+	...BareMinimumRecreationalLocationSchema.entries,
+	longitude: v.number(),
+	latitude: v.number(),
+});
+
+type BareMinimumRecreationalLocationPlusCoordsSchema = Satisfies<
+	v.InferOutput<typeof BareMinimumRecreationalLocationPlusCoordsSchema>,
+	Partial<RecreationalLocationSchema>
+>;
+
 const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
@@ -283,7 +294,7 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 	long: number;
 	range?: number;
 	maxResults?: number;
-}): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+}): Promise<ReadonlyArray<BareMinimumRecreationalLocationPlusCoordsSchema>> {
 	const { lat, long, maxResults = DEFAULT_MAX_RESULTS, range = 10 } = arg;
 
 	if (lat === Infinity || long === Infinity) return [];
@@ -294,7 +305,7 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 
 	const fetchedLocations = (
 		await connection.streamAndReadAll(`
-			SELECT id, title, thumbnail
+			SELECT id, title, thumbnail, latitude, longitude
 			FROM ${USER_RECREATION_LOCATION_TABLE}
 			WHERE ST_DWithin_Spheroid(
 				ST_Point2D(latitude, longitude),
@@ -313,7 +324,7 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 			try {
 				// Validate the data
 				const validatedData = v.parse(
-					BareMinimumRecreationalLocationSchema,
+					BareMinimumRecreationalLocationPlusCoordsSchema,
 					tryParseObject(rowObjectData),
 					{ abortEarly: true },
 				);

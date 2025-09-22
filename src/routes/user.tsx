@@ -34,7 +34,7 @@ export default function Home() {
 
 			<UserSearchBar/>
 
-			<UserMapView coords={latAndLong()} label="You" />
+      <UserMapView coords={latAndLong()} label="You" zoom={16} showNearby={true} />
 
 			<UserParkSection /> 
 			

@@ -492,6 +492,9 @@ export default function InformationRoute() {
 						<UserMapView
 							coords={[locationData().latitude, locationData().longitude]}
 							label={locationData().title}
+							// Uncomment to display nearby locations around the shown recreational location
+							// showNearby={true}
+							// zoom={16}
 						/>
 					</div>
 
