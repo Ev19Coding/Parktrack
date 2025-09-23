@@ -5,6 +5,10 @@ import * as v from "valibot";
  * These schemas match the database tables and provide type safety
  */
 
+// User type enum for role-based access
+export const UserType = v.picklist(["user", "owner", "admin"]);
+export type UserType = v.InferOutput<typeof UserType>;
+
 // User schema - matches the user table
 export const UserSchema = v.object({
 	id: v.string(),
@@ -12,6 +16,8 @@ export const UserSchema = v.object({
 	email: v.pipe(v.string(), v.email()),
 	emailVerified: v.boolean(),
 	image: v.optional(v.pipe(v.string(), v.url())),
+	favourites: v.optional(v.array(v.string()), []), // Array of recreational location IDs
+	type: v.optional(UserType, "user"), // User role: user, owner, or admin
 	createdAt: v.date(),
 	updatedAt: v.date(),
 });
@@ -70,6 +76,8 @@ export const CreateUserSchema = v.object({
 	email: v.pipe(v.string(), v.email()),
 	emailVerified: v.optional(v.boolean()),
 	image: v.optional(v.pipe(v.string(), v.url())),
+	favourites: v.optional(v.array(v.string()), []),
+	type: v.optional(UserType, "user"),
 });
 
 export type CreateUser = v.InferOutput<typeof CreateUserSchema>;
@@ -117,6 +125,8 @@ export const UpdateUserSchema = v.object({
 	email: v.optional(v.pipe(v.string(), v.email())),
 	emailVerified: v.optional(v.boolean()),
 	image: v.optional(v.pipe(v.string(), v.url())),
+	favourites: v.optional(v.array(v.string())),
+	type: v.optional(UserType),
 });
 
 export type UpdateUser = v.InferOutput<typeof UpdateUserSchema>;

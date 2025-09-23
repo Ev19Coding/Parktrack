@@ -344,3 +344,274 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 
 	return fetchedLocations;
 }
+
+/**
+ * Get users by type (user, owner, admin)
+ */
+export async function getUsersByType(
+	userType: "user" | "owner" | "admin",
+	maxResults = DEFAULT_MAX_RESULTS,
+): Promise<
+	ReadonlyArray<{ id: string; name: string; email: string; type: string }>
+> {
+	const fetchedUsers = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+          SELECT id, name, email, type
+          FROM "user"
+          WHERE type = '${userType}'
+          LIMIT ${maxResults}
+          `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			return {
+				id: String(rowObjectData["id"]),
+				name: String(rowObjectData["name"]),
+				email: String(rowObjectData["email"]),
+				type: String(rowObjectData["type"]),
+			};
+		});
+
+	return fetchedUsers;
+}
+
+/**
+ * Get recreational locations from user's favourites
+ */
+export async function getUserFavouriteLocations(
+	userId: string,
+): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	// First get the user's favourites array
+	const userResult = await connection.streamAndReadAll(`
+		SELECT favourites
+		FROM "user"
+		WHERE id = '${userId}'
+	`);
+
+	const userRows = userResult.getRowObjects();
+	if (!userRows.length) return [];
+
+	const favouritesData = userRows[0]?.["favourites"];
+	if (!favouritesData) return [];
+
+	// Parse favourites array (stored as JSON string)
+	let favouriteIds: string[] = [];
+	try {
+		favouriteIds =
+			typeof favouritesData === "string"
+				? JSON.parse(favouritesData)
+				: favouritesData;
+	} catch {
+		return [];
+	}
+
+	if (!favouriteIds.length) return [];
+
+	// Get the recreational locations for these IDs
+	const placeholders = favouriteIds.map(() => "?").join(", ");
+	const fetchedLocations = (
+		await connection.streamAndReadAll(`
+          SELECT id, title, thumbnail
+          FROM ${USER_RECREATION_LOCATION_TABLE}
+          WHERE id IN (${favouriteIds.map((id) => `'${id}'`).join(", ")})
+          `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				const validatedData = v.parse(
+					BareMinimumRecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedLocations;
+}
+
+/**
+ * Add a location to user's favourites (if not already present)
+ */
+export async function addLocationToUserFavourites(
+	userId: string,
+	locationId: string,
+): Promise<boolean> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	// Get current favourites
+	const userResult = await connection.streamAndReadAll(`
+		SELECT favourites
+		FROM "user"
+		WHERE id = '${userId}'
+	`);
+
+	const userRows = userResult.getRowObjects();
+	if (!userRows.length) return false;
+
+	const favouritesData = userRows[0]?.["favourites"];
+	let currentFavourites: string[] = [];
+
+	try {
+		currentFavourites =
+			typeof favouritesData === "string"
+				? JSON.parse(favouritesData)
+				: favouritesData || [];
+	} catch {
+		currentFavourites = [];
+	}
+
+	// Check if already in favourites
+	if (currentFavourites.includes(locationId)) {
+		return false; // Already exists
+	}
+
+	// Add to favourites
+	const updatedFavourites = [...currentFavourites, locationId];
+
+	await connection.streamAndReadAll(`
+		UPDATE "user"
+		SET favourites = '${JSON.stringify(updatedFavourites).replace(/'/g, "''")}'
+		WHERE id = '${userId}'
+	`);
+
+	return true;
+}
+
+/**
+ * Remove a location from user's favourites
+ */
+export async function removeLocationFromUserFavourites(
+	userId: string,
+	locationId: string,
+): Promise<boolean> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	// Get current favourites
+	const userResult = await connection.streamAndReadAll(`
+		SELECT favourites
+		FROM "user"
+		WHERE id = '${userId}'
+	`);
+
+	const userRows = userResult.getRowObjects();
+	if (!userRows.length) return false;
+
+	const favouritesData = userRows[0]?.["favourites"];
+	let currentFavourites: string[] = [];
+
+	try {
+		currentFavourites =
+			typeof favouritesData === "string"
+				? JSON.parse(favouritesData)
+				: favouritesData || [];
+	} catch {
+		currentFavourites = [];
+	}
+
+	// Check if in favourites
+	if (!currentFavourites.includes(locationId)) {
+		return false; // Not in favourites
+	}
+
+	// Remove from favourites
+	const updatedFavourites = currentFavourites.filter((id) => id !== locationId);
+
+	await connection.streamAndReadAll(`
+		UPDATE "user"
+		SET favourites = '${JSON.stringify(updatedFavourites).replace(/'/g, "''")}'
+		WHERE id = '${userId}'
+	`);
+
+	return true;
+}
+
+/**
+ * Check if a location is in user's favourites
+ */
+export async function isLocationInUserFavourites(
+	userId: string,
+	locationId: string,
+): Promise<boolean> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const userResult = await connection.streamAndReadAll(`
+		SELECT favourites
+		FROM "user"
+		WHERE id = '${userId}'
+	`);
+
+	const userRows = userResult.getRowObjects();
+	if (!userRows.length) return false;
+
+	const favouritesData = userRows[0]?.["favourites"];
+	let currentFavourites: string[] = [];
+
+	try {
+		currentFavourites =
+			typeof favouritesData === "string"
+				? JSON.parse(favouritesData)
+				: favouritesData || [];
+	} catch {
+		return false;
+	}
+
+	return currentFavourites.includes(locationId);
+}
+
+/**
+ * Get locations owned by a specific owner (for future use when owners table is separate)
+ */
+export async function getLocationsByOwner(
+	ownerId: string,
+	maxResults = DEFAULT_MAX_RESULTS,
+): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+	const fetchedLocations = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+          SELECT id, title, thumbnail
+          FROM ${USER_RECREATION_LOCATION_TABLE}
+          WHERE owner->>'id' = '${ownerId}'
+          LIMIT ${maxResults}
+          `)
+	)
+		.getRowObjects()
+		.map((rowObjectData) => {
+			try {
+				const validatedData = v.parse(
+					BareMinimumRecreationalLocationSchema,
+					tryParseObject(rowObjectData),
+					{ abortEarly: true },
+				);
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid recreational location data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedLocations;
+}

@@ -1,6 +1,6 @@
-import { getParkTrackDatabaseConnection } from "../util.js";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { getParkTrackDatabaseConnection } from "../util.js";
 
 /**
  * Database migration utility for Better Auth schema
@@ -171,7 +171,9 @@ export async function runMigrations(): Promise<void> {
 	}
 
 	console.log(`Found ${pendingMigrations.length} pending migration(s):`);
-	pendingMigrations.forEach((m) => console.log(`  - ${m.id}: ${m.name}`));
+	pendingMigrations.forEach((m) => {
+		console.log(`  - ${m.id}: ${m.name}`);
+	});
 
 	for (const migration of pendingMigrations) {
 		await runMigration(migration);

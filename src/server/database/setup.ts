@@ -1,7 +1,7 @@
 import {
-	runMigrations,
 	checkTablesExist,
 	getMigrationStatus,
+	runMigrations,
 } from "./migrations/migrate.js";
 import { getParkTrackDatabaseConnection } from "./util.js";
 
@@ -30,12 +30,16 @@ export async function setupDevelopmentDatabase(): Promise<void> {
 
 		if (existingTables.length > 0) {
 			console.log("   Existing tables:");
-			existingTables.forEach((table) => console.log(`   ✅ ${table}`));
+			existingTables.forEach((table) => {
+				console.log(`   ✅ ${table}`);
+			});
 		}
 
 		if (missingTables.length > 0) {
 			console.log("   Missing tables:");
-			missingTables.forEach((table) => console.log(`   ❌ ${table}`));
+			missingTables.forEach((table) => {
+				console.log(`   ❌ ${table}`);
+			});
 		}
 
 		console.log();
@@ -255,7 +259,7 @@ if (import.meta.main) {
 		case "setup":
 			await runDevelopmentSetup();
 			break;
-		case "health":
+		case "health": {
 			const health = await checkDatabaseHealth();
 			console.log("Database Health Check:");
 			console.log("=====================");
@@ -265,6 +269,7 @@ if (import.meta.main) {
 				`Migrations Applied: ${health.migrationsApplied ? "✅" : "❌"}`,
 			);
 			break;
+		}
 		case "sample-data":
 			await createSampleData();
 			break;

@@ -1,22 +1,22 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { getParkTrackDatabaseConnection } from "./util.js";
-import {
-	validateUser,
-	validateSession,
-	validateAccount,
-	validateVerification,
-	validateCreateUser,
-	validateCreateSession,
-	validateCreateAccount,
-	validateCreateVerification,
-	BETTER_AUTH_TABLES,
-	OAUTH_PROVIDERS,
-	CREDENTIAL_PROVIDER,
-	type CreateUser,
-	type CreateSession,
-	type CreateAccount,
-} from "./better-auth-schema.js";
 import type { DuckDBConnection } from "@duckdb/node-api";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import {
+	BETTER_AUTH_TABLES,
+	CREDENTIAL_PROVIDER,
+	type CreateAccount,
+	type CreateSession,
+	type CreateUser,
+	OAUTH_PROVIDERS,
+	validateAccount,
+	validateCreateAccount,
+	validateCreateSession,
+	validateCreateUser,
+	validateCreateVerification,
+	validateSession,
+	validateUser,
+	validateVerification,
+} from "./better-auth-schema.js";
+import { getParkTrackDatabaseConnection } from "./util.js";
 
 describe("Better Auth Schema Integration Tests", () => {
 	let connection: DuckDBConnection;
@@ -33,6 +33,8 @@ describe("Better Auth Schema Integration Tests", () => {
 				email VARCHAR UNIQUE NOT NULL,
 				emailVerified BOOLEAN NOT NULL DEFAULT FALSE,
 				image VARCHAR,
+				favourites JSON DEFAULT '[]',
+				type VARCHAR NOT NULL DEFAULT 'user',
 				createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 			)
@@ -123,6 +125,8 @@ describe("Better Auth Schema Integration Tests", () => {
 				email: "john@example.com",
 				emailVerified: true,
 				image: "https://example.com/avatar.jpg",
+				favourites: ["location_1", "location_2"],
+				type: "user" as const,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			};
@@ -132,6 +136,8 @@ describe("Better Auth Schema Integration Tests", () => {
 			expect(validatedUser.name).toBe(userData.name);
 			expect(validatedUser.email).toBe(userData.email);
 			expect(validatedUser.emailVerified).toBe(userData.emailVerified);
+			expect(validatedUser.favourites).toEqual(userData.favourites);
+			expect(validatedUser.type).toBe(userData.type);
 		});
 
 		it("should validate user creation data", () => {
@@ -139,12 +145,16 @@ describe("Better Auth Schema Integration Tests", () => {
 				name: "Jane Doe",
 				email: "jane@example.com",
 				emailVerified: false,
+				favourites: ["location_3"],
+				type: "owner" as const,
 			};
 
 			const validatedData = validateCreateUser(createData);
 			expect(validatedData.name).toBe(createData.name);
 			expect(validatedData.email).toBe(createData.email);
 			expect(validatedData.emailVerified).toBe(createData.emailVerified);
+			expect(validatedData.favourites).toEqual(createData.favourites);
+			expect(validatedData.type).toBe(createData.type);
 		});
 
 		it("should reject invalid email format", () => {
@@ -160,18 +170,86 @@ describe("Better Auth Schema Integration Tests", () => {
 			expect(() => validateUser(userData)).toThrow();
 		});
 
-		it("should handle optional image field", () => {
-			const userWithoutImage = {
+		it("should handle optional fields", () => {
+			const userWithDefaults = {
 				id: "user_003",
-				name: "No Image User",
-				email: "noimage@example.com",
+				name: "Default User",
+				email: "default@example.com",
 				emailVerified: false,
 				createdAt: new Date(),
 				updatedAt: new Date(),
 			};
 
-			const validatedUser = validateUser(userWithoutImage);
+			const validatedUser = validateUser(userWithDefaults);
 			expect(validatedUser.image).toBeUndefined();
+			expect(validatedUser.favourites).toEqual([]);
+			expect(validatedUser.type).toBe("user");
+		});
+
+		it("should validate different user types", () => {
+			const userTypes = ["user", "owner", "admin"] as const;
+
+			userTypes.forEach((type) => {
+				const userData = {
+					id: `${type}_001`,
+					name: `${type} User`,
+					email: `${type}@example.com`,
+					emailVerified: true,
+					type,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				};
+
+				const validatedUser = validateUser(userData);
+				expect(validatedUser.type).toBe(type);
+			});
+		});
+
+		it("should validate favourites array", () => {
+			const userData = {
+				id: "user_fav_001",
+				name: "Favourite User",
+				email: "fav@example.com",
+				emailVerified: true,
+				favourites: ["loc_1", "loc_2", "loc_3", "loc_4"],
+				type: "user" as const,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			const validatedUser = validateUser(userData);
+			expect(validatedUser.favourites).toHaveLength(4);
+			expect(validatedUser.favourites).toContain("loc_1");
+			expect(validatedUser.favourites).toContain("loc_4");
+		});
+
+		it("should reject invalid user type", () => {
+			const userData = {
+				id: "user_004",
+				name: "Invalid User",
+				email: "invalid@example.com",
+				emailVerified: false,
+				type: "invalid_type",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			expect(() => validateUser(userData)).toThrow();
+		});
+
+		it("should reject invalid favourites format", () => {
+			const userData = {
+				id: "user_005",
+				name: "Bad Favourites User",
+				email: "badfav@example.com",
+				emailVerified: false,
+				favourites: "not_an_array",
+				type: "user",
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+
+			expect(() => validateUser(userData)).toThrow();
 		});
 	});
 
@@ -309,16 +387,20 @@ describe("Better Auth Schema Integration Tests", () => {
 				name: "Database Test User",
 				email: "dbtest@example.com",
 				emailVerified: true,
+				favourites: [],
+				type: "user",
 			};
 
 			// Insert user
 			await connection.streamAndReadAll(`
-				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, createdAt, updatedAt)
+				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
 				VALUES (
 					'${testUser.id}',
 					'${testUser.name}',
 					'${testUser.email}',
 					${testUser.emailVerified},
+					'[]',
+					'user',
 					CURRENT_TIMESTAMP,
 					CURRENT_TIMESTAMP
 				)
@@ -338,6 +420,10 @@ describe("Better Auth Schema Integration Tests", () => {
 			const retrievedUser = validateUser({
 				...row,
 				image: row["image"] || undefined,
+				favourites: row["favourites"]
+					? JSON.parse(row["favourites"] as string)
+					: [],
+				type: (row["type"] as string) || "user",
 				createdAt: new Date(row["createdAt"] as string),
 				updatedAt: new Date(row["updatedAt"] as string),
 			});
@@ -354,8 +440,8 @@ describe("Better Auth Schema Integration Tests", () => {
 
 			// Create user first
 			await connection.streamAndReadAll(`
-				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, createdAt, updatedAt)
-				VALUES ('${userId}', 'Session User', 'session@example.com', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
+				VALUES ('${userId}', 'Session User', 'session@example.com', true, '[]', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 			`);
 
 			// Create session
@@ -421,8 +507,8 @@ describe("Better Auth Schema Integration Tests", () => {
 
 			// Create user
 			await connection.streamAndReadAll(`
-				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, createdAt, updatedAt)
-				VALUES ('${userId}', 'OAuth User', 'oauth@example.com', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
+				VALUES ('${userId}', 'OAuth User', 'oauth@example.com', true, '[]', 'user', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 			`);
 
 			// Create OAuth account
@@ -549,12 +635,14 @@ describe("Better Auth Schema Integration Tests", () => {
 
 			// This should not throw when properly escaped
 			await connection.streamAndReadAll(`
-				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, createdAt, updatedAt)
+				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
 				VALUES (
 					'${specialUser.id}',
 					'${specialUser.name.replace(/'/g, "''")}',
 					'${specialUser.email}',
 					${specialUser.emailVerified},
+					'[]',
+					'user',
 					CURRENT_TIMESTAMP,
 					CURRENT_TIMESTAMP
 				)
@@ -582,12 +670,14 @@ describe("Better Auth Schema Integration Tests", () => {
 			};
 
 			await connection.streamAndReadAll(`
-				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, createdAt, updatedAt)
+				INSERT INTO ${testTablePrefix}user (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
 				VALUES (
 					'${unicodeUser.id}',
 					'${unicodeUser.name}',
 					'${unicodeUser.email}',
 					${unicodeUser.emailVerified},
+					'[]',
+					'user',
 					CURRENT_TIMESTAMP,
 					CURRENT_TIMESTAMP
 				)
@@ -606,6 +696,10 @@ describe("Better Auth Schema Integration Tests", () => {
 			const validatedUser = validateUser({
 				...row,
 				image: row["image"] || undefined,
+				favourites: row["favourites"]
+					? JSON.parse(row["favourites"] as string)
+					: [],
+				type: (row["type"] as string) || "user",
 				createdAt: new Date(row["createdAt"] as string),
 				updatedAt: new Date(row["updatedAt"] as string),
 			});
