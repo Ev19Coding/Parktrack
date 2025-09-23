@@ -1,5 +1,13 @@
-import { useLocation, useNavigate } from "@solidjs/router";
+import {
+	createAsync,
+	query,
+	revalidate,
+	useLocation,
+	useNavigate,
+} from "@solidjs/router";
 import ArrowLeftIcon from "lucide-solid/icons/arrow-left";
+import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
+import AddFavoriteIcon from "lucide-solid/icons/bookmark-plus";
 import CalendarIcon from "lucide-solid/icons/calendar";
 import ClockIcon from "lucide-solid/icons/clock";
 import ExternalLinkIcon from "lucide-solid/icons/external-link";
@@ -16,12 +24,18 @@ import {
 	type JSXElement,
 	onMount,
 	Show,
+	Suspense,
 } from "solid-js";
 import * as v from "valibot";
 import { GenericButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
 import { GenericModal, showModal } from "~/components/modal/generic-modal";
 import { RecreationalLocationSchema } from "~/server/database/schema";
+import {
+	addToFavourites,
+	isLocationInFavourites,
+	removeFromFavourites,
+} from "~/server/user";
 import { DEFAULTS } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
@@ -474,13 +488,81 @@ export default function InformationRoute() {
 				{/* Header Section */}
 				<div class="hero rounded-box bg-base-100 shadow-md">
 					<div class="hero-content px-4 py-6 text-center">
-						<div class="max-w-full">
-							<h1 class="mb-2 break-words font-bold text-xl sm:text-2xl">
+						<div class="max-w-full space-y-2">
+							<h1 class="break-words font-bold text-xl sm:text-2xl">
 								{locationData().title}
 							</h1>
+
 							<p class="break-words text-base-content/70 text-xs sm:text-sm">
 								{locationData().category} • {locationData().address}
 							</p>
+
+							{(() => {
+								const id = () => locationData().id;
+
+								const queryfied = query(
+									() => isLocationInFavourites(id()),
+									`is-location-${id()}-favourite`,
+								);
+
+								const isRecreationLocationUserFavourite = createAsync(
+									() => queryfied(),
+									{ initialValue: false },
+								);
+
+								const [isLoading, setIsLoading] = createSignal(false);
+
+								function LoadingSpinner() {
+									return (
+										<>
+											<span class="loading loading-spinner"></span>
+											Please wait...
+										</>
+									);
+								}
+
+								return (
+									<button
+										type="button"
+										class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+										disabled={isLoading()}
+										onClick={async (_) => {
+											setIsLoading(true);
+
+											if (isRecreationLocationUserFavourite()) {
+												await removeFromFavourites(id());
+											} else {
+												await addToFavourites(id());
+											}
+
+											await revalidate(queryfied.key);
+
+											setIsLoading(false);
+										}}
+									>
+										<Suspense fallback={<LoadingSpinner />}>
+											<Show
+												when={isLoading()}
+												fallback={
+													isRecreationLocationUserFavourite() ? (
+														<>
+															<RemoveFavoriteIcon />
+															Remove from Favourites
+														</>
+													) : (
+														<>
+															<AddFavoriteIcon />
+															Add to Favourites
+														</>
+													)
+												}
+											>
+												<LoadingSpinner />
+											</Show>
+										</Suspense>
+									</button>
+								);
+							})()}
 						</div>
 					</div>
 				</div>
