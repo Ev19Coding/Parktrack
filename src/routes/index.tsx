@@ -210,6 +210,8 @@ export default function LoginPage() {
 									type="button"
 									class="btn btn-accent"
 									onClick={async () => {
+										await AUTH_CLIENT.signOut();
+
 										await revalidateUserLoginData();
 
 										navigate("/user");
