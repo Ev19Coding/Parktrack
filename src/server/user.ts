@@ -102,8 +102,6 @@ export async function getCurrentUserInfo(): Promise<User | null> {
 export async function _isUserLoggedIn(): Promise<boolean> {
 	const session = await getSession();
 
-	console.log(session);
-
 	return !!session;
 }
 
