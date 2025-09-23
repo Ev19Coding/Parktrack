@@ -1,14 +1,17 @@
 import { A, useNavigate } from "@solidjs/router";
 import AnonymousIcon from "lucide-solid/icons/hat-glasses";
 import { createSignal, Match, Show, Switch } from "solid-js";
+import { createStore } from "solid-js/store";
 import { GenericButton } from "~/components/button";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { revalidateUserLoginData } from "~/utils/user-query";
 
 export default function LoginPage() {
-	const [email, setEmail] = createSignal("");
-	const [password, setPassword] = createSignal("");
-	const [username, setUsername] = createSignal("");
+	const [form, setForm] = createStore({
+		email: "",
+		password: "",
+		username: "",
+	});
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
 	const [loginMode, setLoginMode] = createSignal<"sign-up" | "sign-in">(
@@ -24,8 +27,8 @@ export default function LoginPage() {
 
 		try {
 			const result = await AUTH_CLIENT.signIn.email({
-				email: email(),
-				password: password(),
+				email: form.email,
+				password: form.password,
 			});
 
 			if (result.error) {
@@ -49,9 +52,9 @@ export default function LoginPage() {
 
 		try {
 			const result = await AUTH_CLIENT.signUp.email({
-				name: username(),
-				email: email(),
-				password: password(),
+				name: form.username,
+				email: form.email,
+				password: form.password,
 			});
 
 			if (result.error) {
@@ -102,8 +105,8 @@ export default function LoginPage() {
 										type="text"
 										placeholder="Enter your username"
 										class="input"
-										value={username()}
-										onInput={(e) => setUsername(e.currentTarget.value)}
+										value={form.username}
+										onInput={(e) => setForm("username", e.currentTarget.value)}
 										required
 									/>
 								</fieldset>
@@ -118,8 +121,8 @@ export default function LoginPage() {
 									type="email"
 									placeholder="Enter your email"
 									class="input"
-									value={email()}
-									onInput={(e) => setEmail(e.currentTarget.value)}
+									value={form.email}
+									onInput={(e) => setForm("email", e.currentTarget.value)}
 									required
 								/>
 							</fieldset>
@@ -132,8 +135,8 @@ export default function LoginPage() {
 									type="password"
 									placeholder="Enter your password"
 									class="input"
-									value={password()}
-									onInput={(e) => setPassword(e.currentTarget.value)}
+									value={form.password}
+									onInput={(e) => setForm("password", e.currentTarget.value)}
 									required
 								/>
 								<Show when={loginMode() === "sign-in"}>
