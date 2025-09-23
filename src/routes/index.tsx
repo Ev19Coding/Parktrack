@@ -3,7 +3,7 @@ import AnonymousIcon from "lucide-solid/icons/hat-glasses";
 import { createSignal, Match, Show, Switch } from "solid-js";
 import { GenericButton } from "~/components/button";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
-import { revalidateUserLoginData } from "~/utils/user";
+import { revalidateUserLoginData } from "~/utils/user-query";
 
 export default function LoginPage() {
 	const [email, setEmail] = createSignal("");
