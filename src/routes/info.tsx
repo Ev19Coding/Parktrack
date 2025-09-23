@@ -39,6 +39,7 @@ import {
 import { DEFAULTS } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
+import { isUserLoggedIn } from "~/utils/user-query";
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -521,46 +522,52 @@ export default function InformationRoute() {
 									);
 								}
 
+								const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+									initialValue: false,
+								});
+
 								return (
-									<button
-										type="button"
-										class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
-										disabled={isLoading()}
-										onClick={async (_) => {
-											setIsLoading(true);
+									<Show when={isLoggedIn()}>
+										<button
+											type="button"
+											class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+											disabled={isLoading()}
+											onClick={async (_) => {
+												setIsLoading(true);
 
-											if (isRecreationLocationUserFavourite()) {
-												await removeFromFavourites(id());
-											} else {
-												await addToFavourites(id());
-											}
-
-											await revalidate(queryfied.key);
-
-											setIsLoading(false);
-										}}
-									>
-										<Suspense fallback={<LoadingSpinner />}>
-											<Show
-												when={isLoading()}
-												fallback={
-													isRecreationLocationUserFavourite() ? (
-														<>
-															<RemoveFavoriteIcon />
-															Remove from Favourites
-														</>
-													) : (
-														<>
-															<AddFavoriteIcon />
-															Add to Favourites
-														</>
-													)
+												if (isRecreationLocationUserFavourite()) {
+													await removeFromFavourites(id());
+												} else {
+													await addToFavourites(id());
 												}
-											>
-												<LoadingSpinner />
-											</Show>
-										</Suspense>
-									</button>
+
+												await revalidate(queryfied.key);
+
+												setIsLoading(false);
+											}}
+										>
+											<Suspense fallback={<LoadingSpinner />}>
+												<Show
+													when={isLoading()}
+													fallback={
+														isRecreationLocationUserFavourite() ? (
+															<>
+																<RemoveFavoriteIcon />
+																Remove from Favourites
+															</>
+														) : (
+															<>
+																<AddFavoriteIcon />
+																Add to Favourites
+															</>
+														)
+													}
+												>
+													<LoadingSpinner />
+												</Show>
+											</Suspense>
+										</button>
+									</Show>
 								);
 							})()}
 						</div>
