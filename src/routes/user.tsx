@@ -37,8 +37,8 @@ export default function Home() {
 
 			<UserMapView coords={coords()} label={label()} />
 
-			<UserParkSection /> 
-			
+			<UserParkSection />
+
 			<UserRestaurantSection />
 		</div>
 	);
