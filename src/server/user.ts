@@ -126,13 +126,13 @@ export async function isUserRegular() {
 	return userType === "user";
 }
 
-export async function isUserGuest() {
-	const session = await getSession();
+// export async function isUserGuest() {
+// 	const session = await getSession();
 
-	if (session) return false;
+// 	if (session) return false;
 
-	return true;
-}
+// 	return true;
+// }
 
 /** Check if user has permission to perform owner actions */
 export async function canUserPerformOwnerActions(): Promise<boolean> {

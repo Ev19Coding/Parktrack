@@ -5,7 +5,6 @@ import SettingsIcon from "lucide-solid/icons/menu";
 import TrashIcon from "lucide-solid/icons/trash-2";
 import { createSignal, onCleanup, Show } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
-import { isUserGuest } from "~/server/user";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
 import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
@@ -67,7 +66,7 @@ export default function SideBar() {
 					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 						<li>
 							{(() => {
-								const isGuest = createAsync(() => isUserGuest(), {
+								const isLoggedIn = createAsync(() => isUserLoggedIn(), {
 									initialValue: true,
 								});
 
@@ -77,7 +76,7 @@ export default function SideBar() {
 										onClick={async (_) => {
 											setIsLoading(true);
 
-											if (!isGuest()) {
+											if (isLoggedIn()) {
 												AUTH_CLIENT.signOut({
 													fetchOptions: {
 														onResponse() {
@@ -104,7 +103,7 @@ export default function SideBar() {
 											}
 										}}
 									>
-										<LogOutIcon /> {isGuest() ? "Back to Login" : "Log Out"}
+										<LogOutIcon /> {isLoggedIn() ? "Log Out" : "Back to Login"}
 									</button>
 								);
 							})()}
@@ -139,6 +138,8 @@ export default function SideBar() {
 													await AUTH_CLIENT.deleteUser();
 
 													navigate("/");
+
+													await revalidateUserLoginData();
 
 													setIsLoading(false);
 												}, "Account deletion is permanent. Are you sure?")
