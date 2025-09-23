@@ -24,7 +24,7 @@ export function ConfirmationModal() {
 	}
 
 	return (
-		<GenericModal modalId={prop.modalId} z-index={999_999}>
+		<GenericModal modalId={prop.modalId} z-index={99_999}>
 			<div class="mb-4 text-center">
 				{prop.children || (
 					<div class="text-warning">

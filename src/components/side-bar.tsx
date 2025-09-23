@@ -11,6 +11,7 @@ import { generateRandomUUID } from "~/utils/random";
 import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
+import { triggerConfirmationModal } from "./modal/confirmation-modal";
 
 export default function SideBar() {
 	const navigate = useNavigate();
@@ -131,15 +132,17 @@ export default function SideBar() {
 										<button
 											type="button"
 											class="text-error"
-											onClick={async (_) => {
-												setIsLoading(true);
+											onClick={(_) =>
+												triggerConfirmationModal(async () => {
+													setIsLoading(true);
 
-												await AUTH_CLIENT.deleteUser();
+													await AUTH_CLIENT.deleteUser();
 
-												navigate("/");
+													navigate("/");
 
-												setIsLoading(false);
-											}}
+													setIsLoading(false);
+												}, "Account deletion is permanent. Are you sure?")
+											}
 										>
 											<TrashIcon />
 											Delete Account
