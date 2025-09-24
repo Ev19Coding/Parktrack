@@ -79,6 +79,8 @@ export default function UserMapView(prop: {
 			const locations = await getRecreationalLocationsCloseToCoords({
 				lat: coords()[0],
 				long: coords()[1],
+				maxResults: 20,
+				range: 25,
 			});
 
 			// Create markers for each recreational location
