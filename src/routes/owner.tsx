@@ -1,5 +1,5 @@
 import { createAsync } from "@solidjs/router";
-import { getOwnerData } from "~/utils/user";
+import { getOwnerData } from "~/utils/user-query";
 
 export default function AdminPage() {
 	const ownerData = createAsync(() => getOwnerData());
