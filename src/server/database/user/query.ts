@@ -6,10 +6,10 @@ import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/types/generics";
 import { tryParseObject } from "~/utils/parse";
+import type { UserType } from "../better-auth-schema";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATION_LOCATION_TABLE } from "./constants";
-import { UserType } from "../better-auth-schema";
 
 const DEFAULT_MAX_RESULTS = 10;
 
@@ -26,6 +26,8 @@ const UrlSchema = v.pipe(
 );
 
 const NullishStringSchema = v.nullish(v.string()),
+	CategoryStringSchema = v.nullish(v.string(), "Other"),
+	AddressStringSchema = v.nullish(v.string(), "N/A"),
 	ImageUrlWithDefaultSchema = v.nullish(
 		v.union([UrlSchema, v.literal(PLACEHOLDER_IMG)]),
 		PLACEHOLDER_IMG,
@@ -38,8 +40,8 @@ const LightweightRecreationalLocationSchema = v.object({
 	title: v.string(),
 	description: NullishStringSchema,
 	thumbnail: ImageUrlWithDefaultSchema,
-	category: v.string(),
-	address: v.string(),
+	category: CategoryStringSchema,
+	address: AddressStringSchema,
 });
 
 /** Since fetching all the data seems like a waste */

@@ -111,13 +111,13 @@ export const RecreationalLocationSchema = v.pipe(
 		title: v.string(),
 
 		/** Primary category */
-		category: v.string(),
+		category: v.nullish(NullishStringSchema, "Other"),
 
 		// /** All categories this business belongs to */
 		// categories: v.pipe(v.array(v.string()), v.readonly()),
 
 		/** Full address string */
-		address: v.string(),
+		address: v.nullish(NullishStringSchema, "N/A"),
 
 		// /** Detailed address breakdown */
 		// completeAddress: CompleteAddressSchema,
