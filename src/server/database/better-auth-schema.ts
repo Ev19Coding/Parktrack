@@ -6,7 +6,7 @@ import * as v from "valibot";
  */
 
 // User type enum for role-based access
-export const UserType = v.picklist(["user", "owner", "admin"]);
+export const UserType = v.picklist(["user", "owner"]);
 export type UserType = v.InferOutput<typeof UserType>;
 
 // User schema - matches the user table
@@ -17,7 +17,7 @@ export const UserSchema = v.object({
 	emailVerified: v.boolean(),
 	image: v.optional(v.pipe(v.string(), v.url())),
 	favourites: v.optional(v.array(v.string()), []), // Array of recreational location IDs
-	type: v.optional(UserType, "user"), // User role: user, owner, or admin
+	type: v.optional(UserType, "user"), // User role: user, or owner
 	createdAt: v.date(),
 	updatedAt: v.date(),
 });

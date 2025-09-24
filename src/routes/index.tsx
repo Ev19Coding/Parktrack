@@ -189,12 +189,6 @@ export default function LoginPage() {
 													>
 														an owner managing their listings.
 													</option>
-													<option
-														value="admin"
-														selected={isOptionSelected("admin")}
-													>
-														an admin overseeing the system.
-													</option>
 												</>
 											);
 										})()}

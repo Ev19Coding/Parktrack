@@ -227,13 +227,13 @@ describe("MotherDuck Adapter Unit Tests", () => {
 
 		it("should handle JSON objects in SET clause", () => {
 			const updateData = {
-				metadata: { role: "admin", permissions: ["read", "write"] },
+				metadata: { role: "owner", permissions: ["read", "write"] },
 				settings: { theme: "dark", notifications: true },
 			};
 
 			const result = buildSetClause(updateData);
 			expect(result).toContain(
-				'metadata = \'{"role":"admin","permissions":["read","write"]}\'',
+				'metadata = \'{"role":"owner","permissions":["read","write"]}\'',
 			);
 			expect(result).toContain(
 				'settings = \'{"theme":"dark","notifications":true}\'',
@@ -470,7 +470,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const model = "users";
 			const whereConditions = [
 				{ field: "active", value: true },
-				{ field: "role", value: "admin" },
+				{ field: "role", value: "owner" },
 			];
 			const selectFields = ["id", "name", "email"];
 
@@ -479,7 +479,7 @@ describe("MotherDuck Adapter Unit Tests", () => {
 			const query = `SELECT ${selectClause} FROM ${model} ${whereClause} LIMIT 1`;
 
 			expect(query).toBe(
-				"SELECT id, name, email FROM users WHERE active = true AND role = 'admin' LIMIT 1",
+				"SELECT id, name, email FROM users WHERE active = true AND role = 'owner' LIMIT 1",
 			);
 		});
 

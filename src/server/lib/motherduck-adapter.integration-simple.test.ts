@@ -101,7 +101,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 				email: "john@example.com",
 				active: true,
 				score: 95.5,
-				metadata: { role: "admin", permissions: ["read", "write"] },
+				metadata: { role: "owner", permissions: ["read", "write"] },
 				createdAt: new Date("2024-01-01T10:00:00Z"),
 				updatedAt: new Date("2024-01-01T10:00:00Z"),
 			} as const satisfies TestRecord;
@@ -482,7 +482,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 						frequency: "daily",
 					},
 				},
-				permissions: ["read", "write", "admin"],
+				permissions: ["read", "write"],
 				stats: {
 					login_count: 25,
 					last_login: "2024-01-01T10:00:00Z",

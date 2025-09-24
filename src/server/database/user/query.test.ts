@@ -32,7 +32,7 @@ describe("database query functions", () => {
 			const { getUsersByType } = await import("./query");
 
 			// These should be valid types
-			const validTypes = ["user", "owner", "admin"] as const;
+			const validTypes = ["user", "owner"] as const;
 
 			// Just test that the function exists and is callable
 			validTypes.forEach((type) => {

@@ -67,23 +67,12 @@ export async function isLocationInFavourites(
 	return await isLocationInUserFavourites(user.id, locationId);
 }
 
-/** Update user type (admin only function) - requires custom implementation */
+
 export async function updateUserType(
 	userId: string,
 	newType: UserType,
 ): Promise<void> {
-	// const currentUserType = await getUserType();
 
-	// if (currentUserType !== "admin") {
-	// 	throw new Error("Only administrators can change user types");
-	// }
-
-	// const event = getRequestEvent();
-	// if (!event) throw new Error("Request event not available");
-
-	// Note: Better Auth doesn't have a built-in updateUser endpoint that works this way
-	// We would need to implement a custom admin API endpoint for this functionality
-	// For now, we'll use direct database update through the adapter
 
 	const conn = await getParkTrackDatabaseConnection();
 
@@ -117,10 +106,6 @@ export async function isUserOwner() {
 	return userType === "owner";
 }
 
-export async function isUserAdmin() {
-	const userType = await getUserType();
-	return userType === "admin";
-}
 
 export async function isUserRegular() {
 	const userType = await getUserType();
@@ -136,16 +121,9 @@ export async function isUserRegular() {
 // }
 
 /** Check if user has permission to perform owner actions */
-export async function canUserPerformOwnerActions(): Promise<boolean> {
-	const userType = await getUserType();
-	return userType === "owner" || userType === "admin";
-}
 
-/** Check if user has permission to perform admin actions */
-export async function canUserPerformAdminActions(): Promise<boolean> {
-	const userType = await getUserType();
-	return userType === "admin";
-}
+
+
 
 /** Ensure user has specific type, otherwise redirect */
 export async function ensureUserType(requiredType: UserType | UserType[]) {
@@ -163,15 +141,9 @@ export async function ensureUserType(requiredType: UserType | UserType[]) {
 	return true;
 }
 
-/** Ensure user is owner or admin */
-export async function ensureUserIsOwnerOrAdmin() {
-	return await ensureUserType(["owner", "admin"]);
-}
 
-/** Ensure user is admin */
-export async function ensureUserIsAdmin() {
-	return await ensureUserType("admin");
-}
+
+
 /**
  * @returns `true` if the user was successfully converted to an owner, `false` otherwise
  */

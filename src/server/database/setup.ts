@@ -200,7 +200,7 @@ export async function createSampleData(): Promise<void> {
 			email: "john@example.com",
 			emailVerified: true,
 			favourites: [],
-			type: "admin",
+			type: "user",
 		},
 		{
 			id: "dev_user_002",
@@ -209,14 +209,6 @@ export async function createSampleData(): Promise<void> {
 			emailVerified: false,
 			favourites: [],
 			type: "owner",
-		},
-		{
-			id: "dev_user_003",
-			name: "Admin User",
-			email: "admin@example.com",
-			emailVerified: true,
-			favourites: [],
-			type: "user",
 		},
 	] as const satisfies Array<{
 		id: string;
