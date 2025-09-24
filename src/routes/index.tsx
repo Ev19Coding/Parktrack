@@ -63,6 +63,7 @@ export default function LoginPage() {
 				name: form.username,
 				email: form.email,
 				password: form.password,
+				//@ts-expect-error thanks to the `additionalFields` option in the auth init function, this is valid
 				type: form.type,
 			});
 
