@@ -187,7 +187,7 @@ describe("Better Auth Schema Integration Tests", () => {
 		});
 
 		it("should validate different user types", () => {
-			const userTypes = ["user", "owner", "admin"] as const;
+			const userTypes = ["user", "owner"] as const;
 
 			userTypes.forEach((type) => {
 				const userData = {

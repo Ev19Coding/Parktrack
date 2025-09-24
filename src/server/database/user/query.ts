@@ -9,6 +9,7 @@ import { tryParseObject } from "~/utils/parse";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATION_LOCATION_TABLE } from "./constants";
+import { UserType } from "../better-auth-schema";
 
 const DEFAULT_MAX_RESULTS = 10;
 
@@ -346,10 +347,10 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 }
 
 /**
- * Get users by type (user, owner, admin)
+ * Get users by type (user, owner)
  */
 export async function getUsersByType(
-	userType: "user" | "owner" | "admin",
+	userType: UserType,
 	maxResults = DEFAULT_MAX_RESULTS,
 ): Promise<
 	ReadonlyArray<{ id: string; name: string; email: string; type: string }>

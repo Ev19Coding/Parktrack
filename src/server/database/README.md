@@ -202,7 +202,6 @@ import type {
 The setup script creates sample users for development:
 - John Developer (john@example.com) - verified
 - Jane Tester (jane@example.com) - unverified
-- Admin User (admin@example.com) - verified
 
 ### Testing Database Operations
 ```typescript

@@ -5,13 +5,13 @@ import SettingsIcon from "lucide-solid/icons/menu";
 import TrashIcon from "lucide-solid/icons/trash-2";
 import { createSignal, onCleanup, Show } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
-import { isUserGuest } from "~/server/user";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
 import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 import { triggerConfirmationModal } from "./modal/confirmation-modal";
+import { Suspense } from "solid-js";
 
 export default function SideBar() {
 	const navigate = useNavigate();
@@ -67,7 +67,7 @@ export default function SideBar() {
 					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 						<li>
 							{(() => {
-								const isGuest = createAsync(() => isUserGuest(), {
+								const isLoggedIn = createAsync(() => isUserLoggedIn(), {
 									initialValue: true,
 								});
 
@@ -77,7 +77,7 @@ export default function SideBar() {
 										onClick={async (_) => {
 											setIsLoading(true);
 
-											if (!isGuest()) {
+											if (isLoggedIn()) {
 												AUTH_CLIENT.signOut({
 													fetchOptions: {
 														onResponse() {
@@ -104,7 +104,10 @@ export default function SideBar() {
 											}
 										}}
 									>
-										<LogOutIcon /> {isGuest() ? "Back to Login" : "Log Out"}
+										<LogOutIcon />{" "}
+										<Suspense>
+											{isLoggedIn.latest ? "Log Out" : "Back to Login"}
+										</Suspense>
 									</button>
 								);
 							})()}
@@ -127,28 +130,32 @@ export default function SideBar() {
 							const isLoggedIn = createAsync(() => isUserLoggedIn());
 
 							return (
-								<Show when={isLoggedIn()}>
-									<li>
-										<button
-											type="button"
-											class="text-error"
-											onClick={(_) =>
-												triggerConfirmationModal(async () => {
-													setIsLoading(true);
+								<Suspense>
+									<Show when={isLoggedIn()}>
+										<li>
+											<button
+												type="button"
+												class="text-error"
+												onClick={(_) =>
+													triggerConfirmationModal(async () => {
+														setIsLoading(true);
 
-													await AUTH_CLIENT.deleteUser();
+														await AUTH_CLIENT.deleteUser();
 
-													navigate("/");
+														navigate("/");
 
-													setIsLoading(false);
-												}, "Account deletion is permanent. Are you sure?")
-											}
-										>
-											<TrashIcon />
-											Delete Account
-										</button>
-									</li>
-								</Show>
+														await revalidateUserLoginData();
+
+														setIsLoading(false);
+													}, "Account deletion is permanent. Are you sure?")
+												}
+											>
+												<TrashIcon />
+												Delete Account
+											</button>
+										</li>
+									</Show>
+								</Suspense>
 							);
 						})()}
 					</ul>

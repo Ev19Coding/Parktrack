@@ -1,14 +1,25 @@
 import { A, useNavigate } from "@solidjs/router";
 import AnonymousIcon from "lucide-solid/icons/hat-glasses";
-import { createSignal, Match, Show, Switch } from "solid-js";
+import { createSelector, createSignal, Match, Show, Switch } from "solid-js";
+import { createStore } from "solid-js/store";
+import * as v from "valibot";
 import { GenericButton } from "~/components/button";
+import { UserType } from "~/server/database/better-auth-schema";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { revalidateUserLoginData } from "~/utils/user-query";
 
 export default function LoginPage() {
-	const [email, setEmail] = createSignal("");
-	const [password, setPassword] = createSignal("");
-	const [username, setUsername] = createSignal("");
+	const [form, setForm] = createStore<{
+		email: string;
+		password: string;
+		username: string;
+		type: UserType;
+	}>({
+		email: "",
+		password: "",
+		username: "",
+		type: "user",
+	});
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
 	const [loginMode, setLoginMode] = createSignal<"sign-up" | "sign-in">(
@@ -24,8 +35,8 @@ export default function LoginPage() {
 
 		try {
 			const result = await AUTH_CLIENT.signIn.email({
-				email: email(),
-				password: password(),
+				email: form.email,
+				password: form.password,
 			});
 
 			if (result.error) {
@@ -49,9 +60,11 @@ export default function LoginPage() {
 
 		try {
 			const result = await AUTH_CLIENT.signUp.email({
-				name: username(),
-				email: email(),
-				password: password(),
+				name: form.username,
+				email: form.email,
+				password: form.password,
+				//@ts-expect-error thanks to the `additionalFields` option in the auth init function, this is valid
+				type: form.type,
 			});
 
 			if (result.error) {
@@ -102,8 +115,8 @@ export default function LoginPage() {
 										type="text"
 										placeholder="Enter your username"
 										class="input"
-										value={username()}
-										onInput={(e) => setUsername(e.currentTarget.value)}
+										value={form.username}
+										onInput={(e) => setForm("username", e.currentTarget.value)}
 										required
 									/>
 								</fieldset>
@@ -118,8 +131,8 @@ export default function LoginPage() {
 									type="email"
 									placeholder="Enter your email"
 									class="input"
-									value={email()}
-									onInput={(e) => setEmail(e.currentTarget.value)}
+									value={form.email}
+									onInput={(e) => setForm("email", e.currentTarget.value)}
 									required
 								/>
 							</fieldset>
@@ -132,8 +145,8 @@ export default function LoginPage() {
 									type="password"
 									placeholder="Enter your password"
 									class="input"
-									value={password()}
-									onInput={(e) => setPassword(e.currentTarget.value)}
+									value={form.password}
+									onInput={(e) => setForm("password", e.currentTarget.value)}
 									required
 								/>
 								<Show when={loginMode() === "sign-in"}>
@@ -144,6 +157,44 @@ export default function LoginPage() {
 									</p>
 								</Show>
 							</fieldset>
+
+							<Show when={loginMode() === "sign-up"}>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">
+										You are... <span class="text-error">*</span>
+									</legend>
+
+									<select
+										class="select"
+										value={form.type}
+										onInput={({ target: { value } }) =>
+											setForm("type", v.parse(UserType, value))
+										}
+										required
+									>
+										{(() => {
+											const isOptionSelected = createSelector(() => form.type);
+
+											return (
+												<>
+													<option
+														value="user"
+														selected={isOptionSelected("user")}
+													>
+														a regular user looking for venues.
+													</option>
+													<option
+														value="owner"
+														selected={isOptionSelected("owner")}
+													>
+														an owner managing their listings.
+													</option>
+												</>
+											);
+										})()}
+									</select>
+								</fieldset>
+							</Show>
 
 							<Show when={error()}>
 								<div class="alert alert-error">
@@ -207,6 +258,8 @@ export default function LoginPage() {
 									type="button"
 									class="btn btn-accent"
 									onClick={async () => {
+										await AUTH_CLIENT.signOut();
+
 										await revalidateUserLoginData();
 
 										navigate("/user");

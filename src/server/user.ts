@@ -8,6 +8,7 @@ import {
 	isLocationInUserFavourites,
 	removeLocationFromUserFavourites,
 } from "./database/user/query";
+import { getParkTrackDatabaseConnection } from "./database/util";
 
 async function getSession() {
 	const event = getRequestEvent();
@@ -66,24 +67,10 @@ export async function isLocationInFavourites(
 	return await isLocationInUserFavourites(user.id, locationId);
 }
 
-/** Update user type (admin only function) - requires custom implementation */
 export async function updateUserType(
 	userId: string,
 	newType: UserType,
 ): Promise<void> {
-	const currentUserType = await getUserType();
-	if (currentUserType !== "admin") {
-		throw new Error("Only administrators can change user types");
-	}
-
-	const event = getRequestEvent();
-	if (!event) throw new Error("Request event not available");
-
-	// Note: Better Auth doesn't have a built-in updateUser endpoint that works this way
-	// We would need to implement a custom admin API endpoint for this functionality
-	// For now, we'll use direct database update through the adapter
-
-	const { getParkTrackDatabaseConnection } = await import("./database/util");
 	const conn = await getParkTrackDatabaseConnection();
 
 	await conn.streamAndReadAll(`
@@ -95,7 +82,7 @@ export async function updateUserType(
 
 /** Get current user information */
 export async function getCurrentUserInfo(): Promise<User | null> {
-	return await getCurrentUser();
+	return getCurrentUser();
 }
 
 /** Check if current user is logged in */
@@ -116,35 +103,20 @@ export async function isUserOwner() {
 	return userType === "owner";
 }
 
-export async function isUserAdmin() {
-	const userType = await getUserType();
-	return userType === "admin";
-}
-
 export async function isUserRegular() {
 	const userType = await getUserType();
 	return userType === "user";
 }
 
-export async function isUserGuest() {
-	const session = await getSession();
+// export async function isUserGuest() {
+// 	const session = await getSession();
 
-	if (session) return false;
+// 	if (session) return false;
 
-	return true;
-}
+// 	return true;
+// }
 
 /** Check if user has permission to perform owner actions */
-export async function canUserPerformOwnerActions(): Promise<boolean> {
-	const userType = await getUserType();
-	return userType === "owner" || userType === "admin";
-}
-
-/** Check if user has permission to perform admin actions */
-export async function canUserPerformAdminActions(): Promise<boolean> {
-	const userType = await getUserType();
-	return userType === "admin";
-}
 
 /** Ensure user has specific type, otherwise redirect */
 export async function ensureUserType(requiredType: UserType | UserType[]) {
@@ -162,12 +134,28 @@ export async function ensureUserType(requiredType: UserType | UserType[]) {
 	return true;
 }
 
-/** Ensure user is owner or admin */
-export async function ensureUserIsOwnerOrAdmin() {
-	return await ensureUserType(["owner", "admin"]);
+/**
+ * @returns `true` if the user was successfully converted to an owner, `false` otherwise
+ */
+export async function convertUserToOwner(): Promise<boolean> {
+	const userInfo = await getCurrentUserInfo();
+
+	if (!userInfo) return false;
+
+	await updateUserType(userInfo.id, "owner");
+
+	return true;
 }
 
-/** Ensure user is admin */
-export async function ensureUserIsAdmin() {
-	return await ensureUserType("admin");
+/**
+ * @returns `true` if the owner was successfully converted to a user, `false` otherwise
+ */
+export async function convertOwnerToUser(): Promise<boolean> {
+	const ownerInfo = await getCurrentUserInfo();
+
+	if (!ownerInfo) return false;
+
+	await updateUserType(ownerInfo.id, "user");
+
+	return true;
 }
