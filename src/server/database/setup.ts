@@ -1,3 +1,4 @@
+import type { UserType } from "./better-auth-schema.js";
 import {
 	checkTablesExist,
 	getMigrationStatus,
@@ -198,30 +199,45 @@ export async function createSampleData(): Promise<void> {
 			name: "John Developer",
 			email: "john@example.com",
 			emailVerified: true,
+			favourites: [],
+			type: "admin",
 		},
 		{
 			id: "dev_user_002",
 			name: "Jane Tester",
 			email: "jane@example.com",
 			emailVerified: false,
+			favourites: [],
+			type: "owner",
 		},
 		{
 			id: "dev_user_003",
 			name: "Admin User",
 			email: "admin@example.com",
 			emailVerified: true,
+			favourites: [],
+			type: "user",
 		},
-	];
+	] as const satisfies Array<{
+		id: string;
+		name: string;
+		email: string;
+		emailVerified: boolean;
+		type?: UserType;
+		favourites: Array<string>;
+	}>;
 
 	console.log("Creating sample users...");
 	for (const user of sampleUsers) {
 		await connection.streamAndReadAll(`
-			INSERT INTO "user" (id, name, email, emailVerified, createdAt, updatedAt)
+			INSERT INTO "user" (id, name, email, emailVerified, favourites, type, createdAt, updatedAt)
 			VALUES (
 				'${user.id}',
 				'${user.name}',
 				'${user.email}',
 				${user.emailVerified},
+				'${user.favourites}',
+				'${(user).type ?? "user"}',
 				CURRENT_TIMESTAMP,
 				CURRENT_TIMESTAMP
 			)

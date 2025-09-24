@@ -5,6 +5,10 @@ const AUTH = betterAuth({
 	database: motherDuckAdapter(),
 	emailAndPassword: { enabled: true },
 	user: {
+		additionalFields: {
+			type: { type: "string", defaultValue: "user" },
+			favourites: { type: "string[]", defaultValue: [] },
+		},
 		deleteUser: {
 			enabled: true,
 		},

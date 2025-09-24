@@ -1,16 +1,24 @@
 import { A, useNavigate } from "@solidjs/router";
 import AnonymousIcon from "lucide-solid/icons/hat-glasses";
-import { createSignal, Match, Show, Switch } from "solid-js";
+import { createSelector, createSignal, Match, Show, Switch } from "solid-js";
 import { createStore } from "solid-js/store";
+import * as v from "valibot";
 import { GenericButton } from "~/components/button";
+import { UserType } from "~/server/database/better-auth-schema";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { revalidateUserLoginData } from "~/utils/user-query";
 
 export default function LoginPage() {
-	const [form, setForm] = createStore({
+	const [form, setForm] = createStore<{
+		email: string;
+		password: string;
+		username: string;
+		type: UserType;
+	}>({
 		email: "",
 		password: "",
 		username: "",
+		type: "user",
 	});
 	const [isLoading, setIsLoading] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
@@ -55,6 +63,7 @@ export default function LoginPage() {
 				name: form.username,
 				email: form.email,
 				password: form.password,
+				type: form.type,
 			});
 
 			if (result.error) {
@@ -147,6 +156,50 @@ export default function LoginPage() {
 									</p>
 								</Show>
 							</fieldset>
+
+							<Show when={loginMode() === "sign-up"}>
+								<fieldset class="fieldset">
+									<legend class="fieldset-legend">
+										You are... <span class="text-error">*</span>
+									</legend>
+
+									<select
+										class="select"
+										value={form.type}
+										onInput={({ target: { value } }) =>
+											setForm("type", v.parse(UserType, value))
+										}
+										required
+									>
+										{(() => {
+											const isOptionSelected = createSelector(() => form.type);
+
+											return (
+												<>
+													<option
+														value="user"
+														selected={isOptionSelected("user")}
+													>
+														a regular user looking for venues.
+													</option>
+													<option
+														value="owner"
+														selected={isOptionSelected("owner")}
+													>
+														an owner managing their listings.
+													</option>
+													<option
+														value="admin"
+														selected={isOptionSelected("admin")}
+													>
+														an admin overseeing the system.
+													</option>
+												</>
+											);
+										})()}
+									</select>
+								</fieldset>
+							</Show>
 
 							<Show when={error()}>
 								<div class="alert alert-error">
