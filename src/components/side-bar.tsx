@@ -113,7 +113,13 @@ export default function SideBar() {
 						</li>
 
 						<li>
-							<A href="/user">
+							<A
+								href="/user"
+								onClick={(_) => {
+									// Close the side bar
+									drawerToggle$.click();
+								}}
+							>
 								<HomePageIcon /> Homepage
 							</A>
 						</li>
