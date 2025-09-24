@@ -87,12 +87,6 @@ export async function updateUserType(
 
 	const conn = await getParkTrackDatabaseConnection();
 
-	console.log(`
-		UPDATE "user"
-		SET type = '${newType}'
-		WHERE id = '${userId}'
-	`)
-
 	await conn.streamAndReadAll(`
 		UPDATE "user"
 		SET type = '${newType}'
