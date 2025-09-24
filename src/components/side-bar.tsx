@@ -104,7 +104,10 @@ export default function SideBar() {
 											}
 										}}
 									>
-										<LogOutIcon /> <Suspense>{isLoggedIn.latest ? "Log Out" : "Back to Login"}</Suspense>
+										<LogOutIcon />{" "}
+										<Suspense>
+											{isLoggedIn.latest ? "Log Out" : "Back to Login"}
+										</Suspense>
 									</button>
 								);
 							})()}
@@ -127,30 +130,32 @@ export default function SideBar() {
 							const isLoggedIn = createAsync(() => isUserLoggedIn());
 
 							return (
-								<Suspense><Show when={isLoggedIn()}>
-									<li>
-										<button
-											type="button"
-											class="text-error"
-											onClick={(_) =>
-												triggerConfirmationModal(async () => {
-													setIsLoading(true);
+								<Suspense>
+									<Show when={isLoggedIn()}>
+										<li>
+											<button
+												type="button"
+												class="text-error"
+												onClick={(_) =>
+													triggerConfirmationModal(async () => {
+														setIsLoading(true);
 
-													await AUTH_CLIENT.deleteUser();
+														await AUTH_CLIENT.deleteUser();
 
-													navigate("/");
+														navigate("/");
 
-													await revalidateUserLoginData();
+														await revalidateUserLoginData();
 
-													setIsLoading(false);
-												}, "Account deletion is permanent. Are you sure?")
-											}
-										>
-											<TrashIcon />
-											Delete Account
-										</button>
-									</li>
-								</Show></Suspense>
+														setIsLoading(false);
+													}, "Account deletion is permanent. Are you sure?")
+												}
+											>
+												<TrashIcon />
+												Delete Account
+											</button>
+										</li>
+									</Show>
+								</Suspense>
 							);
 						})()}
 					</ul>

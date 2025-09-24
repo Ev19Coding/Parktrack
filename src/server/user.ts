@@ -67,13 +67,10 @@ export async function isLocationInFavourites(
 	return await isLocationInUserFavourites(user.id, locationId);
 }
 
-
 export async function updateUserType(
 	userId: string,
 	newType: UserType,
 ): Promise<void> {
-
-
 	const conn = await getParkTrackDatabaseConnection();
 
 	await conn.streamAndReadAll(`
@@ -106,7 +103,6 @@ export async function isUserOwner() {
 	return userType === "owner";
 }
 
-
 export async function isUserRegular() {
 	const userType = await getUserType();
 	return userType === "user";
@@ -121,9 +117,6 @@ export async function isUserRegular() {
 // }
 
 /** Check if user has permission to perform owner actions */
-
-
-
 
 /** Ensure user has specific type, otherwise redirect */
 export async function ensureUserType(requiredType: UserType | UserType[]) {
@@ -141,31 +134,28 @@ export async function ensureUserType(requiredType: UserType | UserType[]) {
 	return true;
 }
 
-
-
-
 /**
  * @returns `true` if the user was successfully converted to an owner, `false` otherwise
  */
-export async function convertUserToOwner():Promise<boolean>{
-  const userInfo = await getCurrentUserInfo()
+export async function convertUserToOwner(): Promise<boolean> {
+	const userInfo = await getCurrentUserInfo();
 
-  if (!userInfo) return false
+	if (!userInfo) return false;
 
-  await updateUserType(userInfo.id, "owner")
+	await updateUserType(userInfo.id, "owner");
 
-  return true
+	return true;
 }
 
 /**
  * @returns `true` if the owner was successfully converted to a user, `false` otherwise
  */
-export async function convertOwnerToUser():Promise<boolean>{
-  const ownerInfo = await getCurrentUserInfo()
+export async function convertOwnerToUser(): Promise<boolean> {
+	const ownerInfo = await getCurrentUserInfo();
 
-  if (!ownerInfo) return false
+	if (!ownerInfo) return false;
 
-  await updateUserType(ownerInfo.id, "user")
+	await updateUserType(ownerInfo.id, "user");
 
-  return true
+	return true;
 }
