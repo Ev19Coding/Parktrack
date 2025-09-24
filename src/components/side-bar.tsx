@@ -3,7 +3,7 @@ import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
 import TrashIcon from "lucide-solid/icons/trash-2";
-import { createSignal, onCleanup, Show } from "solid-js";
+import { createSignal, onCleanup, Show, Suspense } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
@@ -11,7 +11,6 @@ import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 import { triggerConfirmationModal } from "./modal/confirmation-modal";
-import { Suspense } from "solid-js";
 
 export default function SideBar() {
 	const navigate = useNavigate();
