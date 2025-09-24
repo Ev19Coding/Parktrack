@@ -11,6 +11,7 @@ import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 import { triggerConfirmationModal } from "./modal/confirmation-modal";
+import { Suspense } from "solid-js";
 
 export default function SideBar() {
 	const navigate = useNavigate();
@@ -103,7 +104,7 @@ export default function SideBar() {
 											}
 										}}
 									>
-										<LogOutIcon /> {isLoggedIn() ? "Log Out" : "Back to Login"}
+										<LogOutIcon /> <Suspense>{isLoggedIn.latest ? "Log Out" : "Back to Login"}</Suspense>
 									</button>
 								);
 							})()}
@@ -126,7 +127,7 @@ export default function SideBar() {
 							const isLoggedIn = createAsync(() => isUserLoggedIn());
 
 							return (
-								<Show when={isLoggedIn()}>
+								<Suspense><Show when={isLoggedIn()}>
 									<li>
 										<button
 											type="button"
@@ -149,7 +150,7 @@ export default function SideBar() {
 											Delete Account
 										</button>
 									</li>
-								</Show>
+								</Show></Suspense>
 							);
 						})()}
 					</ul>
