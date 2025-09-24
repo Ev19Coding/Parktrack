@@ -24,7 +24,4 @@ SET type = COALESCE(type, 'user')
 WHERE
   type IS NULL;
 
--- Optional index to speed up queries that filter by role
-CREATE INDEX IF NOT EXISTS idx_user_type ON "user" (type);
-
 COMMIT;
