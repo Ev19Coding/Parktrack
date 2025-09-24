@@ -8,6 +8,7 @@ import {
 	isLocationInUserFavourites,
 	removeLocationFromUserFavourites,
 } from "./database/user/query";
+import { getParkTrackDatabaseConnection } from "./database/util";
 
 async function getSession() {
 	const event = getRequestEvent();
@@ -71,20 +72,26 @@ export async function updateUserType(
 	userId: string,
 	newType: UserType,
 ): Promise<void> {
-	const currentUserType = await getUserType();
-	if (currentUserType !== "admin") {
-		throw new Error("Only administrators can change user types");
-	}
+	// const currentUserType = await getUserType();
 
-	const event = getRequestEvent();
-	if (!event) throw new Error("Request event not available");
+	// if (currentUserType !== "admin") {
+	// 	throw new Error("Only administrators can change user types");
+	// }
+
+	// const event = getRequestEvent();
+	// if (!event) throw new Error("Request event not available");
 
 	// Note: Better Auth doesn't have a built-in updateUser endpoint that works this way
 	// We would need to implement a custom admin API endpoint for this functionality
 	// For now, we'll use direct database update through the adapter
 
-	const { getParkTrackDatabaseConnection } = await import("./database/util");
 	const conn = await getParkTrackDatabaseConnection();
+
+	console.log(`
+		UPDATE "user"
+		SET type = '${newType}'
+		WHERE id = '${userId}'
+	`)
 
 	await conn.streamAndReadAll(`
 		UPDATE "user"
@@ -95,7 +102,7 @@ export async function updateUserType(
 
 /** Get current user information */
 export async function getCurrentUserInfo(): Promise<User | null> {
-	return await getCurrentUser();
+	return getCurrentUser();
 }
 
 /** Check if current user is logged in */
@@ -170,4 +177,29 @@ export async function ensureUserIsOwnerOrAdmin() {
 /** Ensure user is admin */
 export async function ensureUserIsAdmin() {
 	return await ensureUserType("admin");
+}
+/**
+ * @returns `true` if the user was successfully converted to an owner, `false` otherwise
+ */
+export async function convertUserToOwner():Promise<boolean>{
+  const userInfo = await getCurrentUserInfo()
+
+  if (!userInfo) return false
+
+  await updateUserType(userInfo.id, "owner")
+
+  return true
+}
+
+/**
+ * @returns `true` if the owner was successfully converted to a user, `false` otherwise
+ */
+export async function convertOwnerToUser():Promise<boolean>{
+  const ownerInfo = await getCurrentUserInfo()
+
+  if (!ownerInfo) return false
+
+  await updateUserType(ownerInfo.id, "user")
+
+  return true
 }
