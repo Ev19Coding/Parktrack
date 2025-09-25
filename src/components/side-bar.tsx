@@ -19,6 +19,10 @@ export default function SideBar() {
 
 	const [isLoading, setIsLoading] = createSignal(false);
 
+	const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+		initialValue: false,
+	});
+
 	const drawerId = generateRandomUUID();
 
 	let drawerToggle$!: HTMLInputElement;
@@ -66,68 +70,54 @@ export default function SideBar() {
 
 					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
 						<li>
-							{(() => {
-								const isLoggedIn = createAsync(() => isUserLoggedIn(), {
-									initialValue: true,
-								});
+							<button
+								type="button"
+								onClick={async (_) => {
+									setIsLoading(true);
 
-								return (
-									<button
-										type="button"
-										onClick={async (_) => {
-											setIsLoading(true);
+									if (isLoggedIn()) {
+										AUTH_CLIENT.signOut({
+											fetchOptions: {
+												onResponse() {
+													setIsLoading(false);
+												},
+												onSuccess() {
+													revalidateUserLoginData().then(() => {
+														// Move to the log out page
+														navigate("/");
 
-											if (isLoggedIn()) {
-												AUTH_CLIENT.signOut({
-													fetchOptions: {
-														onResponse() {
-															setIsLoading(false);
-														},
-														onSuccess() {
-															revalidateUserLoginData().then(() => {
-																// Move to the log out page
-																navigate("/");
+														// Close the side bar
+														drawerToggle$.click();
+													});
+												},
+											},
+										});
+									} else {
+										await revalidateUserLoginData();
 
-																// Close the side bar
-																drawerToggle$.click();
-															});
-														},
-													},
-												});
-											} else {
-												await revalidateUserLoginData();
+										// Move to the log out page
+										navigate("/");
 
-												// Move to the log out page
-												navigate("/");
-
-												setIsLoading(false);
-											}
-										}}
-									>
-										<LogOutIcon />{" "}
-										<Suspense>
-											{isLoggedIn.latest ? "Log Out" : "Back to Login"}
-										</Suspense>
-									</button>
-								);
-							})()}
+										setIsLoading(false);
+									}
+								}}
+							>
+								<LogOutIcon />
+								<Suspense>
+									{isLoggedIn.latest ? "Log Out" : "Back to Login"}
+								</Suspense>
+							</button>
 						</li>
 
-						{(() => {
-							const isLoggedIn = createAsync(() => isUserLoggedIn());
-
-							return (
-								<Suspense>
-									<Show when={isLoggedIn()}>
-										<li>
-											<A href="#">
-												<StarIcon /> Favourites
-											</A>
-										</li>
-									</Show>
-								</Suspense>
-							);
-						})()}
+						<Suspense>
+							<Show when={isLoggedIn()}>
+								<li>
+									<A href="#">
+										<StarIcon /> Favourites
+									</A>
+								</li>
+							</Show>
+						</Suspense>
 
 						<li>
 							<A
@@ -148,38 +138,32 @@ export default function SideBar() {
 							</button>
 						</li>
 
-						{(() => {
-							const isLoggedIn = createAsync(() => isUserLoggedIn());
+						<Suspense>
+							<Show when={isLoggedIn()}>
+								<li>
+									<button
+										type="button"
+										class="text-error"
+										onClick={(_) =>
+											triggerConfirmationModal(async () => {
+												setIsLoading(true);
 
-							return (
-								<Suspense>
-									<Show when={isLoggedIn()}>
-										<li>
-											<button
-												type="button"
-												class="text-error"
-												onClick={(_) =>
-													triggerConfirmationModal(async () => {
-														setIsLoading(true);
+												await AUTH_CLIENT.deleteUser();
 
-														await AUTH_CLIENT.deleteUser();
+												navigate("/");
 
-														navigate("/");
+												await revalidateUserLoginData();
 
-														await revalidateUserLoginData();
-
-														setIsLoading(false);
-													}, "Account deletion is permanent. Are you sure?")
-												}
-											>
-												<TrashIcon />
-												Delete Account
-											</button>
-										</li>
-									</Show>
-								</Suspense>
-							);
-						})()}
+												setIsLoading(false);
+											}, "Account deletion is permanent. Are you sure?")
+										}
+									>
+										<TrashIcon />
+										Delete Account
+									</button>
+								</li>
+							</Show>
+						</Suspense>
 					</ul>
 				</div>
 			</div>
