@@ -1,1 +1,1 @@
-export const USER_RECREATION_LOCATION_TABLE = "user_recreational_locations";
+export const USER_RECREATIONAL_LOCATION_TABLE = "user_recreational_locations";

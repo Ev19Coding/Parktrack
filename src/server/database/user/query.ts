@@ -11,7 +11,7 @@ import { tryParseObject } from "~/utils/parse";
 import type { UserType } from "../better-auth-schema";
 import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
-import { USER_RECREATION_LOCATION_TABLE } from "./constants";
+import { USER_RECREATIONAL_LOCATION_TABLE } from "./constants";
 
 const DEFAULT_MAX_RESULTS = 10;
 
@@ -95,7 +95,7 @@ async function getAllRecreationalLocations() {
 				await getParkTrackDatabaseConnection()
 			).streamAndReadAll(`
          SELECT id, title, thumbnail, category, address
-         FROM ${USER_RECREATION_LOCATION_TABLE}
+         FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          `)
 		)
 			.getRowObjects()
@@ -177,7 +177,7 @@ export async function getRecreationalLocationFromDatabaseById(
 			await getParkTrackDatabaseConnection()
 		).streamAndReadAll(`
          SELECT *
-         FROM ${USER_RECREATION_LOCATION_TABLE}
+         FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          WHERE id = ${id}
          `)
 	)
@@ -254,7 +254,7 @@ export async function getRecreationalLocationsFromDatabaseAtRandom(
 			await getParkTrackDatabaseConnection()
 		).streamAndReadAll(`
           SELECT id, title, thumbnail
-          FROM ${USER_RECREATION_LOCATION_TABLE}
+          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
           WHERE category LIKE '%${category}%'
           ORDER BY RANDOM()
           LIMIT ${maxResults}
@@ -309,7 +309,7 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 	const fetchedLocations = (
 		await connection.streamAndReadAll(`
 			SELECT id, title, thumbnail, latitude, longitude
-			FROM ${USER_RECREATION_LOCATION_TABLE}
+			FROM ${USER_RECREATIONAL_LOCATION_TABLE}
 			WHERE ST_DWithin_Spheroid(
 				ST_Point2D(latitude, longitude),
 				ST_Point2D(${lat}, ${long}),
@@ -419,7 +419,7 @@ export async function getUserFavouriteLocations(
 	const fetchedLocations = (
 		await connection.streamAndReadAll(`
           SELECT id, title, thumbnail
-          FROM ${USER_RECREATION_LOCATION_TABLE}
+          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
           WHERE id IN (${favouriteIds.map((id) => `'${id}'`).join(", ")})
           `)
 	)
@@ -589,7 +589,7 @@ export async function getLocationsByOwner(
 			await getParkTrackDatabaseConnection()
 		).streamAndReadAll(`
           SELECT id, title, thumbnail
-          FROM ${USER_RECREATION_LOCATION_TABLE}
+          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
           WHERE owner->>'id' = '${ownerId}'
           LIMIT ${maxResults}
           `)
