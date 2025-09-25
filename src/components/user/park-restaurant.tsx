@@ -14,6 +14,7 @@ import { getProxiedImageUrl } from "~/utils/image";
 import { getRandomElementInArray } from "~/utils/random";
 import { queryRecreationalLocationCategories } from "~/utils/user-query";
 import LoadingSpinner from "../loading-spinner";
+import { RecreationalLocationDisplayButtonCard } from "../location-display-button-card";
 
 function DataSection(prop: {
 	data: PromiseValue<
@@ -35,11 +36,8 @@ function DataSection(prop: {
 		setIsLoadingRecreationalLocationInfo,
 	] = createSignal(false);
 
-	const buttonStyle =
-		"relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44";
-
 	function SkeletonLoaderFallback() {
-		return <div class={`${buttonStyle} skeleton`}></div>;
+		return <RecreationalLocationDisplayButtonCard isSkeleton={true} />;
 	}
 
 	return (
@@ -60,9 +58,7 @@ function DataSection(prop: {
 						>
 							<Index each={prop.data}>
 								{(baseLocationData) => (
-									<button
-										type="button"
-										class={buttonStyle}
+									<RecreationalLocationDisplayButtonCard
 										onClick={async () => {
 											setIsLoadingRecreationalLocationInfo(true);
 
@@ -78,17 +74,9 @@ function DataSection(prop: {
 
 											setIsLoadingRecreationalLocationInfo(false);
 										}}
-									>
-										<img
-											src={getProxiedImageUrl(baseLocationData().thumbnail)}
-											alt={baseLocationData().title}
-											class="size-full object-cover brightness-90 transition-all hover:scale-105 hover:brightness-105"
-										/>
-
-										<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
-											{baseLocationData().title}
-										</div>
-									</button>
+										thumbnail={getProxiedImageUrl(baseLocationData().thumbnail)}
+										title={baseLocationData().title}
+									/>
 								)}
 							</Index>
 						</Suspense>

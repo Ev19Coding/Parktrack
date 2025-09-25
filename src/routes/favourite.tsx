@@ -9,6 +9,7 @@ import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
 import { createSignal, Index, Show, Suspense } from "solid-js";
 import { BackNavigationButton } from "~/components/button";
 import LoadingSpinner from "~/components/loading-spinner";
+import { RecreationalLocationDisplayButtonCard } from "~/components/location-display-button-card";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
@@ -133,24 +134,13 @@ export default function FavouritePage() {
 										<Index each={favouriteLocations()}>
 											{(loc) => (
 												<div class={buttonStyle}>
-													<button
-														type="button"
-														class="size-full"
+													<RecreationalLocationDisplayButtonCard
 														onClick={async () => {
 															await handleOpenInfo(loc().id);
 														}}
-													>
-														<img
-															src={getProxiedImageUrl(loc().thumbnail)}
-															alt={loc().title}
-															class="size-full object-cover brightness-90 transition-all hover:scale-105 hover:brightness-105"
-														/>
-
-														{/* Title overlay */}
-														<div class="absolute top-2 left-2 w-9/10 truncate break-all font-semibold text-shadow-neutral text-shadow-xs">
-															{loc().title}
-														</div>
-													</button>
+														thumbnail={getProxiedImageUrl(loc().thumbnail)}
+														title={loc().title}
+													/>
 
 													{/* Remove favourite button */}
 													<button
