@@ -411,7 +411,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				SELECT * FROM ${testTablePrefix}user WHERE id = '${testUser.id}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const row = rows[0];
@@ -479,7 +479,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				WHERE s.id = '${sessionId}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const sessionRow = rows[0];
@@ -542,7 +542,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				SELECT * FROM ${testTablePrefix}account WHERE id = '${accountId}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const row = rows[0];
@@ -591,7 +591,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				SELECT * FROM ${testTablePrefix}verification WHERE identifier = '${identifier}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const row = rows[0];
@@ -652,7 +652,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				SELECT * FROM ${testTablePrefix}user WHERE id = '${specialUser.id}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const row = rows[0];
@@ -687,7 +687,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				SELECT * FROM ${testTablePrefix}user WHERE id = '${unicodeUser.id}'
 			`);
 
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 			expect(rows).toHaveLength(1);
 
 			const row = rows[0];

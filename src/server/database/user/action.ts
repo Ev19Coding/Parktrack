@@ -133,7 +133,7 @@ export async function createUserRecreationalLocationTableEntry(
 	const connection = await getParkTrackDatabaseConnection();
 
 	const result = await connection.streamAndReadAll(sql);
-	const rows = result.getRowObjects();
+	const rows = result.getRowObjectsJS();
 
 	const returnedId = rows?.[0]?.["id"];
 	if (returnedId == null) {

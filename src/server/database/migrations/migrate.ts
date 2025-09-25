@@ -103,7 +103,7 @@ export async function getAppliedMigrations(): Promise<MigrationRecord[]> {
 		ORDER BY id ASC
 	`);
 
-	return result.getRowObjects().map((row) => ({
+	return result.getRowObjectsJS().map((row) => ({
 		id: row["id"] as string,
 		name: row["name"] as string,
 		appliedAt: new Date(row["appliedAt"] as string),

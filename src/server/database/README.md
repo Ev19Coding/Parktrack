@@ -158,7 +158,7 @@ const connection = await getParkTrackDatabaseConnection();
 
 // Execute query
 const result = await connection.streamAndReadAll('SELECT * FROM "user"');
-const users = result.getRowObjects();
+const users = result.getRowObjectsJS();
 ```
 
 ### DuckDB Considerations

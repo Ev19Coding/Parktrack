@@ -185,7 +185,7 @@ export async function createSampleData(): Promise<void> {
 		SELECT COUNT(*) as count FROM "user" WHERE email LIKE '%@example.com'
 	`);
 
-	const userCount = existingUsers.getRowObjects()[0]?.["count"] as number;
+	const userCount = existingUsers.getRowObjectsJS()[0]?.["count"] as number;
 
 	if (userCount > 0) {
 		console.log("✅ Sample data already exists (found test users)");

@@ -127,7 +127,7 @@ export const motherDuckAdapter = (
 					const query = `INSERT INTO ${model} (${columns}) VALUES (${values}) RETURNING *`;
 
 					const result = await conn.streamAndReadAll(query);
-					const rows = result.getRowObjects();
+					const rows = result.getRowObjectsJS();
 
 					return (rows[0] as any) || data;
 				},
@@ -142,7 +142,7 @@ export const motherDuckAdapter = (
 					const query = `UPDATE ${model} SET ${setClause} ${whereClause} RETURNING *`;
 
 					const result = await conn.streamAndReadAll(query);
-					const rows = result.getRowObjects();
+					const rows = result.getRowObjectsJS();
 
 					return rows[0] as any;
 				},
@@ -159,7 +159,7 @@ export const motherDuckAdapter = (
 
 					const countQuery = `SELECT COUNT(*) as count FROM ${model} ${whereClause}`;
 					const countResult = await conn.streamAndReadAll(countQuery);
-					const countRows = countResult.getRowObjects();
+					const countRows = countResult.getRowObjectsJS();
 
 					const query = `UPDATE ${model} SET ${setClause} ${whereClause}`;
 					await conn.streamAndReadAll(query);
@@ -185,7 +185,7 @@ export const motherDuckAdapter = (
 
 					const countQuery = `SELECT COUNT(*) as count FROM ${model} ${whereClause}`;
 					const countResult = await conn.streamAndReadAll(countQuery);
-					const countRows = countResult.getRowObjects();
+					const countRows = countResult.getRowObjectsJS();
 
 					const query = `DELETE FROM ${model} ${whereClause}`;
 					await conn.streamAndReadAll(query);
@@ -204,7 +204,7 @@ export const motherDuckAdapter = (
 					const query = `SELECT ${selectClause} FROM ${model} ${whereClause} LIMIT 1`;
 
 					const result = await conn.streamAndReadAll(query);
-					const rows = result.getRowObjects();
+					const rows = result.getRowObjectsJS();
 
 					return (rows[0] as any) || null;
 				},
@@ -229,7 +229,7 @@ export const motherDuckAdapter = (
 						`SELECT * FROM ${model} ${whereClause} ${orderByClause} ${limitClause} ${offsetClause}`.trim();
 
 					const result = await conn.streamAndReadAll(query);
-					return result.getRowObjects() as any;
+					return result.getRowObjectsJS() as any;
 				},
 
 				count: async ({ model, where = [] }) => {
@@ -241,7 +241,7 @@ export const motherDuckAdapter = (
 					const query = `SELECT COUNT(*) as count FROM ${model} ${whereClause}`;
 
 					const result = await conn.streamAndReadAll(query);
-					const rows = result.getRowObjects();
+					const rows = result.getRowObjectsJS();
 
 					return Number(rows[0]?.["count"]) || 0;
 				},

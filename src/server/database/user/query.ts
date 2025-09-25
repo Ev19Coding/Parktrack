@@ -98,7 +98,7 @@ async function getAllRecreationalLocations() {
          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          `)
 		)
-			.getRowObjects()
+			.getRowObjectsJS()
 			.map((rowObjectData) => {
 				try {
 					// Validate the data
@@ -181,7 +181,7 @@ export async function getRecreationalLocationFromDatabaseById(
          WHERE id = ${id}
          `)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			try {
 				// Validate the data
@@ -260,7 +260,7 @@ export async function getRecreationalLocationsFromDatabaseAtRandom(
           LIMIT ${maxResults}
           `)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			try {
 				// Validate the data
@@ -322,7 +322,7 @@ export async function getRecreationalLocationsCloseToCoords(arg: {
 			LIMIT ${maxResults};
 		`)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			try {
 				// Validate the data
@@ -367,7 +367,7 @@ export async function getUsersByType(
           LIMIT ${maxResults}
           `)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			return {
 				id: String(rowObjectData["id"]),
@@ -395,7 +395,7 @@ export async function getUserFavouriteLocations(
 		WHERE id = '${userId}'
 	`);
 
-	const userRows = userResult.getRowObjects();
+	const userRows = userResult.getRowObjectsJS();
 	if (!userRows.length) return [];
 
 	const favouritesData = userRows[0]?.["favourites"];
@@ -423,7 +423,7 @@ export async function getUserFavouriteLocations(
           WHERE id IN (${favouriteIds.map((id) => `'${id}'`).join(", ")})
           `)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			try {
 				const validatedData = v.parse(
@@ -464,7 +464,7 @@ export async function addLocationToUserFavourites(
 		WHERE id = '${userId}'
 	`);
 
-	const userRows = userResult.getRowObjects();
+	const userRows = userResult.getRowObjectsJS();
 	if (!userRows.length) return false;
 
 	const favouritesData = userRows[0]?.["favourites"];
@@ -512,7 +512,7 @@ export async function removeLocationFromUserFavourites(
 		WHERE id = '${userId}'
 	`);
 
-	const userRows = userResult.getRowObjects();
+	const userRows = userResult.getRowObjectsJS();
 	if (!userRows.length) return false;
 
 	const favouritesData = userRows[0]?.["favourites"];
@@ -559,7 +559,7 @@ export async function isLocationInUserFavourites(
 		WHERE id = '${userId}'
 	`);
 
-	const userRows = userResult.getRowObjects();
+	const userRows = userResult.getRowObjectsJS();
 	if (!userRows.length) return false;
 
 	const favouritesData = userRows[0]?.["favourites"];
@@ -594,7 +594,7 @@ export async function getLocationsByOwner(
           LIMIT ${maxResults}
           `)
 	)
-		.getRowObjects()
+		.getRowObjectsJS()
 		.map((rowObjectData) => {
 			try {
 				const validatedData = v.parse(

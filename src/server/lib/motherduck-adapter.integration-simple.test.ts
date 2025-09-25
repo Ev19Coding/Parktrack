@@ -1,6 +1,6 @@
+import type { DuckDBConnection } from "@duckdb/node-api";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getParkTrackDatabaseConnection } from "../database/util.js";
-import type { DuckDBConnection } from "@duckdb/node-api";
 
 interface TestRecord {
 	id: string;
@@ -110,7 +110,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const query = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(query);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -135,7 +135,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const query = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(query);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -155,7 +155,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const query = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(query);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -165,7 +165,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const tableCheck = await connection.streamAndReadAll(
 				`SELECT COUNT(*) as count FROM ${testTable}`,
 			);
-			const countRows = tableCheck.getRowObjects();
+			const countRows = tableCheck.getRowObjectsJS();
 			expect(Number(countRows[0]?.["count"])).toBeGreaterThan(0);
 		});
 	});
@@ -201,7 +201,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 
 			const updateQuery = `UPDATE ${testTable} SET ${setClause} ${whereClause} RETURNING *`;
 			const result = await connection.streamAndReadAll(updateQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const updated = rows[0] as Record<string, unknown>;
@@ -233,7 +233,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 
 			const updateQuery = `UPDATE ${testTable} SET ${setClause} ${whereClause} RETURNING *`;
 			const result = await connection.streamAndReadAll(updateQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			expect(rows[0]?.["name"]).toBe("Updated Multi Where");
@@ -272,7 +272,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const selectQuery = `SELECT * FROM ${testTable} ${whereClause}`;
 
 			const result = await connection.streamAndReadAll(selectQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			const activeRecords = rows.filter((row) => row["active"] === true);
 			expect(activeRecords.length).toBeGreaterThanOrEqual(1);
@@ -297,7 +297,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const selectQuery = `SELECT * FROM ${testTable} ${whereClause}`;
 
 			const result = await connection.streamAndReadAll(selectQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows.length).toBeGreaterThanOrEqual(1);
 			expect(rows[0]?.["name"]).toBe("LIKE Test User");
@@ -340,7 +340,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const selectQuery = `SELECT * FROM ${testTable} WHERE name IN ('Alice', 'Bob', 'Charlie') ORDER BY name ASC LIMIT 2`;
 
 			const result = await connection.streamAndReadAll(selectQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(2);
 			expect(rows[0]?.["name"]).toBe("Alice");
@@ -373,7 +373,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			// Verify deletion
 			const selectQuery = `SELECT * FROM ${testTable} ${whereClause}`;
 			const result = await connection.streamAndReadAll(selectQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(0);
 		});
@@ -414,7 +414,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			// Verify deletions
 			const selectQuery = `SELECT * FROM ${testTable} WHERE name LIKE 'Batch Delete%'`;
 			const result = await connection.streamAndReadAll(selectQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(0);
 		});
@@ -454,7 +454,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			// Count all records
 			const totalCountQuery = `SELECT COUNT(*) as count FROM ${testTable}`;
 			const totalResult = await connection.streamAndReadAll(totalCountQuery);
-			const totalRows = totalResult.getRowObjects();
+			const totalRows = totalResult.getRowObjectsJS();
 			const totalCount = Number(totalRows[0]?.["count"]);
 
 			expect(totalCount).toBeGreaterThanOrEqual(3);
@@ -463,7 +463,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const whereClause = buildWhereClause([{ field: "active", value: true }]);
 			const activeCountQuery = `SELECT COUNT(*) as count FROM ${testTable} ${whereClause}`;
 			const activeResult = await connection.streamAndReadAll(activeCountQuery);
-			const activeRows = activeResult.getRowObjects();
+			const activeRows = activeResult.getRowObjectsJS();
 			const activeCount = Number(activeRows[0]?.["count"]);
 
 			expect(activeCount).toBeGreaterThanOrEqual(2);
@@ -501,7 +501,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const insertQuery = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(insertQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -534,7 +534,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const insertQuery = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(insertQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -563,7 +563,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const insertQuery = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(insertQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;
@@ -586,7 +586,7 @@ describe("MotherDuck Adapter Direct Integration Tests", () => {
 			const insertQuery = `INSERT INTO ${testTable} (${columns}) VALUES (${values}) RETURNING *`;
 
 			const result = await connection.streamAndReadAll(insertQuery);
-			const rows = result.getRowObjects();
+			const rows = result.getRowObjectsJS();
 
 			expect(rows).toHaveLength(1);
 			const inserted = rows[0] as Record<string, unknown>;

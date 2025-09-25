@@ -102,6 +102,14 @@ const NullishStringSchema = v.nullish(v.string()),
 		PLACEHOLDER_IMG,
 	);
 
+const IsoDateStringToDateSchema = v.union([
+  // Accept an ISO timestamp string and convert to Date
+  v.pipe(v.string(), v.isoTimestamp(), v.transform((s) => new Date(s))),
+  // Or accept a Date instance directly
+  v.date(),
+]);
+
+
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({
 		/** Id of the entry in the database (converted to ) */
@@ -159,13 +167,13 @@ export const RecreationalLocationSchema = v.pipe(
 		emails: v.nullish(v.array(v.pipe(v.string(), v.email()))),
 
 		/** Average rating (0-5 stars). 0 stars mean no reviews */
-		rating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
+		rating: v.nullish(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
 
 		/** Review rating (alternative field name) */
-		reviewRating: v.optional(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
+		reviewRating: v.nullish(v.pipe(v.number(), v.minValue(0), v.maxValue(5))),
 
 		/** Total number of reviews */
-		reviewCount: v.optional(
+		reviewCount: v.nullish(
 			v.pipe(
 				v.unknown(),
 				v.transform((val) => Number(val)),
@@ -174,10 +182,10 @@ export const RecreationalLocationSchema = v.pipe(
 		),
 
 		/** Breakdown of reviews by star rating */
-		reviewsBreakdown: v.optional(ReviewsBreakdownSchema),
+		reviewsBreakdown: v.nullish(ReviewsBreakdownSchema),
 
 		/** Reviews per rating (alternative field name) */
-		reviewsPerRating: v.optional(ReviewsBreakdownSchema),
+		reviewsPerRating: v.nullish(ReviewsBreakdownSchema),
 
 		/** Price range as text (e.g., "₦₦₦", "₦25,000–30,000") */
 		priceRange: NullishStringSchema,
@@ -201,16 +209,16 @@ export const RecreationalLocationSchema = v.pipe(
 		orderOnline: v.nullish(v.array(ExternalLinkSchema)),
 
 		/** Menu information */
-		menu: v.optional(MenuSchema),
+		menu: v.nullish(MenuSchema),
 
 		/** Business owner information */
-		owner: v.optional(OwnerSchema),
+		owner: v.nullish(OwnerSchema),
 
 		/** Detailed business features and amenities */
 		about: v.nullish(v.pipe(v.array(AboutCategorySchema), v.readonly())),
 
 		/** TODO: User reviews array */
-		userReviews: v.optional(v.array(v.any())),
+		userReviews: v.nullish(v.array(v.any())),
 
 		/** TODO: Extended user reviews */
 		userReviewsExtended: v.nullish(v.any()),
@@ -221,13 +229,13 @@ export const RecreationalLocationSchema = v.pipe(
 		// TODO
 
 		/** Date when location was created in our system */
-		createdAt: v.optional(v.date()),
+		createdAt: v.nullish(IsoDateStringToDateSchema),
 
 		/** Date when location was last updated in our system */
-		updatedAt: v.optional(v.date()),
+		updatedAt: v.nullish(IsoDateStringToDateSchema),
 
 		/** Whether the location is currently active in our system */
-		isActive: v.optional(v.boolean(), true),
+		isActive: v.nullish(v.boolean(), true),
 	}),
 	v.readonly(),
 );
