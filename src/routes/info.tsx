@@ -1,11 +1,4 @@
-import {
-	createAsync,
-	query,
-	revalidate,
-	useLocation,
-	useNavigate,
-} from "@solidjs/router";
-import ArrowLeftIcon from "lucide-solid/icons/arrow-left";
+import { createAsync, query, revalidate, useLocation } from "@solidjs/router";
 import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
 import AddFavoriteIcon from "lucide-solid/icons/bookmark-plus";
 import CalendarIcon from "lucide-solid/icons/calendar";
@@ -27,7 +20,7 @@ import {
 	Suspense,
 } from "solid-js";
 import * as v from "valibot";
-import { GenericButton } from "~/components/button";
+import { BackNavigationButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
 import { GenericModal, showModal } from "~/components/modal/generic-modal";
 import { RecreationalLocationSchema } from "~/server/database/schema";
@@ -55,30 +48,6 @@ function SectionHeader(props: { title: string; icon: JSXElement }) {
 			{props.icon}
 			{props.title}
 		</h2>
-	);
-}
-
-function BackButton() {
-	const navigate = useNavigate();
-
-	const handleBack = () => {
-		// Try to go back in history first, fallback to home if no history
-		if (window.history.length > 1) {
-			window.history.back();
-		} else {
-			navigate("/");
-		}
-	};
-
-	return (
-		<GenericButton
-			onClick={handleBack}
-			class="btn-ghost btn-sm absolute z-10 gap-2"
-			aria-label="Go back"
-		>
-			<ArrowLeftIcon size={16} />
-			<span class="hidden sm:inline">Back</span>
-		</GenericButton>
 	);
 }
 
@@ -484,7 +453,7 @@ export default function InformationRoute() {
 		<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
 			<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
 				{/* Back Button */}
-				<BackButton />
+				<BackNavigationButton />
 
 				{/* Header Section */}
 				<div class="hero rounded-box bg-base-100 shadow-md">
