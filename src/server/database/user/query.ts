@@ -1,4 +1,6 @@
+/** biome-ignore-all lint/complexity/useLiteralKeys: <Typescript prefers if we use string literals in dynamic access> */
 "use server";
+// This contains functions for reading from the database
 
 import Fuse from "fuse.js";
 import QuickLRU from "quick-lru";

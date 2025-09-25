@@ -56,7 +56,7 @@ export const OwnerWithLocationSchema = v.object({
 
 export type OwnerWithLocation = v.InferOutput<typeof OwnerWithLocationSchema>;
 
-// Schema for creating a new owner-location relationship
+// TODO: Delete this. Schema for creating a new owner-location relationship
 export const CreateOwnerLocationSchema = v.object({
 	ownerId: v.string(),
 	locationData: RecreationalLocationSchema,
