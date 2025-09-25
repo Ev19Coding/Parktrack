@@ -2,6 +2,7 @@ import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
 import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import SettingsIcon from "lucide-solid/icons/menu";
+import StarIcon from "lucide-solid/icons/star";
 import TrashIcon from "lucide-solid/icons/trash-2";
 import { createSignal, onCleanup, Show, Suspense } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
@@ -111,6 +112,22 @@ export default function SideBar() {
 								);
 							})()}
 						</li>
+
+						{(() => {
+							const isLoggedIn = createAsync(() => isUserLoggedIn());
+
+							return (
+								<Suspense>
+									<Show when={isLoggedIn()}>
+										<li>
+											<A href="#">
+												<StarIcon /> Favourites
+											</A>
+										</li>
+									</Show>
+								</Suspense>
+							);
+						})()}
 
 						<li>
 							<A
