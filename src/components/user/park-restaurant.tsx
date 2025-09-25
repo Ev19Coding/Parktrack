@@ -7,16 +7,17 @@ import {
 import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
 import {
 	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
-	getParkRecreationalLocationsFromDatabaseAtRandom,
-	getRestaurantRecreationalLocationsFromDatabaseAtRandom,
+	getRecreationalLocationsFromDatabaseAtRandom,
 } from "~/server/database/user/query";
 import type { PromiseValue } from "~/types/generics";
 import { getProxiedImageUrl } from "~/utils/image";
+import { getRandomElementInArray } from "~/utils/random";
+import { queryRecreationalLocationCategories } from "~/utils/user-query";
 import LoadingSpinner from "../loading-spinner";
 
 function DataSection(prop: {
 	data: PromiseValue<
-		ReturnType<typeof getParkRecreationalLocationsFromDatabaseAtRandom>
+		ReturnType<typeof getRecreationalLocationsFromDatabaseAtRandom>
 	>;
 
 	header: JSXElement;
@@ -44,7 +45,9 @@ function DataSection(prop: {
 	return (
 		<>
 			<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
-				<h2 class="shrink font-bold text-xl">{prop.header}</h2>
+				<Suspense>
+					<h2 class="shrink font-bold text-xl">{prop.header}</h2>
+				</Suspense>
 
 				<div class="overflow-auto">
 					<div class="grid auto-rows-fr grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-3">
@@ -103,32 +106,23 @@ function DataSection(prop: {
 	);
 }
 
-export function UserParkSection() {
+export function UserRecreationalLocationDisplay(prop: { class?: string }) {
+	const randomCategory = createAsync(
+		async () =>
+			getRandomElementInArray(await queryRecreationalLocationCategories()),
+		{ initialValue: "Locations" },
+	);
+
 	const randomParks = createAsyncStore(
-		() => getParkRecreationalLocationsFromDatabaseAtRandom(),
+		() => getRecreationalLocationsFromDatabaseAtRandom(randomCategory()),
 		{ initialValue: [], reconcile: { merge: true } },
 	);
 
 	return (
 		<DataSection
-			class="lg:col-[1/2] lg:row-span-2"
+			class={prop.class ?? ""}
 			data={randomParks()}
-			header="Parks for You"
-		/>
-	);
-}
-
-export function UserRestaurantSection() {
-	const randomRestaurants = createAsyncStore(
-		() => getRestaurantRecreationalLocationsFromDatabaseAtRandom(),
-		{ initialValue: [], reconcile: { merge: true } },
-	);
-
-	return (
-		<DataSection
-			class="lg:col-[2/3] lg:row-span-2"
-			data={randomRestaurants() ?? []}
-			header="Restaurants for You"
+			header={`${randomCategory()}(s) for You`}
 		/>
 	);
 }

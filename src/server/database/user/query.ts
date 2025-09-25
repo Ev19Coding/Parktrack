@@ -206,7 +206,45 @@ export async function getRecreationalLocationFromDatabaseById(
 	return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
 }
 
-export async function getParkRecreationalLocationsFromDatabaseAtRandom(
+export async function getRecreationalLocationCategories(): Promise<
+	ReadonlyArray<string>
+> {
+	const fetchedCategories = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+    SELECT DISTINCT category
+    FROM user_recreational_locations
+    WHERE category IS NOT NULL
+    `)
+	)
+		.getColumnsJson()
+		.flatMap((columnData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(v.array(v.string()), columnData, {
+					abortEarly: true,
+				});
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid column data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedCategories;
+}
+
+/** Returns from any category randomly */
+export async function getRecreationalLocationsFromDatabaseAtRandom(
+	category: string,
 	maxResults = DEFAULT_MAX_RESULTS,
 ): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
 	const fetchedParks = (
@@ -215,7 +253,7 @@ export async function getParkRecreationalLocationsFromDatabaseAtRandom(
 		).streamAndReadAll(`
           SELECT id, title, thumbnail
           FROM ${USER_RECREATION_LOCATION_TABLE}
-          WHERE category LIKE '%Park%' OR title LIKE '%Park%'
+          WHERE category LIKE '%${category}%'
           ORDER BY RANDOM()
           LIMIT ${maxResults}
           `)
@@ -244,46 +282,6 @@ export async function getParkRecreationalLocationsFromDatabaseAtRandom(
 		});
 
 	return fetchedParks;
-}
-
-export async function getRestaurantRecreationalLocationsFromDatabaseAtRandom(
-	maxResults = DEFAULT_MAX_RESULTS,
-): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
-	const fetchedRestaurants = (
-		await (
-			await getParkTrackDatabaseConnection()
-		).streamAndReadAll(`
-          SELECT id, title, thumbnail
-          FROM ${USER_RECREATION_LOCATION_TABLE}
-          WHERE category LIKE '%Restaurant%' OR title LIKE '%Restaurant%'
-          ORDER BY RANDOM()
-          LIMIT ${maxResults}
-          `)
-	)
-		.getRowObjects()
-		.map((rowObjectData) => {
-			try {
-				// Validate the data
-				const validatedData = v.parse(
-					BareMinimumRecreationalLocationSchema,
-					tryParseObject(rowObjectData),
-					{ abortEarly: true },
-				);
-
-				return validatedData;
-			} catch (e) {
-				throw new Error(
-					`Invalid recreational location data: ${JSON.stringify(
-						e,
-						(_, value) =>
-							typeof value === "bigint" ? value.toString() : value,
-						2,
-					)}`,
-				);
-			}
-		});
-
-	return fetchedRestaurants;
 }
 
 /**

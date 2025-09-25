@@ -1,10 +1,7 @@
 import { createMemo } from "solid-js";
 import { useGeolocation } from "solidjs-use";
 import UserMapView from "~/components/map-view";
-import {
-	UserParkSection,
-	UserRestaurantSection,
-} from "~/components/user/park-restaurant";
+import { UserRecreationalLocationDisplay } from "~/components/user/park-restaurant";
 import UserSearchBar from "~/components/user/search-bar";
 
 // TODO: Move this out of here
@@ -40,9 +37,9 @@ export default function Home() {
 				showNearby={true}
 			/>
 
-			<UserParkSection />
+			<UserRecreationalLocationDisplay class="lg:col-[1/2] lg:row-span-2" />
 
-			<UserRestaurantSection />
+			<UserRecreationalLocationDisplay class="lg:col-[2/3] lg:row-span-2" />
 		</div>
 	);
 }
