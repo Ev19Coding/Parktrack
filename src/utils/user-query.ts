@@ -1,10 +1,28 @@
 import { query, revalidate } from "@solidjs/router";
-import { getRecreationalLocationCategories } from "~/server/database/user/query";
-import { _isUserLoggedIn, isUserOwner, isUserRegular } from "~/server/user";
+import {
+	getLocationsByOwner,
+	getRecreationalLocationCategories,
+} from "~/server/database/user/query";
+import {
+	_isUserLoggedIn,
+	getCurrentUserInfo,
+	isUserOwner,
+	isUserRegular,
+} from "~/server/user";
 
 // These need to be wrapped with query to handle redirects properly
+
+/** Returns all the relevant data of the owner */
 export const getOwnerData = query(async () => {
-	if (await isUserOwner()) return {};
+	if (await isUserOwner()) {
+		const ownerInfo = await getCurrentUserInfo();
+
+		if (!ownerInfo) return null;
+
+		const ownerLocations = await getLocationsByOwner(ownerInfo.id);
+
+		return { locations: ownerLocations } as const;
+	}
 	return null;
 }, "owner-data");
 

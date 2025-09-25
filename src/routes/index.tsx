@@ -6,6 +6,7 @@ import * as v from "valibot";
 import { GenericButton } from "~/components/button";
 import { UserType } from "~/server/database/better-auth-schema";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
+import { getCurrentUserInfo } from "~/server/user";
 import { revalidateUserLoginData } from "~/utils/user-query";
 
 export default function LoginPage() {
@@ -44,7 +45,7 @@ export default function LoginPage() {
 			} else {
 				await revalidateUserLoginData();
 
-				navigate("/user");
+				(await getCurrentUserInfo())?.type === "owner" ? navigate("/owner"):navigate("/user");
 			}
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
@@ -72,7 +73,7 @@ export default function LoginPage() {
 			} else {
 				await revalidateUserLoginData();
 
-				navigate("/user");
+			 form.type === "user" ?	navigate("/user"):navigate("/owner")
 			}
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
