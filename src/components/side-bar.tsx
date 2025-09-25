@@ -112,7 +112,13 @@ export default function SideBar() {
 						<Suspense>
 							<Show when={isLoggedIn()}>
 								<li>
-									<A href="#">
+									<A
+										href="/favourite"
+										onClick={(_) => {
+											// Close the side bar
+											drawerToggle$.click();
+										}}
+									>
 										<StarIcon /> Favourites
 									</A>
 								</li>
