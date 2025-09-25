@@ -7,6 +7,9 @@ export default defineConfig({
 	},
 	server: {
 		compressPublicAssets: true,
-		prerender: { crawlLinks: true, routes: ["/", "/user", "/info"] },
+		prerender: {
+			crawlLinks: true,
+			routes: ["/", "/user", "/info", "/owner", "/favourite"],
+		},
 	},
 });
