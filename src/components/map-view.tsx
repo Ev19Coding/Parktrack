@@ -10,7 +10,9 @@ import {
 	Show,
 } from "solid-js";
 import { SolidLeafletMap } from "solidjs-leaflet";
-import mapMarkerStr from "~/assets/map-maker.svg";
+import locationMarker from "~/assets/marker/location.svg";
+import generalMarker from "~/assets/marker/other.webp";
+import userMarker from "~/assets/marker/user.webp";
 import {
 	getRecreationalLocationFromDatabaseById,
 	getRecreationalLocationsCloseToCoords,
@@ -22,6 +24,7 @@ import LoadingSpinner from "./loading-spinner";
 export default function UserMapView(prop: {
 	label: string;
 	coords: readonly [latitude: number, longitude: number] | null;
+	markerType: "user" | "location";
 	zoom?: number;
 	/** Whether closeby locations should be marked */
 	showNearby?: boolean;
@@ -92,7 +95,7 @@ export default function UserMapView(prop: {
 				const marker = leafletRef()
 					?.marker([latitude, longitude], {
 						icon: leafletRef()!.icon({
-							iconUrl: mapMarkerStr,
+							iconUrl: generalMarker,
 						}),
 					})
 					.bindPopup(`
@@ -158,7 +161,7 @@ export default function UserMapView(prop: {
 					width="100%"
 					onMapReady={(leaflet, map) => {
 						const icon = leaflet.icon({
-							iconUrl: mapMarkerStr,
+							iconUrl: prop.markerType === "user" ? userMarker : locationMarker,
 							// shadowUrl: "/marker-shadow.png",
 						});
 						const marker = leaflet

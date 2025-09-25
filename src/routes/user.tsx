@@ -35,6 +35,7 @@ export default function Home() {
 				label="You"
 				zoom={16}
 				showNearby={true}
+				markerType="user"
 			/>
 
 			<UserRecreationalLocationDisplay class="lg:col-[1/2] lg:row-span-2" />
