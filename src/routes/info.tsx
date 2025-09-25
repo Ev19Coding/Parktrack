@@ -29,7 +29,7 @@ import {
 	isLocationInFavourites,
 	removeFromFavourites,
 } from "~/server/user";
-import { DEFAULTS } from "~/shared/constants";
+import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import { isUserLoggedIn } from "~/utils/user-query";
@@ -421,26 +421,12 @@ function BusinessDetails(props: {
 
 /** Shows extra details about a recreational location the user selected */
 export default function InformationRoute() {
-	const { STRING, NUMBER } = DEFAULTS;
 	const location = useLocation();
 
 	// Use onMount to ensure this only runs on the client
 	const [locationData, setLocationData] = createSignal<
 		v.InferOutput<typeof RecreationalLocationSchema>
-	>({
-		address: STRING,
-		category: STRING,
-		id: STRING,
-		title: STRING,
-		latitude: NUMBER,
-		longitude: NUMBER,
-		link: STRING,
-		thumbnail: STRING,
-		images: [],
-		openHours: {},
-		popularTimes: {},
-		isActive: true,
-	});
+	>(DUMMY_RECREATIONAL_LOCATION_DATA);
 
 	onMount(() => {
 		const result = v.safeParse(RecreationalLocationSchema, location.state);
