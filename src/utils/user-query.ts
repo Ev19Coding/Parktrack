@@ -1,7 +1,6 @@
 import { query, revalidate } from "@solidjs/router";
 import { getRecreationalLocationCategories } from "~/server/database/user/query";
 import { _isUserLoggedIn, isUserOwner, isUserRegular } from "~/server/user";
-import { getRandomElementInArray } from "./random";
 
 // These need to be wrapped with query to handle redirects properly
 export const getOwnerData = query(async () => {
