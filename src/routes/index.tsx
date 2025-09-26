@@ -153,13 +153,13 @@ export default function LoginPage() {
 									onInput={(e) => setForm("password", e.currentTarget.value)}
 									required
 								/>
-								<Show when={loginMode() === "sign-in"}>
+								{/*<Show when={loginMode() === "sign-in"}>
 									<p class="label">
 										<A href="#" class="label-text-alt link link-hover">
 											Forgot password?
 										</A>
 									</p>
-								</Show>
+								</Show>*/}
 							</fieldset>
 
 							<Show when={loginMode() === "sign-up"}>
