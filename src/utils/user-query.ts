@@ -33,11 +33,14 @@ export const getRegularUserData = query(async () => {
 
 export const isUserLoggedIn = query(_isUserLoggedIn, "is-user-logged-in");
 
+export const queryIsUserOwner = query(isUserOwner, "is-user-owner");
+
 export async function revalidateUserLoginData() {
 	return revalidate([
 		isUserLoggedIn.key,
 		getOwnerData.key,
 		getRegularUserData.key,
+		queryIsUserOwner.key,
 	]);
 }
 

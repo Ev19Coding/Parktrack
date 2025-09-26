@@ -1,6 +1,7 @@
 import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
 import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
+import ListingsIcon from "lucide-solid/icons/map";
 import SettingsIcon from "lucide-solid/icons/menu";
 import StarIcon from "lucide-solid/icons/star";
 import TrashIcon from "lucide-solid/icons/trash-2";
@@ -8,7 +9,11 @@ import { createSignal, onCleanup, Show, Suspense } from "solid-js";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
-import { isUserLoggedIn, revalidateUserLoginData } from "~/utils/user-query";
+import {
+	isUserLoggedIn,
+	queryIsUserOwner,
+	revalidateUserLoginData,
+} from "~/utils/user-query";
 import { TooltipButton } from "./button";
 import LoadingSpinner from "./loading-spinner";
 import { triggerConfirmationModal } from "./modal/confirmation-modal";
@@ -20,6 +25,10 @@ export default function SideBar() {
 	const [isLoading, setIsLoading] = createSignal(false);
 
 	const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+		initialValue: false,
+	});
+
+	const isUserOwner = createAsync(() => queryIsUserOwner(), {
 		initialValue: false,
 	});
 
@@ -108,6 +117,22 @@ export default function SideBar() {
 								</Suspense>
 							</button>
 						</li>
+
+						<Suspense>
+							<Show when={isUserOwner()}>
+								<li>
+									<A
+										href="/owner"
+										onClick={(_) => {
+											// Close the side bar
+											drawerToggle$.click();
+										}}
+									>
+										<ListingsIcon /> Your Listings
+									</A>
+								</li>
+							</Show>
+						</Suspense>
 
 						<Suspense>
 							<Show when={isLoggedIn()}>
