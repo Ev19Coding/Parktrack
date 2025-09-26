@@ -5,7 +5,7 @@ import ViewIcon from "lucide-solid/icons/eye";
 import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
 import { createMemo, createSignal, Index, Show } from "solid-js";
-import { createStore } from "solid-js/store";
+import { createStore, type SetStoreFunction } from "solid-js/store";
 import type { Mutable } from "solidjs-use";
 import * as v from "valibot";
 import { BackNavigationButton, GenericButton } from "~/components/button";
@@ -29,6 +29,282 @@ import { generateRandomUUID } from "~/utils/random";
 import { getOwnerData } from "~/utils/user-query";
 
 const { URL } = DEFAULTS;
+
+/**
+ * Shared form for both Create and Edit dialogs.
+ * Keeps markup in one place so Create/Edit can share structure and validation.
+ */
+function LocationForm(props: {
+	formData: Mutable<RecreationalLocationSchema>;
+	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+}) {
+	return (
+		<>
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<div>
+					<label class="label">
+						<span class="label-text">Title</span>
+
+						<input
+							name="title"
+							required
+							class="input input-bordered w-full"
+							value={props.formData.title}
+							onInput={(e) => props.setFormData("title", e.currentTarget.value)}
+						/>
+					</label>
+				</div>
+
+				<div>
+					<label class="label">
+						<span class="label-text">Category</span>
+
+						<input
+							name="category"
+							class="input input-bordered w-full"
+							value={props.formData.category ?? ""}
+							onInput={(e) =>
+								props.setFormData("category", e.currentTarget.value)
+							}
+						/>
+					</label>
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+				<div>
+					<label class="label">
+						<span class="label-text">Address</span>
+
+						<input
+							name="address"
+							class="input input-bordered w-full"
+							value={props.formData.address ?? ""}
+							onInput={(e) =>
+								props.setFormData("address", e.currentTarget.value)
+							}
+						/>
+					</label>
+				</div>
+
+				<div>
+					<label class="label">
+						<span class="label-text">Link</span>
+
+						<input
+							name="link"
+							class="input input-bordered w-full"
+							value={props.formData.link}
+							onInput={(e) => props.setFormData("link", e.currentTarget.value)}
+						/>
+					</label>
+				</div>
+			</div>
+
+			<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+				<div>
+					<label class="label">
+						<span class="label-text">Latitude</span>
+
+						<input
+							name="latitude"
+							class="input input-bordered w-full"
+							value={props.formData.latitude}
+							onInput={(e) =>
+								props.setFormData("latitude", Number(e.currentTarget.value))
+							}
+							type="number"
+							step="any"
+						/>
+					</label>
+				</div>
+
+				<div>
+					<label class="label">
+						<span class="label-text">Longitude</span>
+
+						<input
+							name="longitude"
+							class="input input-bordered w-full"
+							value={props.formData.longitude}
+							onInput={(e) =>
+								props.setFormData("longitude", Number(e.currentTarget.value))
+							}
+							type="number"
+							step="any"
+						/>
+					</label>
+				</div>
+
+				<div>
+					<label class="label">
+						<span class="label-text">Thumbnail URL</span>
+
+						<input
+							name="thumbnail"
+							class="input input-bordered w-full"
+							value={props.formData.thumbnail}
+							onInput={(e) =>
+								props.setFormData("thumbnail", e.currentTarget.value)
+							}
+						/>
+					</label>
+				</div>
+			</div>
+		</>
+	);
+}
+
+/**
+ * Create dialog component.
+ * Accepts the minimal props to render and handle user actions.
+ */
+function CreateLocationModal(props: {
+	modalId: string;
+	formData: Mutable<RecreationalLocationSchema>;
+	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+	isLoading: boolean;
+	onCancel: () => void;
+	onSubmit: () => Promise<void>;
+}) {
+	return (
+		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
+			<div class="prose mx-auto max-w-full p-2">
+				<h2 class="font-bold text-xl">Create Location</h2>
+
+				<form
+					method="post"
+					class="grid gap-3"
+					onSubmit={(e) => e.preventDefault()}
+				>
+					<LocationForm
+						formData={props.formData}
+						setFormData={props.setFormData}
+					/>
+
+					<div class="flex justify-end gap-2 pt-2">
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
+							Cancel
+						</GenericButton>
+
+						<GenericButton
+							class="btn-primary"
+							onClick={async () => {
+								await props.onSubmit();
+							}}
+						>
+							{props.isLoading ? "Creating..." : "Create"}
+						</GenericButton>
+					</div>
+				</form>
+			</div>
+		</GenericModal>
+	);
+}
+
+/**
+ * Edit dialog component.
+ * Shares the same form as Create but provides a hidden id and different button text.
+ */
+function EditLocationModal(props: {
+	modalId: string;
+	formData: Mutable<RecreationalLocationSchema>;
+	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+	isLoading: boolean;
+	onCancel: () => void;
+	onSubmit: () => Promise<void>;
+}) {
+	return (
+		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
+			<div class="prose mx-auto max-w-full p-2">
+				<h2 class="font-bold text-xl">Edit Location</h2>
+
+				<form class="grid gap-3" onSubmit={(e) => e.preventDefault()}>
+					<input type="hidden" name="id" value={props.formData.id} />
+
+					<LocationForm
+						formData={props.formData}
+						setFormData={props.setFormData}
+					/>
+
+					<div class="flex justify-end gap-2 pt-2">
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
+							Cancel
+						</GenericButton>
+
+						<GenericButton
+							class="btn-primary"
+							onClick={async () => {
+								await props.onSubmit();
+							}}
+						>
+							{props.isLoading ? "Saving..." : "Save Changes"}
+						</GenericButton>
+					</div>
+				</form>
+			</div>
+		</GenericModal>
+	);
+}
+
+/**
+ * View dialog component for showing details and raw data.
+ */
+function ViewLocationModal(props: {
+	modalId: string;
+	formData: Mutable<RecreationalLocationSchema>;
+	onClose: () => void;
+}) {
+	return (
+		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
+			<div class="prose mx-auto max-w-full p-2">
+				<h2 class="font-bold text-xl">Location Details</h2>
+
+				<div class="grid gap-3">
+					<div class="flex items-start gap-4">
+						<img
+							src={getProxiedImageUrl(props.formData.thumbnail)}
+							alt={props.formData.title}
+							class="h-28 w-40 rounded object-cover"
+						/>
+
+						<div>
+							<h3 class="font-semibold text-lg">{props.formData.title}</h3>
+							<div class="text-base-content/70 text-sm">
+								{props.formData.category ?? "Other"} •{" "}
+								{props.formData.address ?? "N/A"}
+							</div>
+						</div>
+					</div>
+
+					<div>
+						<div class="label">
+							<span class="label-text">Raw Data</span>
+						</div>
+
+						<pre class="max-h-64 overflow-auto rounded bg-base-200 p-2 text-xs">
+							{JSON.stringify(props.formData, null, 2)}
+						</pre>
+					</div>
+
+					<div class="flex justify-end gap-2 pt-2">
+						<GenericButton class="btn-ghost" onClick={props.onClose}>
+							Close
+						</GenericButton>
+					</div>
+				</div>
+			</div>
+		</GenericModal>
+	);
+}
 
 export default function OwnerPage() {
 	const queryOwnerRecreationalLocations = query(async () => {
@@ -138,6 +414,35 @@ export default function OwnerPage() {
 		setFormData(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
 
 		showModal(createModalId);
+	}
+
+	// Handlers passed into the Create/Edit modals, keep side-effects in owner page
+	async function handleCreate() {
+		setIsActionLoading(true);
+
+		await setOwnerOnLocationData();
+
+		await createUserRecreationalLocationTableEntry(formData);
+
+		await revalidate(queryOwnerRecreationalLocations.key);
+
+		closeModal(createModalId);
+
+		setIsActionLoading(false);
+	}
+
+	async function handleEdit() {
+		setIsActionLoading(true);
+
+		await setOwnerOnLocationData();
+
+		await updateUserRecreationalLocationTableEntry(formData.id, formData);
+
+		await revalidate(queryOwnerRecreationalLocations.key);
+
+		closeModal(editModalId);
+
+		setIsActionLoading(false);
 	}
 
 	return (
@@ -291,353 +596,30 @@ export default function OwnerPage() {
 				</Show>
 			</div>
 
-			{/* Create Modal */}
-			<GenericModal modalId={createModalId} class="w-full max-w-4xl">
-				<div class="prose mx-auto max-w-full p-2">
-					<h2 class="font-bold text-xl">Create Location</h2>
+			{/* Modals */}
+			<CreateLocationModal
+				modalId={createModalId}
+				formData={formData}
+				setFormData={setFormData}
+				isLoading={isActionLoading()}
+				onCancel={() => closeModal(createModalId)}
+				onSubmit={handleCreate}
+			/>
 
-					<form method="post" class="grid gap-3">
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<label class="label">
-									<span class="label-text">Title</span>
+			<ViewLocationModal
+				modalId={viewModalId}
+				formData={formData}
+				onClose={() => closeModal(viewModalId)}
+			/>
 
-									<input
-										name="title"
-										required
-										class="input input-bordered w-full"
-										value={formData.title}
-										onInput={(e) => setFormData("title", e.currentTarget.value)}
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Category</span>
-
-									<input
-										name="category"
-										class="input input-bordered w-full"
-										value={formData.category ?? ""}
-										onInput={(e) =>
-											setFormData("category", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<label class="label">
-									<span class="label-text">Address</span>
-
-									<input
-										name="address"
-										class="input input-bordered w-full"
-										value={formData.address ?? ""}
-										onInput={(e) =>
-											setFormData("address", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Link</span>
-
-									<input
-										name="link"
-										class="input input-bordered w-full"
-										value={formData.link}
-										onInput={(e) => setFormData("link", e.currentTarget.value)}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-							<div>
-								<label class="label">
-									<span class="label-text">Latitude</span>
-
-									<input
-										name="latitude"
-										class="input input-bordered w-full"
-										value={formData.latitude}
-										onInput={(e) =>
-											setFormData("latitude", Number(e.currentTarget.value))
-										}
-										type="number"
-										step="any"
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Longitude</span>
-
-									<input
-										name="longitude"
-										class="input input-bordered w-full"
-										value={formData.longitude}
-										onInput={(e) =>
-											setFormData("longitude", Number(e.currentTarget.value))
-										}
-										type="number"
-										step="any"
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Thumbnail URL</span>
-
-									<input
-										name="thumbnail"
-										class="input input-bordered w-full"
-										value={formData.thumbnail}
-										onInput={(e) =>
-											setFormData("thumbnail", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="flex justify-end gap-2 pt-2">
-							<GenericButton
-								class="btn-ghost"
-								type="button"
-								onClick={() => closeModal(createModalId)}
-							>
-								Cancel
-							</GenericButton>
-
-							<GenericButton
-								class="btn-primary"
-								onClick={async (_) => {
-									setIsActionLoading(true);
-
-									await setOwnerOnLocationData();
-
-									await createUserRecreationalLocationTableEntry(formData);
-
-									await revalidate(queryOwnerRecreationalLocations.key);
-
-									closeModal(createModalId);
-
-									setIsActionLoading(false);
-								}}
-							>
-								{isActionLoading() ? "Creating..." : "Create"}
-							</GenericButton>
-						</div>
-					</form>
-				</div>
-			</GenericModal>
-
-			{/* View Modal */}
-			<GenericModal modalId={viewModalId} class="w-full max-w-4xl">
-				<div class="prose mx-auto max-w-full p-2">
-					<h2 class="font-bold text-xl">Location Details</h2>
-
-					<div class="grid gap-3">
-						<div class="flex items-start gap-4">
-							<img
-								src={getProxiedImageUrl(formData.thumbnail)}
-								alt={formData.title}
-								class="h-28 w-40 rounded object-cover"
-							/>
-
-							<div>
-								<h3 class="font-semibold text-lg">{formData.title}</h3>
-								<div class="text-base-content/70 text-sm">
-									{formData.category ?? "Other"} • {formData.address ?? "N/A"}
-								</div>
-							</div>
-						</div>
-
-						<div>
-							<div class="label">
-								<span class="label-text">Raw Data</span>
-							</div>
-
-							<pre class="max-h-64 overflow-auto rounded bg-base-200 p-2 text-xs">
-								{JSON.stringify(formData, null, 2)}
-							</pre>
-						</div>
-
-						<div class="flex justify-end gap-2 pt-2">
-							<GenericButton
-								class="btn-ghost"
-								onClick={() => closeModal(viewModalId)}
-							>
-								Close
-							</GenericButton>
-						</div>
-					</div>
-				</div>
-			</GenericModal>
-
-			{/* Edit Modal*/}
-			<GenericModal modalId={editModalId} class="w-full max-w-4xl">
-				<div class="prose mx-auto max-w-full p-2">
-					<h2 class="font-bold text-xl">Edit Location</h2>
-
-					<form class="grid gap-3">
-						<input type="hidden" name="id" value={formData.id} />
-
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<label class="label">
-									<span class="label-text">Title</span>
-
-									<input
-										name="title"
-										required
-										class="input input-bordered w-full"
-										value={formData.title}
-										onInput={(e) => setFormData("title", e.currentTarget.value)}
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Category</span>
-
-									<input
-										name="category"
-										class="input input-bordered w-full"
-										value={formData.category ?? ""}
-										onInput={(e) =>
-											setFormData("category", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-							<div>
-								<label class="label">
-									<span class="label-text">Address</span>
-
-									<input
-										name="address"
-										class="input input-bordered w-full"
-										value={formData.address ?? ""}
-										onInput={(e) =>
-											setFormData("address", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Link</span>
-
-									<input
-										name="link"
-										class="input input-bordered w-full"
-										value={formData.link}
-										onInput={(e) => setFormData("link", e.currentTarget.value)}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-							<div>
-								<label class="label">
-									<span class="label-text">Latitude</span>
-
-									<input
-										name="latitude"
-										class="input input-bordered w-full"
-										value={formData.latitude}
-										onInput={(e) =>
-											setFormData("latitude", Number(e.currentTarget.value))
-										}
-										type="number"
-										step="any"
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Longitude</span>
-
-									<input
-										name="longitude"
-										class="input input-bordered w-full"
-										value={formData.longitude}
-										onInput={(e) =>
-											setFormData("longitude", Number(e.currentTarget.value))
-										}
-										type="number"
-										step="any"
-									/>
-								</label>
-							</div>
-
-							<div>
-								<label class="label">
-									<span class="label-text">Thumbnail URL</span>
-
-									<input
-										name="thumbnail"
-										class="input input-bordered w-full"
-										value={formData.thumbnail}
-										onInput={(e) =>
-											setFormData("thumbnail", e.currentTarget.value)
-										}
-									/>
-								</label>
-							</div>
-						</div>
-
-						<div class="flex justify-end gap-2 pt-2">
-							<GenericButton
-								class="btn-ghost"
-								type="button"
-								onClick={() => closeModal(editModalId)}
-							>
-								Cancel
-							</GenericButton>
-
-							<GenericButton
-								class="btn-primary"
-								onClick={async (_) => {
-									setIsActionLoading(true);
-
-									await setOwnerOnLocationData();
-
-									await updateUserRecreationalLocationTableEntry(
-										formData.id,
-										formData,
-									);
-
-									await revalidate(queryOwnerRecreationalLocations.key);
-
-									closeModal(editModalId);
-
-									setIsActionLoading(false);
-								}}
-							>
-								{isActionLoading() ? "Saving..." : "Save Changes"}
-							</GenericButton>
-						</div>
-					</form>
-				</div>
-			</GenericModal>
+			<EditLocationModal
+				modalId={editModalId}
+				formData={formData}
+				setFormData={setFormData}
+				isLoading={isActionLoading()}
+				onCancel={() => closeModal(editModalId)}
+				onSubmit={handleEdit}
+			/>
 		</div>
 	);
 }
