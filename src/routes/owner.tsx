@@ -19,6 +19,9 @@ import { Mutable } from "solidjs-use";
 import { getCurrentUserInfo } from "~/server/user";
 import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z"
 import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a"
+import ViewIcon from "lucide-solid/icons/eye"
+import EditIcon from "lucide-solid/icons/square-pen"
+import DeleteIcon from "lucide-solid/icons/trash-2"
 
 const {URL} = DEFAULTS
 
@@ -237,22 +240,22 @@ export default function OwnerPage() {
 														type="button"
 														class="btn btn-ghost btn-sm"
 														onClick={() => openViewModal(loc())}
-													>
-														View
+													><ViewIcon />
+														<span class="hidden md:inline-block">View</span>
 													</button>
 													<button
 														type="button"
 														class="btn btn-outline btn-sm"
 														onClick={() => openEditModal(loc())}
-													>
-														Edit
+													><EditIcon />
+													<span class="hidden md:inline-block">Edit</span>
 													</button>
 													<button
 														type="button"
 														class="btn btn-error btn-sm"
 														onClick={() => confirmDelete(loc().id, loc().title)}
-													>
-														Delete
+													><DeleteIcon />
+													<span class="hidden md:inline-block">Delete</span>
 													</button>
 												</div>
 											</td>
