@@ -21,7 +21,9 @@ export default function LoginPage() {
 		username: "",
 		type: "user",
 	});
-	const [isLoading, setIsLoading] = createSignal(false);
+	const [isSigningUpOrInWithEmail, setIsSigningUpOrInWithEmail] =
+		createSignal(false);
+	const [isSigningUpAsGuest, setIsSigningUpAsGuest] = createSignal(false);
 	const [error, setError] = createSignal<string | null>(null);
 	const [loginMode, setLoginMode] = createSignal<"sign-up" | "sign-in">(
 		"sign-in",
@@ -31,7 +33,7 @@ export default function LoginPage() {
 
 	const handleSignIn = async (e: Event) => {
 		e.preventDefault();
-		setIsLoading(true);
+		setIsSigningUpOrInWithEmail(true);
 		setError(null);
 
 		try {
@@ -53,13 +55,13 @@ export default function LoginPage() {
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
 		} finally {
-			setIsLoading(false);
+			setIsSigningUpOrInWithEmail(false);
 		}
 	};
 
 	const handleSignUp = async (e: Event) => {
 		e.preventDefault();
-		setIsLoading(true);
+		setIsSigningUpOrInWithEmail(true);
 		setError(null);
 
 		try {
@@ -81,7 +83,7 @@ export default function LoginPage() {
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
 		} finally {
-			setIsLoading(false);
+			setIsSigningUpOrInWithEmail(false);
 		}
 	};
 
@@ -210,10 +212,10 @@ export default function LoginPage() {
 								<GenericButton
 									type="submit"
 									class="btn-primary"
-									disabled={isLoading()}
+									disabled={isSigningUpOrInWithEmail()}
 								>
 									<Switch>
-										<Match when={isLoading()}>
+										<Match when={isSigningUpOrInWithEmail()}>
 											<span class="loading loading-spinner loading-sm"></span>
 											Signing In...
 										</Match>
@@ -261,16 +263,25 @@ export default function LoginPage() {
 								<button
 									type="button"
 									class="btn btn-accent"
+									disabled={isSigningUpAsGuest()}
 									onClick={async () => {
+										setIsSigningUpAsGuest(true);
+
 										await AUTH_CLIENT.signOut();
 
 										await revalidateUserLoginData();
 
 										navigate("/user");
+
+										setIsSigningUpAsGuest(false);
 									}}
 								>
 									<AnonymousIcon />
-									Continue as Guest
+									{isSigningUpAsGuest() ? (
+										<span class="loading loading-spinner loading-sm"></span>
+									) : (
+										"Continue as Guest"
+									)}
 								</button>
 							</div>
 
