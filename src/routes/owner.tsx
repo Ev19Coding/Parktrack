@@ -1,4 +1,4 @@
-import { createAsync, revalidate } from "@solidjs/router";
+import { createAsync, query, revalidate } from "@solidjs/router";
 import {  createMemo, createSignal, Index, Show } from "solid-js";
 import { createStore, } from "solid-js/store";
 import { BackNavigationButton, GenericButton } from "~/components/button";
@@ -21,7 +21,7 @@ import { getCurrentUserInfo } from "~/server/user";
 const {URL} = DEFAULTS
 
 export default function OwnerPage() {
-	const ownerRecreationalLocations = createAsync(async () => {
+  const queryOwnerRecreationalLocations = query(async () => {
 		const { locations = [] } = (await getOwnerData()) ?? {};
 
 		const fullDataLocationPromises = locations.map((loc) =>
@@ -33,7 +33,9 @@ export default function OwnerPage() {
 
 		return acc
 		}, [])
-	}, {initialValue:[]});
+	}, "get-owner-recreational-locations")
+
+	const ownerRecreationalLocations = createAsync(()=>queryOwnerRecreationalLocations(), {initialValue:[]});
 
 	const SortKeySchema = v.union([v.literal("title"), v.literal("category")])
 	type SortKeySchema = v.InferOutput<typeof SortKeySchema>
@@ -88,8 +90,15 @@ export default function OwnerPage() {
 	function confirmDelete(id: string, title: string) {
 		triggerConfirmationModal(
 			async () => {
+			setIsActionLoading(true)
+
 				await deleteUserRecreationalLocationTableEntry(id);
+
+				await revalidate(queryOwnerRecreationalLocations.key)
+
 				closeModal(viewModalId);
+
+				setIsActionLoading(false)
 			},
 			<div>
 				Delete <span class="font-semibold text-primary">{title}</span>{" "}
@@ -392,6 +401,9 @@ export default function OwnerPage() {
 
 							await createUserRecreationalLocationTableEntry(formData)
 
+
+							await revalidate(queryOwnerRecreationalLocations.key)
+
 							closeModal(createModalId)
 
 							setIsActionLoading(false)
@@ -576,6 +588,8 @@ export default function OwnerPage() {
 							await setOwnerOnLocationData()
 
 							await updateUserRecreationalLocationTableEntry(formData.id, formData)
+
+							await revalidate(queryOwnerRecreationalLocations.key)
 
 							closeModal(editModalId)
 
