@@ -446,46 +446,41 @@ export default function OwnerPage() {
 				<div class="prose mx-auto max-w-full p-2">
 					<h2 class="font-bold text-xl">Location Details</h2>
 
-					<Show when={formData} fallback={<div>No item selected.</div>}>
-						{(location) => (
-							<div class="grid gap-3">
-								<div class="flex items-start gap-4">
-									<img
-										src={getProxiedImageUrl(location().thumbnail)}
-										alt={location().title}
-										class="h-28 w-40 rounded object-cover"
-									/>
+					<div class="grid gap-3">
+						<div class="flex items-start gap-4">
+							<img
+								src={getProxiedImageUrl(formData.thumbnail)}
+								alt={formData.title}
+								class="h-28 w-40 rounded object-cover"
+							/>
 
-									<div>
-										<h3 class="font-semibold text-lg">{location().title}</h3>
-										<div class="text-base-content/70 text-sm">
-											{location().category ?? "Other"} •{" "}
-											{location().address ?? "N/A"}
-										</div>
-									</div>
-								</div>
-
-								<div>
-									<div class="label">
-										<span class="label-text">Raw Data</span>
-									</div>
-
-									<pre class="max-h-64 overflow-auto rounded bg-base-200 p-2 text-xs">
-										{JSON.stringify(location(), null, 2)}
-									</pre>
-								</div>
-
-								<div class="flex justify-end gap-2 pt-2">
-									<GenericButton
-										class="btn-ghost"
-										onClick={() => closeModal(viewModalId)}
-									>
-										Close
-									</GenericButton>
+							<div>
+								<h3 class="font-semibold text-lg">{formData.title}</h3>
+								<div class="text-base-content/70 text-sm">
+									{formData.category ?? "Other"} • {formData.address ?? "N/A"}
 								</div>
 							</div>
-						)}
-					</Show>
+						</div>
+
+						<div>
+							<div class="label">
+								<span class="label-text">Raw Data</span>
+							</div>
+
+							<pre class="max-h-64 overflow-auto rounded bg-base-200 p-2 text-xs">
+								{JSON.stringify(formData, null, 2)}
+							</pre>
+						</div>
+
+						<div class="flex justify-end gap-2 pt-2">
+							<GenericButton
+								class="btn-ghost"
+								onClick={() => closeModal(viewModalId)}
+							>
+								Close
+							</GenericButton>
+						</div>
+					</div>
 				</div>
 			</GenericModal>
 
