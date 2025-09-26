@@ -11,12 +11,14 @@ import {
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 import { createUserRecreationalLocationTableEntry, deleteUserRecreationalLocationTableEntry, updateUserRecreationalLocationTableEntry } from "~/server/database/user/action";
 import { getRecreationalLocationFromDatabaseById } from "~/server/database/user/query";
-import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
+import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import { getOwnerData } from "~/utils/user-query";import * as v from "valibot"
 import { Mutable } from "solidjs-use";
 import { getCurrentUserInfo } from "~/server/user";
+
+const {URL} = DEFAULTS
 
 export default function OwnerPage() {
 	const ownerRecreationalLocations = createAsync(async () => {
@@ -55,7 +57,7 @@ export default function OwnerPage() {
 
 	if (!info) throw Error("No owner data detected")
 
-	setFormData("owner", {id:info.id,name:info.name})
+	setFormData("owner", {id:info.id,name:info.name,link:URL})
 	}
 
 	const locations = createMemo(() => {
