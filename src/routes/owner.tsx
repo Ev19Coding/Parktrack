@@ -17,6 +17,8 @@ import { generateRandomUUID } from "~/utils/random";
 import { getOwnerData } from "~/utils/user-query";import * as v from "valibot"
 import { Mutable } from "solidjs-use";
 import { getCurrentUserInfo } from "~/server/user";
+import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z"
+import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a"
 
 const {URL} = DEFAULTS
 
@@ -172,7 +174,7 @@ export default function OwnerPage() {
 							onClick={() => setSortDir(sortDir() === "asc" ? "desc" : "asc")}
 							aria-label="Toggle sort direction"
 						>
-							{sortDir() === "asc" ? "Asc" : "Desc"}
+							{sortDir() === "asc" ?  <AscendingOrderIcon/> : <DescendingOrderIcon/>}
 						</button>
 					</div>
 
