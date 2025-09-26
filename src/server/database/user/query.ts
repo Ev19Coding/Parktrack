@@ -129,7 +129,7 @@ async function getAllRecreationalLocations() {
 				{ name: "category", weight: 1.5 },
 				// { name: "phone", weight: 0.5 },
 			],
-			threshold: 0.3,
+			threshold: 0.25,
 			includeScore: true,
 			ignoreLocation: true,
 			shouldSort: true,
