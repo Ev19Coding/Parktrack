@@ -10,8 +10,8 @@ import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
 import {
-	isUserLoggedIn,
 	queryIsUserOwner,
+	queryUserLoggedIn,
 	revalidateUserLoginData,
 } from "~/utils/user-query";
 import { TooltipButton } from "./button";
@@ -24,7 +24,7 @@ export default function SideBar() {
 
 	const [isLoading, setIsLoading] = createSignal(false);
 
-	const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+	const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 		initialValue: false,
 	});
 

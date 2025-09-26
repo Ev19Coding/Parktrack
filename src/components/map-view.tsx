@@ -13,12 +13,12 @@ import { SolidLeafletMap } from "solidjs-leaflet";
 import locationMarker from "~/assets/marker/location.svg";
 import generalMarker from "~/assets/marker/other.webp";
 import userMarker from "~/assets/marker/user.webp";
-import {
-	getRecreationalLocationFromDatabaseById,
-	getRecreationalLocationsCloseToCoords,
-} from "~/server/database/user/query";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
+import {
+	queryRecreationalLocationById,
+	queryRecreationalLocationsCloseToCoords,
+} from "~/utils/user-query";
 import LoadingSpinner from "./loading-spinner";
 
 export default function UserMapView(prop: {
@@ -79,12 +79,12 @@ export default function UserMapView(prop: {
 			setRecreationalMarkers([]);
 
 			// Get recreational locations near the current coordinates
-			const locations = await getRecreationalLocationsCloseToCoords({
+			const locations = await queryRecreationalLocationsCloseToCoords({
 				lat: coords()[0],
 				long: coords()[1],
 				maxResults: 55,
 				range: 55,
-			});
+			})
 
 			// Create markers for each recreational location
 			const newMarkers: Marker[] = [];
@@ -120,8 +120,7 @@ export default function UserMapView(prop: {
 						const clickListener = async () => {
 							setIsLoading(true);
 
-							const locationData =
-								await getRecreationalLocationFromDatabaseById(id);
+							const locationData = await queryRecreationalLocationById(id)
 
 							if (locationData) {
 								// If already on info page, navigate away first

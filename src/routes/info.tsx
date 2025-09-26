@@ -26,13 +26,18 @@ import { GenericModal, showModal } from "~/components/modal/generic-modal";
 import { RecreationalLocationSchema } from "~/server/database/schema";
 import {
 	addToFavourites,
+	getCurrentUserId,
 	isLocationInFavourites,
 	removeFromFavourites,
 } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import { isUserLoggedIn } from "~/utils/user-query";
+import {
+	queryUserLoggedIn,
+	revalidateUserFavouriteStatus,
+	revalidateUserFavourites,
+} from "~/utils/user-query";
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -477,7 +482,7 @@ export default function InformationRoute() {
 									);
 								}
 
-								const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+								const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 									initialValue: false,
 								});
 
@@ -496,7 +501,23 @@ export default function InformationRoute() {
 													await addToFavourites(id());
 												}
 
-												await revalidate(queryfied.key);
+												// Prefer targeted revalidation: per-user favourites list and per-item status.
+												try {
+													const userId = await getCurrentUserId();
+													if (userId) {
+														// Revalidate both the user's favourites collection and the per-item flag.
+														await revalidate([
+															`user-favourites:${userId}`,
+															`is-favourite:${userId}:${id()}`,
+														]);
+													} else {
+														// Fallback to the original query key if we can't resolve the user id.
+														await revalidate(queryfied.key);
+													}
+												} catch {
+													// Ensure fallback on any error.
+													await revalidate(queryfied.key);
+												}
 
 												setIsLoading(false);
 											}}

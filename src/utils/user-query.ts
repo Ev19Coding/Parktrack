@@ -2,17 +2,29 @@ import { query, revalidate } from "@solidjs/router";
 import {
 	getLocationsByOwner,
 	getRecreationalLocationCategories,
+	getRecreationalLocationFromDatabaseById,
+	getRecreationalLocationsCloseToCoords,
+	getRecreationalLocationsFromDatabaseAtRandom,
+	getUserFavouriteLocations,
+	getUserQueryResultFromDatabase,
+	getUsersByType,
+	isLocationInUserFavourites,
 } from "~/server/database/user/query";
 import {
-	_isUserLoggedIn,
+	isUserLoggedIn as isUserLoggedIn,
 	getCurrentUserInfo,
 	isUserOwner,
 	isUserRegular,
 } from "~/server/user";
+import { generateRandomUUID } from "~/utils/random";
 
-// These need to be wrapped with query to handle redirects properly
+// Query-wrapped read-only helpers that mirror server reads.
+// Keys are deterministic so `revalidate` can target them.
 
-/** Returns all the relevant data of the owner */
+//
+// Auth queries
+//
+
 export const getOwnerData = query(async () => {
 	if (await isUserOwner()) {
 		const ownerInfo = await getCurrentUserInfo();
@@ -24,27 +36,101 @@ export const getOwnerData = query(async () => {
 		return { locations: ownerLocations } as const;
 	}
 	return null;
-}, "owner-data");
+}, generateRandomUUID());
 
 export const getRegularUserData = query(async () => {
 	if (await isUserRegular()) return {};
 	return null;
-}, "regular-user-data");
+}, generateRandomUUID());
 
-export const isUserLoggedIn = query(_isUserLoggedIn, "is-user-logged-in");
+export const queryUserLoggedIn = query(isUserLoggedIn, generateRandomUUID());
 
-export const queryIsUserOwner = query(isUserOwner, "is-user-owner");
+export const queryIsUserOwner = query(isUserOwner, generateRandomUUID());
 
 export async function revalidateUserLoginData() {
 	return revalidate([
-		isUserLoggedIn.key,
+		queryUserLoggedIn.key,
 		getOwnerData.key,
 		getRegularUserData.key,
 		queryIsUserOwner.key,
 	]);
 }
 
-export const queryRecreationalLocationCategories = query(
-	() => getRecreationalLocationCategories(),
-	"location-categories",
+//
+// Recreational location queries
+//
+
+export const queryUserSearchForRecreationalLocations = query(
+	getUserQueryResultFromDatabase,
+	generateRandomUUID(),
 );
+
+export const queryRecreationalLocationById = query(
+	getRecreationalLocationFromDatabaseById,
+	generateRandomUUID(),
+);
+
+export async function revalidateRecreationalLocationById() {
+	return revalidate([queryRecreationalLocationById.key]);
+}
+
+export const queryRecreationalLocationCategories = query(
+	getRecreationalLocationCategories,
+	generateRandomUUID(),
+);
+
+export async function revalidateRecreationalLocationCategories() {
+	return revalidate([queryRecreationalLocationCategories.key]);
+}
+
+export const queryRecreationalLocationsAtRandom = query(
+	getRecreationalLocationsFromDatabaseAtRandom,
+	generateRandomUUID(),
+);
+
+export const queryRecreationalLocationsCloseToCoords = query(
+	getRecreationalLocationsCloseToCoords,
+	generateRandomUUID(),
+);
+
+export const queryUsersByType = query(getUsersByType, generateRandomUUID());
+
+export const queryUserFavouriteLocations = query(
+	getUserFavouriteLocations,
+	generateRandomUUID(),
+);
+
+export async function revalidateUserFavourites() {
+	return revalidate([queryUserFavouriteLocations.key]);
+}
+
+export async function revalidateUserFavouriteStatus() {
+	return revalidate([queryIsLocationInUserFavourites.key, queryUserFavouriteLocations.key]);
+}
+
+export const queryIsLocationInUserFavourites = query(
+	isLocationInUserFavourites,
+	generateRandomUUID(),
+);
+
+//
+// Owner queries
+//
+
+export const queryLocationsByOwner = query(getLocationsByOwner, generateRandomUUID());
+
+//
+// Convenience revalidation helpers
+//
+
+export async function revalidateSearchQuery() {
+	return revalidate([queryUserSearchForRecreationalLocations.key]);
+}
+
+export async function revalidateNearbyCoords() {
+	return revalidate(queryRecreationalLocationsCloseToCoords.key);
+}
+
+export async function revalidateRandomCategory() {
+	return revalidate([queryRecreationalLocationsAtRandom.key]);
+}

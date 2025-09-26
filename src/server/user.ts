@@ -86,7 +86,7 @@ export async function getCurrentUserInfo(): Promise<User | null> {
 }
 
 /** Check if current user is logged in */
-export async function _isUserLoggedIn(): Promise<boolean> {
+export async function isUserLoggedIn(): Promise<boolean> {
 	const session = await getSession();
 
 	return !!session;

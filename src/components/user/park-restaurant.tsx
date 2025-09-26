@@ -5,31 +5,26 @@ import {
 	useNavigate,
 } from "@solidjs/router";
 import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
-import {
-	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
-	getRecreationalLocationsFromDatabaseAtRandom,
-} from "~/server/database/user/query";
 import type { PromiseValue } from "~/types/generics";
 import { getProxiedImageUrl } from "~/utils/image";
 import { getRandomElementInArray } from "~/utils/random";
-import { queryRecreationalLocationCategories } from "~/utils/user-query";
+import {
+	queryRecreationalLocationById,
+	queryRecreationalLocationCategories,
+	queryRecreationalLocationsAtRandom,
+} from "~/utils/user-query";
 import LoadingSpinner from "../loading-spinner";
 import { RecreationalLocationDisplayButtonCard } from "../location-display-button-card";
 
 function DataSection(prop: {
-	data: PromiseValue<
-		ReturnType<typeof getRecreationalLocationsFromDatabaseAtRandom>
-	>;
-
+	data: ReadonlyArray<{ id: string; title: string; thumbnail: string }>;
 	header: JSXElement;
 	class: string;
 }) {
 	const navigate = useNavigate();
 
-	const getRecreationalLocationFromDatabaseById = query(
-		_getRecreationalLocationFromDatabaseById,
-		"db-location-data-query",
-	);
+	const getRecreationalLocationFromDatabaseById = (id: string) =>
+		queryRecreationalLocationById(id)
 
 	const [
 		isLoadingRecreationalLocationInfo,
@@ -102,7 +97,7 @@ export function UserRecreationalLocationDisplay(prop: { class?: string }) {
 	);
 
 	const randomParks = createAsyncStore(
-		() => getRecreationalLocationsFromDatabaseAtRandom(randomCategory()),
+		() => queryRecreationalLocationsAtRandom(randomCategory()),
 		{ initialValue: [], reconcile: { merge: true } },
 	);
 

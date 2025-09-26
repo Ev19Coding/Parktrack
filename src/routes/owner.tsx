@@ -21,7 +21,7 @@ import {
 	deleteUserRecreationalLocationTableEntry,
 	updateUserRecreationalLocationTableEntry,
 } from "~/server/database/user/action";
-import { getRecreationalLocationFromDatabaseById } from "~/server/database/user/query";
+import { queryRecreationalLocationById } from "~/utils/user-query";
 import { getCurrentUserInfo } from "~/server/user";
 import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
@@ -29,6 +29,8 @@ import { generateRandomUUID } from "~/utils/random";
 import {
 	getOwnerData,
 	queryRecreationalLocationCategories,
+	revalidateRecreationalLocationById,
+	revalidateRecreationalLocationCategories,
 } from "~/utils/user-query";
 
 const { URL } = DEFAULTS;
@@ -694,7 +696,7 @@ export default function OwnerPage() {
 		const { locations = [] } = (await getOwnerData()) ?? {};
 
 		const fullDataLocationPromises = locations.map((loc) =>
-			getRecreationalLocationFromDatabaseById(loc.id),
+			queryRecreationalLocationById(loc.id),
 		);
 
 		return (await Promise.allSettled(fullDataLocationPromises)).reduce<
@@ -767,7 +769,17 @@ export default function OwnerPage() {
 			async () => {
 				setIsActionLoading(true);
 				await deleteUserRecreationalLocationTableEntry(id);
-				await revalidate(queryOwnerRecreationalLocations.key);
+				// Revalidate owner list, categories and the specific location cache
+				try {
+					await Promise.all([
+						revalidateRecreationalLocationById(),
+						revalidateRecreationalLocationCategories(),
+						revalidate(queryOwnerRecreationalLocations.key),
+					]);
+				} catch {
+					// Fallback to revalidating the owner query key if any helper fails
+					await revalidate(queryOwnerRecreationalLocations.key);
+				}
 				closeModal(viewModalId);
 				setIsActionLoading(false);
 			},
@@ -796,8 +808,18 @@ export default function OwnerPage() {
 	async function handleCreate() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
-		await createUserRecreationalLocationTableEntry(formData);
-		await revalidate(queryOwnerRecreationalLocations.key);
+		const created = await createUserRecreationalLocationTableEntry(formData);
+		// Revalidate owner list, categories and the newly created record if possible
+		try {
+			await Promise.all([
+				revalidateRecreationalLocationById(),
+				revalidateRecreationalLocationCategories(),
+				revalidate(queryOwnerRecreationalLocations.key),
+			]);
+		} catch {
+			// Ensure the owner listing is at least revalidated on error
+			await revalidate(queryOwnerRecreationalLocations.key);
+		}
 		closeModal(createModalId);
 		setIsActionLoading(false);
 	}
@@ -806,7 +828,16 @@ export default function OwnerPage() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
 		await updateUserRecreationalLocationTableEntry(formData.id, formData);
-		await revalidate(queryOwnerRecreationalLocations.key);
+		// Revalidate owner list, categories and the updated record
+		try {
+			await Promise.all([
+				revalidateRecreationalLocationById(),
+				revalidateRecreationalLocationCategories(),
+				revalidate(queryOwnerRecreationalLocations.key),
+			]);
+		} catch {
+			await revalidate(queryOwnerRecreationalLocations.key);
+		}
 		closeModal(editModalId);
 		setIsActionLoading(false);
 	}
