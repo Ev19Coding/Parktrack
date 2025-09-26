@@ -4,7 +4,7 @@ import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
 import ViewIcon from "lucide-solid/icons/eye";
 import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
-import { createMemo, createSignal, Index, Show } from "solid-js";
+import { createMemo, createSignal, Index, Show, For } from "solid-js";
 import { createStore, type SetStoreFunction } from "solid-js/store";
 import type { Mutable } from "solidjs-use";
 import * as v from "valibot";
@@ -26,150 +26,549 @@ import { getCurrentUserInfo } from "~/server/user";
 import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import { getOwnerData } from "~/utils/user-query";
+import {
+	getOwnerData,
+	queryRecreationalLocationCategories,
+} from "~/utils/user-query";
 
 const { URL } = DEFAULTS;
 
-/**
- * Shared form for both Create and Edit dialogs.
- * Keeps markup in one place so Create/Edit can share structure and validation.
- */
+/** Utility to generate a minimal about-category object from a tag string */
+function aboutFromTag(tag: string) {
+	return { id: generateRandomUUID(), name: tag, options: [] };
+}
 function LocationForm(props: {
 	formData: Mutable<RecreationalLocationSchema>;
 	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+	categories: readonly string[];
 }) {
+	// Local signals for the small interactive lists
+	const [openHourInput, setOpenHourInput] = createSignal("");
+	const [imageTitleInput, setImageTitleInput] = createSignal("");
+	const [imageUrlInput, setImageUrlInput] = createSignal("");
+	const [aboutTagInput, setAboutTagInput] = createSignal("");
+
+	// Email helper: comma-separated to string[]
+	function onEmailsInput(value: string) {
+		const list = value
+			.split(",")
+			.map((s) => s.trim())
+			.filter(Boolean);
+		props.setFormData("emails", list.length ? list : undefined);
+	}
+
+	function upsertOwner(part: Partial<RecreationalLocationSchema["owner"]>) {
+		props.setFormData("owner", {
+			...(props.formData.owner ?? { id: "", name: "", link: "" }),
+			...part,
+		});
+	}
+
+	// openHours - expect input like "Monday: 8am-5pm" or "Monday: Open"
+	function addOpenHour() {
+		const raw = openHourInput().trim();
+		if (!raw) return;
+		const [dayPart, ...rest] = raw.split(":");
+		if (!dayPart || rest.length === 0) return;
+		const day = dayPart.trim();
+		const hours = rest.join(":").trim();
+		// merge into existing openHours
+		const existing = props.formData.openHours ?? {};
+		const prev = existing[day] ?? [];
+		props.setFormData("openHours", { ...existing, [day]: [...prev, hours] });
+		setOpenHourInput("");
+	}
+
+	function removeOpenHour(day: string, idx: number) {
+		const existing = props.formData.openHours ?? {};
+		const arr = [...(existing[day] ?? [])];
+		arr.splice(idx, 1);
+		if (arr.length === 0) {
+			const copy = { ...existing };
+			delete copy[day];
+			props.setFormData("openHours", Object.keys(copy).length ? copy : {});
+			return;
+		}
+		props.setFormData("openHours", { ...existing, [day]: arr });
+	}
+
+	// images: simple title + url inputs produce { title, image }
+	function addImage() {
+		const title = imageTitleInput().trim();
+		const url = imageUrlInput().trim();
+		if (!url) return;
+		const item = { title: title || "Image", image: url };
+		const arr = props.formData.images ? [...props.formData.images, item] : [item];
+		props.setFormData("images", arr);
+		setImageTitleInput("");
+		setImageUrlInput("");
+	}
+
+	function removeImage(idx: number) {
+		if (!props.formData.images) return;
+		const arr = [...props.formData.images];
+		arr.splice(idx, 1);
+		props.setFormData("images", arr.length ? arr : []);
+	}
+
+	// about: treat as simple tags -> convert to about categories
+	function addAboutTag() {
+		const tag = aboutTagInput().trim();
+		if (!tag) return;
+		const newAbout = aboutFromTag(tag);
+		const arr = props.formData.about ? [...props.formData.about, newAbout] : [newAbout];
+		props.setFormData("about", arr);
+		setAboutTagInput("");
+	}
+
+	function removeAbout(idx: number) {
+		if (!props.formData.about) return;
+		const arr = [...props.formData.about];
+		arr.splice(idx, 1);
+		props.setFormData("about", arr.length ? arr : undefined);
+	}
+
 	return (
 		<>
-			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-				<div>
-					<label class="label">
-						<span class="label-text">Title</span>
+			{/* Basic / header */}
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<label class="form-control">
+					<span class="label-text">Title</span>
+					<input
+						name="title"
+						placeholder="Name of the location"
+						class="input input-bordered input-primary w-full"
+						value={props.formData.title}
+						onInput={(e) => props.setFormData("title", e.currentTarget.value)}
+						required
+					/>
+				</label>
 
-						<input
-							name="title"
-							required
-							class="input input-bordered w-full"
-							value={props.formData.title}
-							onInput={(e) => props.setFormData("title", e.currentTarget.value)}
-						/>
-					</label>
+				{/* category as plain text with datalist suggestions */}
+				<label class="form-control">
+					<span class="label-text">Category</span>
+					<input
+						name="category"
+						list="category-suggestions"
+						class="input input-bordered w-full"
+						placeholder="e.g. Park, Trail, Beach"
+						value={props.formData.category ?? ""}
+						onInput={(e) => props.setFormData("category", e.currentTarget.value)}
+					/>
+					<datalist id="category-suggestions">
+						<For each={props.categories}>{(c) => <option value={c} />}</For>
+					</datalist>
+				</label>
+			</div>
+
+			{/* Address & Link */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<label class="form-control">
+					<span class="label-text">Address</span>
+					<input
+						name="address"
+						placeholder="Full address or landmark"
+						class="input input-bordered w-full"
+						value={props.formData.address ?? ""}
+						onInput={(e) => props.setFormData("address", e.currentTarget.value)}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Direct Link</span>
+					<input
+						name="link"
+						placeholder="Direct map/listing URL"
+						class="input input-bordered w-full"
+						value={props.formData.link}
+						onInput={(e) => props.setFormData("link", e.currentTarget.value)}
+					/>
+				</label>
+			</div>
+
+			{/* Coordinates / Plus Code */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<label class="form-control">
+					<span class="label-text">Latitude</span>
+					<input
+						name="latitude"
+						class="input input-bordered w-full"
+						placeholder="e.g. 34.0522"
+						value={props.formData.latitude ?? ""}
+						onInput={(e) =>
+							props.setFormData("latitude", Number(e.currentTarget.value))
+						}
+						type="number"
+						step="any"
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Longitude</span>
+					<input
+						name="longitude"
+						class="input input-bordered w-full"
+						placeholder="e.g. -118.2437"
+						value={props.formData.longitude ?? ""}
+						onInput={(e) =>
+							props.setFormData("longitude", Number(e.currentTarget.value))
+						}
+						type="number"
+						step="any"
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Plus Code</span>
+					<input
+						name="plusCode"
+						class="input input-bordered w-full"
+						placeholder="Plus Code (optional)"
+						value={props.formData.plusCode ?? ""}
+						onInput={(e) => props.setFormData("plusCode", e.currentTarget.value)}
+					/>
+				</label>
+			</div>
+
+			{/* Thumbnail / Reviews Link */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+				<label class="form-control">
+					<span class="label-text">Thumbnail URL</span>
+					<input
+						name="thumbnail"
+						placeholder="Image URL (will use placeholder if empty)"
+						class="input input-bordered w-full"
+						value={props.formData.thumbnail ?? ""}
+						onInput={(e) => props.setFormData("thumbnail", e.currentTarget.value)}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Reviews Link</span>
+					<input
+						name="reviewsLink"
+						placeholder="Link to reviews page (optional)"
+						class="input input-bordered w-full"
+						value={props.formData.reviewsLink ?? ""}
+						onInput={(e) => props.setFormData("reviewsLink", e.currentTarget.value)}
+					/>
+				</label>
+			</div>
+
+			{/* Description */}
+			<label class="form-control mt-4">
+				<span class="label-text">Description</span>
+				<textarea
+					name="description"
+					placeholder="Short description or notes about the location"
+					class="textarea textarea-bordered w-full"
+					value={props.formData.description ?? ""}
+					onInput={(e) => props.setFormData("description", e.currentTarget.value)}
+					rows={4}
+				/>
+			</label>
+
+			{/* Contact */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<label class="form-control">
+					<span class="label-text">Phone</span>
+					<input
+						name="phone"
+						placeholder="+1 555-555-5555"
+						class="input input-bordered w-full"
+						value={props.formData.phone ?? ""}
+						onInput={(e) => props.setFormData("phone", e.currentTarget.value)}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Website</span>
+					<input
+						name="website"
+						placeholder="https://example.com"
+						class="input input-bordered w-full"
+						value={props.formData.website ?? ""}
+						onInput={(e) => props.setFormData("website", e.currentTarget.value)}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Emails (comma separated)</span>
+					<input
+						name="emails"
+						placeholder="owner@example.com, info@example.com"
+						class="input input-bordered w-full"
+						value={(props.formData.emails ?? []).join(", ")}
+						onInput={(e) => onEmailsInput(e.currentTarget.value)}
+					/>
+				</label>
+			</div>
+
+			{/* Rating / ReviewCount / PriceRange */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<label class="form-control">
+					<span class="label-text">Rating</span>
+					<input
+						name="rating"
+						type="number"
+						step="0.1"
+						min="0"
+						max="5"
+						placeholder="0.0 - 5.0"
+						class="input input-bordered w-full"
+						value={props.formData.rating ?? ""}
+						onInput={(e) =>
+							props.setFormData(
+								"rating",
+								e.currentTarget.value === ""
+									? undefined
+									: Number(e.currentTarget.value),
+							)
+						}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Review Count</span>
+					<input
+						name="reviewCount"
+						type="number"
+						min="0"
+						placeholder="Total reviews"
+						class="input input-bordered w-full"
+						value={props.formData.reviewCount ?? ""}
+						onInput={(e) =>
+							props.setFormData(
+								"reviewCount",
+								e.currentTarget.value === ""
+									? undefined
+									: Number(e.currentTarget.value),
+							)
+						}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Price Range</span>
+					<input
+						name="priceRange"
+						class="input input-bordered w-full"
+						placeholder="e.g. ₦₦, ₦25,000–30,000"
+						value={props.formData.priceRange ?? ""}
+						onInput={(e) => props.setFormData("priceRange", e.currentTarget.value)}
+					/>
+				</label>
+			</div>
+
+			{/* Timezone / Owner */}
+			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+				<label class="form-control">
+					<span class="label-text">Timezone</span>
+					<input
+						name="timezone"
+						class="input input-bordered w-full"
+						placeholder="e.g. America/Los_Angeles"
+						value={props.formData.timezone ?? ""}
+						onInput={(e) => props.setFormData("timezone", e.currentTarget.value)}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Owner Name</span>
+					<input
+						name="ownerName"
+						placeholder="Owner name"
+						class="input input-bordered w-full"
+						value={props.formData.owner?.name ?? ""}
+						onInput={(e) => upsertOwner({ name: e.currentTarget.value })}
+					/>
+				</label>
+
+				<label class="form-control">
+					<span class="label-text">Owner Link</span>
+					<input
+						name="ownerLink"
+						placeholder="https://owner.example.com"
+						class="input input-bordered w-full"
+						value={props.formData.owner?.link ?? ""}
+						onInput={(e) => upsertOwner({ link: e.currentTarget.value })}
+					/>
+				</label>
+			</div>
+
+			{/* Active toggle */}
+			<label class="form-control mt-4 cursor-pointer">
+				<div class="flex items-center gap-3">
+					<span class="label-text">Active in system</span>
+					<input
+						type="checkbox"
+						class="toggle toggle-primary"
+						checked={Boolean(props.formData.isActive)}
+						onInput={(e) => props.setFormData("isActive", e.currentTarget.checked)}
+					/>
+				</div>
+			</label>
+
+			{/* ------------------ openHours UI ------------------ */}
+			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
+				<div class="flex items-center justify-between mb-2">
+					<div class="font-semibold">Open Hours</div>
+					<div class="text-sm text-base-content/70">Enter as "Day: hours"</div>
 				</div>
 
-				<div>
-					<label class="label">
-						<span class="label-text">Category</span>
+				<div class="flex flex-col sm:flex-row gap-2">
+					<input
+						class="input input-bordered flex-1"
+						placeholder="e.g. Monday: 8 am–5 pm"
+						value={openHourInput()}
+						onInput={(e) => setOpenHourInput(e.currentTarget.value)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && (e.preventDefault(), addOpenHour())
+						}
+					/>
+					<button type="button" class="btn btn-primary" onClick={addOpenHour}>
+						Add
+					</button>
+				</div>
 
-						<input
-							name="category"
-							class="input input-bordered w-full"
-							value={props.formData.category ?? ""}
-							onInput={(e) =>
-								props.setFormData("category", e.currentTarget.value)
-							}
-						/>
-					</label>
+				<div class="mt-3 flex flex-wrap gap-2">
+					{Object.entries(props.formData.openHours ?? {}).map(([day, arr]) =>
+						arr.map((h, idx) => (
+							<div class="badge badge-outline" role="listitem">
+								<span class="mr-2">
+									{day}: {h}
+								</span>
+								<button
+									type="button"
+									class="btn btn-xs btn-ghost"
+									onClick={() => removeOpenHour(day, idx)}
+								>
+									✕
+								</button>
+							</div>
+						)),
+					)}
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
-				<div>
-					<label class="label">
-						<span class="label-text">Address</span>
-
-						<input
-							name="address"
-							class="input input-bordered w-full"
-							value={props.formData.address ?? ""}
-							onInput={(e) =>
-								props.setFormData("address", e.currentTarget.value)
-							}
-						/>
-					</label>
+			{/* ------------------ Images UI ------------------ */}
+			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
+				<div class="flex items-center justify-between mb-2">
+					<div class="font-semibold">Images</div>
+					<div class="text-sm text-base-content/70">Add image title + URL</div>
 				</div>
 
-				<div>
-					<label class="label">
-						<span class="label-text">Link</span>
+				<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+					<input
+						class="input input-bordered col-span-1"
+						placeholder="Title (optional)"
+						value={imageTitleInput()}
+						onInput={(e) => setImageTitleInput(e.currentTarget.value)}
+					/>
+					<input
+						class="input input-bordered col-span-1 sm:col-span-2"
+						placeholder="Image URL"
+						value={imageUrlInput()}
+						onInput={(e) => setImageUrlInput(e.currentTarget.value)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && (e.preventDefault(), addImage())
+						}
+					/>
+				</div>
 
-						<input
-							name="link"
-							class="input input-bordered w-full"
-							value={props.formData.link}
-							onInput={(e) => props.setFormData("link", e.currentTarget.value)}
-						/>
-					</label>
+				<div class="mt-2 flex gap-2">
+					<button type="button" class="btn btn-primary" onClick={addImage}>
+						Add Image
+					</button>
+				</div>
+
+				<div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+					<For each={props.formData.images ?? []}>
+						{(img, i) => (
+							<div class="card bg-base-200 p-2">
+								<div class="flex items-center gap-2">
+									<img
+										src={getProxiedImageUrl(img.image)}
+										alt={img.title}
+										class="h-12 w-20 object-cover rounded"
+									/>
+									<div class="flex-1">
+										<div class="font-semibold text-sm">{img.title}</div>
+										<div class="text-xs text-base-content/60 truncate">
+											{img.image}
+										</div>
+									</div>
+									<button
+										type="button"
+										class="btn btn-ghost btn-sm"
+										onClick={() => removeImage(i())}
+									>
+										Remove
+									</button>
+								</div>
+							</div>
+						)}
+					</For>
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-				<div>
-					<label class="label">
-						<span class="label-text">Latitude</span>
-
-						<input
-							name="latitude"
-							class="input input-bordered w-full"
-							value={props.formData.latitude}
-							onInput={(e) =>
-								props.setFormData("latitude", Number(e.currentTarget.value))
-							}
-							type="number"
-							step="any"
-						/>
-					</label>
+			{/* ------------------ About tags UI ------------------ */}
+			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
+				<div class="flex items-center justify-between mb-2">
+					<div class="font-semibold">About (tags)</div>
+					<div class="text-sm text-base-content/70">
+						Tags describing features/amenities
+					</div>
 				</div>
 
-				<div>
-					<label class="label">
-						<span class="label-text">Longitude</span>
-
-						<input
-							name="longitude"
-							class="input input-bordered w-full"
-							value={props.formData.longitude}
-							onInput={(e) =>
-								props.setFormData("longitude", Number(e.currentTarget.value))
-							}
-							type="number"
-							step="any"
-						/>
-					</label>
+				<div class="flex gap-2">
+					<input
+						class="input input-bordered flex-1"
+						placeholder="Add tag (e.g. playground)"
+						value={aboutTagInput()}
+						onInput={(e) => setAboutTagInput(e.currentTarget.value)}
+						onKeyDown={(e) =>
+							e.key === "Enter" && (e.preventDefault(), addAboutTag())
+						}
+					/>
+					<button type="button" class="btn btn-primary" onClick={addAboutTag}>
+						Add
+					</button>
 				</div>
 
-				<div>
-					<label class="label">
-						<span class="label-text">Thumbnail URL</span>
-
-						<input
-							name="thumbnail"
-							class="input input-bordered w-full"
-							value={props.formData.thumbnail}
-							onInput={(e) =>
-								props.setFormData("thumbnail", e.currentTarget.value)
-							}
-						/>
-					</label>
+				<div class="mt-3 flex flex-wrap gap-2">
+					<For each={props.formData.about ?? []}>
+						{(a, idx) => (
+							<div class="badge badge-lg" role="listitem">
+								<span class="mr-2">{a.name}</span>
+								<button
+									type="button"
+									class="btn btn-xs btn-ghost"
+									onClick={() => removeAbout(idx())}
+								>
+									✕
+								</button>
+							</div>
+						)}
+					</For>
 				</div>
 			</div>
 		</>
 	);
 }
 
-/**
- * Create dialog component.
- * Accepts the minimal props to render and handle user actions.
- */
 function CreateLocationModal(props: {
 	modalId: string;
 	formData: Mutable<RecreationalLocationSchema>;
 	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+	categories: ReadonlyArray<string>;
 	isLoading: boolean;
 	onCancel: () => void;
 	onSubmit: () => Promise<void>;
 }) {
 	return (
 		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
-			<div class="prose mx-auto max-w-full p-2">
+			<div class="prose mx-auto max-w-full p-3">
 				<h2 class="font-bold text-xl">Create Location</h2>
 
 				<form
@@ -180,22 +579,17 @@ function CreateLocationModal(props: {
 					<LocationForm
 						formData={props.formData}
 						setFormData={props.setFormData}
+						categories={props.categories}
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton
-							class="btn-ghost"
-							type="button"
-							onClick={props.onCancel}
-						>
+						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
 							Cancel
 						</GenericButton>
 
 						<GenericButton
-							class="btn-primary"
-							onClick={async () => {
-								await props.onSubmit();
-							}}
+							class="btn btn-primary"
+							onClick={async () => await props.onSubmit()}
 						>
 							{props.isLoading ? "Creating..." : "Create"}
 						</GenericButton>
@@ -206,45 +600,36 @@ function CreateLocationModal(props: {
 	);
 }
 
-/**
- * Edit dialog component.
- * Shares the same form as Create but provides a hidden id and different button text.
- */
 function EditLocationModal(props: {
 	modalId: string;
 	formData: Mutable<RecreationalLocationSchema>;
 	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
+	categories: readonly string[];
 	isLoading: boolean;
 	onCancel: () => void;
 	onSubmit: () => Promise<void>;
 }) {
 	return (
 		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
-			<div class="prose mx-auto max-w-full p-2">
+			<div class="prose mx-auto max-w-full p-3">
 				<h2 class="font-bold text-xl">Edit Location</h2>
 
 				<form class="grid gap-3" onSubmit={(e) => e.preventDefault()}>
 					<input type="hidden" name="id" value={props.formData.id} />
-
 					<LocationForm
 						formData={props.formData}
 						setFormData={props.setFormData}
+						categories={props.categories}
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton
-							class="btn-ghost"
-							type="button"
-							onClick={props.onCancel}
-						>
+						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
 							Cancel
 						</GenericButton>
 
 						<GenericButton
-							class="btn-primary"
-							onClick={async () => {
-								await props.onSubmit();
-							}}
+							class="btn btn-primary"
+							onClick={async () => await props.onSubmit()}
 						>
 							{props.isLoading ? "Saving..." : "Save Changes"}
 						</GenericButton>
@@ -255,17 +640,15 @@ function EditLocationModal(props: {
 	);
 }
 
-/**
- * View dialog component for showing details and raw data.
- */
 function ViewLocationModal(props: {
 	modalId: string;
 	formData: Mutable<RecreationalLocationSchema>;
 	onClose: () => void;
 }) {
+
 	return (
 		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
-			<div class="prose mx-auto max-w-full p-2">
+			<div class="prose mx-auto max-w-full p-3">
 				<h2 class="font-bold text-xl">Location Details</h2>
 
 				<div class="grid gap-3">
@@ -279,8 +662,7 @@ function ViewLocationModal(props: {
 						<div>
 							<h3 class="font-semibold text-lg">{props.formData.title}</h3>
 							<div class="text-base-content/70 text-sm">
-								{props.formData.category ?? "Other"} •{" "}
-								{props.formData.address ?? "N/A"}
+								{props.formData.category ?? "Other"} • {props.formData.address ?? "N/A"}
 							</div>
 						</div>
 					</div>
@@ -307,6 +689,7 @@ function ViewLocationModal(props: {
 }
 
 export default function OwnerPage() {
+	// fetch owner's locations (existing)
 	const queryOwnerRecreationalLocations = query(async () => {
 		const { locations = [] } = (await getOwnerData()) ?? {};
 
@@ -318,7 +701,6 @@ export default function OwnerPage() {
 			RecreationalLocationSchema[]
 		>((acc, val) => {
 			if (val.status === "fulfilled" && val.value) acc.push(val.value);
-
 			return acc;
 		}, []);
 	}, "get-owner-recreational-locations");
@@ -328,6 +710,13 @@ export default function OwnerPage() {
 		{ initialValue: [] },
 	);
 
+	// categories suggestions resource (used by LocationForm datalist)
+	const categoriesAsync = createAsync(
+		() => queryRecreationalLocationCategories(),
+		{ initialValue: [] },
+	);
+	const categories = createMemo(() => categoriesAsync() ?? []);
+
 	const SortKeySchema = v.union([v.literal("title"), v.literal("category")]);
 	type SortKeySchema = v.InferOutput<typeof SortKeySchema>;
 
@@ -336,7 +725,6 @@ export default function OwnerPage() {
 	const [sortDir, setSortDir] = createSignal<"asc" | "desc">("asc");
 	const [isActionLoading, setIsActionLoading] = createSignal(false);
 
-	// modal ids (unique so multiple mounted modals won't clash)
 	const createModalId = generateRandomUUID();
 	const viewModalId = generateRandomUUID();
 	const editModalId = generateRandomUUID();
@@ -347,15 +735,12 @@ export default function OwnerPage() {
 
 	async function setOwnerOnLocationData() {
 		const info = await getCurrentUserInfo();
-
 		if (!info) throw Error("No owner data detected");
-
 		setFormData("owner", { id: info.id, name: info.name, link: URL });
 	}
 
 	const locations = createMemo(() => {
 		const base = ownerRecreationalLocations();
-
 		const term = search().trim().toLowerCase();
 		const filtered = term
 			? base.filter((l) =>
@@ -369,7 +754,6 @@ export default function OwnerPage() {
 		filtered.sort((a, b) => {
 			const av = (a[key] ?? "").toLowerCase();
 			const bv = (b[key] ?? "").toLowerCase();
-
 			if (av === bv) return 0;
 			const res = av < bv ? -1 : 1;
 			return sortDir() === "asc" ? res : -res;
@@ -382,13 +766,9 @@ export default function OwnerPage() {
 		triggerConfirmationModal(
 			async () => {
 				setIsActionLoading(true);
-
 				await deleteUserRecreationalLocationTableEntry(id);
-
 				await revalidate(queryOwnerRecreationalLocations.key);
-
 				closeModal(viewModalId);
-
 				setIsActionLoading(false);
 			},
 			<div>
@@ -400,48 +780,34 @@ export default function OwnerPage() {
 
 	function openViewModal(data: RecreationalLocationSchema) {
 		setFormData(data);
-
 		showModal(viewModalId);
 	}
 
 	function openEditModal(data: RecreationalLocationSchema) {
 		setFormData(data);
-
 		showModal(editModalId);
 	}
 
 	function openCreateModal() {
 		setFormData(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
-
 		showModal(createModalId);
 	}
 
-	// Handlers passed into the Create/Edit modals, keep side-effects in owner page
 	async function handleCreate() {
 		setIsActionLoading(true);
-
 		await setOwnerOnLocationData();
-
 		await createUserRecreationalLocationTableEntry(formData);
-
 		await revalidate(queryOwnerRecreationalLocations.key);
-
 		closeModal(createModalId);
-
 		setIsActionLoading(false);
 	}
 
 	async function handleEdit() {
 		setIsActionLoading(true);
-
 		await setOwnerOnLocationData();
-
 		await updateUserRecreationalLocationTableEntry(formData.id, formData);
-
 		await revalidate(queryOwnerRecreationalLocations.key);
-
 		closeModal(editModalId);
-
 		setIsActionLoading(false);
 	}
 
@@ -470,13 +836,13 @@ export default function OwnerPage() {
 						<input
 							type="search"
 							placeholder="Search by title..."
-							class="input w-40"
+							class="input input-bordered w-40"
 							value={search()}
 							onInput={(e) => setSearch(e.currentTarget.value)}
 						/>
 
 						<select
-							class="select w-40"
+							class="select select-bordered w-40"
 							value={sortKey()}
 							onInput={(e) =>
 								setSortKey(v.parse(SortKeySchema, e.currentTarget.value))
@@ -501,7 +867,7 @@ export default function OwnerPage() {
 					</div>
 
 					<div>
-						<GenericButton class="btn-primary" onClick={openCreateModal}>
+						<GenericButton class="btn btn-primary" onClick={openCreateModal}>
 							Create Location
 						</GenericButton>
 					</div>
@@ -601,6 +967,7 @@ export default function OwnerPage() {
 				modalId={createModalId}
 				formData={formData}
 				setFormData={setFormData}
+				categories={categories()}
 				isLoading={isActionLoading()}
 				onCancel={() => closeModal(createModalId)}
 				onSubmit={handleCreate}
@@ -616,6 +983,7 @@ export default function OwnerPage() {
 				modalId={editModalId}
 				formData={formData}
 				setFormData={setFormData}
+				categories={categories()}
 				isLoading={isActionLoading()}
 				onCancel={() => closeModal(editModalId)}
 				onSubmit={handleEdit}
