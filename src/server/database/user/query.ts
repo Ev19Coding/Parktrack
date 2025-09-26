@@ -44,6 +44,11 @@ const LightweightRecreationalLocationSchema = v.object({
 	thumbnail: ImageUrlWithDefaultSchema,
 	category: CategoryStringSchema,
 	address: AddressStringSchema,
+	// Keep this loose since `about` is a structured field (categories + options).
+	// We'll derive a searchable string from it for Fuse.js instead of indexing the raw object.
+	about: v.nullish(v.array(v.any())),
+	// Keep owner so we can surface owner name in the Fuse index and affect ranking
+	owner: v.nullish(v.any()),
 });
 
 /** Since fetching all the data seems like a waste */
@@ -74,11 +79,85 @@ type BareMinimumRecreationalLocationPlusCoordsSchema = Satisfies<
 	Partial<RecreationalLocationSchema>
 >;
 
+type AboutOption = { name?: string; enabled?: boolean };
+type AboutCategory = { id?: string; name?: string; options?: AboutOption[] };
+
+/**
+ * Build a normalized searchable string from the structured `about` field.
+ * - Accepts the common shape: AboutCategory[]
+ * - Falls back to stringifying unknown objects
+ * - Returns `undefined` when nothing useful was found
+ */
+export function computeAboutText(about: unknown): string | undefined {
+	const parts: string[] = [];
+
+	if (!about) return undefined;
+
+	// `about` is expected to be an array of categories each with `name` and `options`.
+	// We'll extract category names and enabled option names to form a searchable text blob.
+	if (Array.isArray(about)) {
+		for (const rawCategory of about) {
+			if (!rawCategory || typeof rawCategory !== "object") continue;
+
+			const category = rawCategory as AboutCategory;
+
+			if (typeof category.name === "string" && category.name.trim()) {
+				parts.push(category.name.trim());
+			}
+
+			if (Array.isArray(category.options)) {
+				for (const rawOpt of category.options) {
+					if (!rawOpt || typeof rawOpt !== "object") continue;
+
+					const opt = rawOpt as AboutOption;
+					if (opt.enabled && typeof opt.name === "string" && opt.name.trim()) {
+						parts.push(opt.name.trim());
+					}
+				}
+			}
+		}
+	} else if (typeof about === "string") {
+		if (about.trim()) parts.push(about.trim());
+	} else if (about && typeof about === "object") {
+		// Fallback: stringify reasonable object shapes
+		try {
+			const stringified = JSON.stringify(about);
+			if (stringified && stringified !== "{}" && stringified !== "null") {
+				parts.push(stringified);
+			}
+		} catch {
+			// ignore any circular or unexpected shapes
+		}
+	}
+
+	if (!parts.length) return undefined;
+	// Join with spaces so the text behaves like a normal searchable string
+	return parts.join(" ");
+}
+
+/**
+ * Compute owner name from the lightweight owner object.
+ * - Accepts shapes like { id: string, name: string, ... }
+ * - Returns normalized trimmed name or undefined
+ */
+export function computeOwnerName(owner: unknown): string | undefined {
+	if (!owner || typeof owner !== "object") return undefined;
+	try {
+		const name = (owner as any).name;
+		if (typeof name === "string" && name.trim()) return name.trim();
+	} catch {
+		// ignore unexpected shapes
+	}
+	return undefined;
+}
+
 const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
 	data: LightweightRecreationalLocationSchema[];
-	fuseIndex: Fuse<LightweightRecreationalLocationSchema>;
+	fuseIndex: Fuse<
+		LightweightRecreationalLocationSchema & { aboutText?: string }
+	>;
 	cachedOn: Date;
 } = { cachedOn: new Date(0), data: [], fuseIndex: new Fuse([]) };
 
@@ -90,11 +169,16 @@ async function getAllRecreationalLocations() {
 		recreationalLocationsCache.cachedOn.getTime() + CACHE_DURATION_IN_MS <
 		currentDate.getTime()
 	) {
-		const fetchedData = (
+		const fetchedData: Array<
+			LightweightRecreationalLocationSchema & {
+				aboutText?: string;
+				ownerName?: string;
+			}
+		> = (
 			await (
 				await getParkTrackDatabaseConnection()
 			).streamAndReadAll(`
-         SELECT id, title, thumbnail, category, address
+         SELECT id, title, thumbnail, category, address, description, about
          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          `)
 		)
@@ -108,6 +192,18 @@ async function getAllRecreationalLocations() {
 						{ abortEarly: true },
 					);
 
+					// Compute searchable strings from structured fields
+					const aboutText = computeAboutText(validatedData.about);
+					const ownerName = computeOwnerName((validatedData as any).owner);
+
+					// Build augmented object only including fields when present
+					const augment: Partial<{ aboutText: string; ownerName: string }> = {};
+					if (typeof aboutText === "string") augment["aboutText"] = aboutText;
+					if (typeof ownerName === "string") augment["ownerName"] = ownerName;
+
+					if (Object.keys(augment).length) {
+						return { ...validatedData, ...augment };
+					}
 					return validatedData;
 				} catch (e) {
 					throw new Error(
@@ -121,15 +217,29 @@ async function getAllRecreationalLocations() {
 				}
 			});
 
+		// The inferred type of `fetchedData` can include elements where `aboutText` is
+		// present on some items and absent on others, which TypeScript widens to
+		// `aboutText: string | undefined`. The Fuse generic expects `aboutText?: string`.
+		// With `exactOptionalPropertyTypes` enabled this becomes a type mismatch even
+		// though the runtime shape is compatible. Rather than overcomplicate the
+		// typing here, acknowledge the mismatch and proceed.
+
 		const fuse = new Fuse(fetchedData, {
 			keys: [
-				{ name: "title", weight: 2 },
-				{ name: "description", weight: 1 },
+				// Prioritize title heavily.
+				{ name: "title", weight: 2.5 },
+				// `aboutText` aggregates tags/features from the structured `about` field; boost it for relevance.
+				{ name: "aboutText", weight: 1.8 },
+				// Owner name should be searchable and moderately influence ranking.
+				{ name: "ownerName", weight: 1.6 },
+				// Description is helpful but less weighted than title/about.
+				{ name: "description", weight: 1.2 },
 				{ name: "address", weight: 1 },
 				{ name: "category", weight: 1.5 },
 				// { name: "phone", weight: 0.5 },
 			],
-			threshold: 0.25,
+			// Slightly relax threshold so partial matches in about/description still surface.
+			threshold: 0.3,
 			includeScore: true,
 			ignoreLocation: true,
 			shouldSort: true,
@@ -415,7 +525,6 @@ export async function getUserFavouriteLocations(
 	if (!favouriteIds.length) return [];
 
 	// Get the recreational locations for these IDs
-	const placeholders = favouriteIds.map(() => "?").join(", ");
 	const fetchedLocations = (
 		await connection.streamAndReadAll(`
           SELECT id, title, thumbnail

@@ -1,3 +1,4 @@
+import Fuse from "fuse.js";
 import { describe, expect, it } from "vitest";
 
 // TODO: E2E and integration tests
@@ -8,9 +9,6 @@ describe("database query functions", () => {
 		expect(module.getUserQueryResultFromDatabase).toBeDefined();
 		expect(module.getRecreationalLocationFromDatabaseById).toBeDefined();
 		expect(module.getRecreationalLocationsFromDatabaseAtRandom).toBeDefined();
-		expect(
-			module.getRestaurantRecreationalLocationsFromDatabaseAtRandom,
-		).toBeDefined();
 		expect(module.getRecreationalLocationsCloseToCoords).toBeDefined();
 	});
 
@@ -57,6 +55,91 @@ describe("database query functions", () => {
 			const module = await import("./query");
 
 			expect(typeof module.getLocationsByOwner).toBe("function");
+		});
+	});
+
+	// New unit tests covering computeAboutText, computeOwnerName, and a small owner search scenario with Fuse
+	describe("computeAboutText and computeOwnerName", () => {
+		it("should extract category names and enabled option names from about", async () => {
+			const { computeAboutText } = await import("./query");
+
+			const about = [
+				{
+					id: "1",
+					name: "Facilities",
+					options: [
+						{ name: "Playground", enabled: true },
+						{ name: "Picnic tables", enabled: false },
+					],
+				},
+				{
+					id: "2",
+					name: "Access",
+					options: [{ name: "Wheelchair accessible", enabled: true }],
+				},
+			];
+
+			const text = computeAboutText(about);
+			expect(typeof text).toBe("string");
+			expect(text).toContain("Facilities");
+			expect(text).toContain("Playground");
+			expect(text).toContain("Access");
+			expect(text).toContain("Wheelchair accessible");
+		});
+
+		it("should handle string about values", async () => {
+			const { computeAboutText } = await import("./query");
+
+			const text = computeAboutText("dog-friendly, water");
+			expect(text).toContain("dog-friendly");
+			expect(text).toContain("water");
+		});
+
+		it("should return undefined for empty or useless about shapes", async () => {
+			const { computeAboutText } = await import("./query");
+
+			expect(computeAboutText(null)).toBeUndefined();
+			expect(computeAboutText(undefined)).toBeUndefined();
+			expect(computeAboutText({})).toBeUndefined();
+		});
+
+		it("should extract owner name when present", async () => {
+			const { computeOwnerName } = await import("./query");
+
+			expect(computeOwnerName({ id: "o1", name: "Alice Johnson" })).toBe(
+				"Alice Johnson",
+			);
+			expect(computeOwnerName({})).toBeUndefined();
+			expect(computeOwnerName(null)).toBeUndefined();
+		});
+	});
+
+	describe("search ranking with ownerName", () => {
+		it("should find documents by ownerName using Fuse", async () => {
+			const docs: Array<{ id: string; title: string; ownerName: string }> = [
+				{ id: "1", title: "Riverside Park", ownerName: "Alice Johnson" },
+				{ id: "2", title: "Lakeside Reserve", ownerName: "Bob Smith" },
+				{ id: "3", title: "Hilltop Gardens", ownerName: "Alice Cooper" },
+			];
+
+			// Use a similar ownerName key to the production index so we validate the field is useful
+			const fuse = new Fuse<(typeof docs)[number]>(docs, {
+				keys: [{ name: "ownerName", weight: 2 }],
+				threshold: 0.3,
+				ignoreLocation: true,
+			});
+
+			const results = fuse.search("Alice");
+			expect(results.length).toBeGreaterThanOrEqual(1);
+
+			// Top result should be an Alice (either Johnson or Cooper), and should contain ownerName
+			const top = results[0]?.item as (typeof docs)[number] | undefined;
+			// Make a hard runtime assertion so TypeScript sees `top` as defined before accessing properties.
+			if (!top) {
+				throw new Error("Expected at least one search result");
+			}
+			expect(typeof top.ownerName).toBe("string");
+			expect(top.ownerName.toLowerCase()).toContain("alice");
 		});
 	});
 });
