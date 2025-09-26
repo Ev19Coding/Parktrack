@@ -301,28 +301,30 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Title</span>
+
+									<input
+										name="title"
+										required
+										class="input input-bordered w-full"
+										value={formData.title}
+										onInput={(e) => setFormData("title", e.currentTarget.value)}
+									/>
 								</label>
-								<input
-									name="title"
-									required
-									class="input input-bordered w-full"
-									value={formData.title}
-									onInput={(e) => setFormData("title", e.currentTarget.value)}
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Category</span>
+
+									<input
+										name="category"
+										class="input input-bordered w-full"
+										value={formData.category ?? ""}
+										onInput={(e) =>
+											setFormData("category", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="category"
-									class="input input-bordered w-full"
-									value={formData.category ?? ""}
-									onInput={(e) =>
-										setFormData("category", e.currentTarget.value)
-									}
-								/>
 							</div>
 						</div>
 
@@ -330,25 +332,29 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Address</span>
+
+									<input
+										name="address"
+										class="input input-bordered w-full"
+										value={formData.address ?? ""}
+										onInput={(e) =>
+											setFormData("address", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="address"
-									class="input input-bordered w-full"
-									value={formData.address ?? ""}
-									onInput={(e) => setFormData("address", e.currentTarget.value)}
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Link</span>
+
+									<input
+										name="link"
+										class="input input-bordered w-full"
+										value={formData.link}
+										onInput={(e) => setFormData("link", e.currentTarget.value)}
+									/>
 								</label>
-								<input
-									name="link"
-									class="input input-bordered w-full"
-									value={formData.link}
-									onInput={(e) => setFormData("link", e.currentTarget.value)}
-								/>
 							</div>
 						</div>
 
@@ -356,47 +362,50 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Latitude</span>
+
+									<input
+										name="latitude"
+										class="input input-bordered w-full"
+										value={formData.latitude}
+										onInput={(e) =>
+											setFormData("latitude", Number(e.currentTarget.value))
+										}
+										type="number"
+										step="any"
+									/>
 								</label>
-								<input
-									name="latitude"
-									class="input input-bordered w-full"
-									value={formData.latitude}
-									onInput={(e) =>
-										setFormData("latitude", Number(e.currentTarget.value))
-									}
-									type="number"
-									step="any"
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Longitude</span>
+
+									<input
+										name="longitude"
+										class="input input-bordered w-full"
+										value={formData.longitude}
+										onInput={(e) =>
+											setFormData("longitude", Number(e.currentTarget.value))
+										}
+										type="number"
+										step="any"
+									/>
 								</label>
-								<input
-									name="longitude"
-									class="input input-bordered w-full"
-									value={formData.longitude}
-									onInput={(e) =>
-										setFormData("longitude", Number(e.currentTarget.value))
-									}
-									type="number"
-									step="any"
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Thumbnail URL</span>
+
+									<input
+										name="thumbnail"
+										class="input input-bordered w-full"
+										value={formData.thumbnail}
+										onInput={(e) =>
+											setFormData("thumbnail", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="thumbnail"
-									class="input input-bordered w-full"
-									value={formData.thumbnail}
-									onInput={(e) =>
-										setFormData("thumbnail", e.currentTarget.value)
-									}
-								/>
 							</div>
 						</div>
 
@@ -457,9 +466,10 @@ export default function OwnerPage() {
 								</div>
 
 								<div>
-									<label class="label">
+									<div class="label">
 										<span class="label-text">Raw Data</span>
-									</label>
+									</div>
+
 									<pre class="max-h-64 overflow-auto rounded bg-base-200 p-2 text-xs">
 										{JSON.stringify(location(), null, 2)}
 									</pre>
@@ -491,28 +501,30 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Title</span>
+
+									<input
+										name="title"
+										required
+										class="input input-bordered w-full"
+										value={formData.title}
+										onInput={(e) => setFormData("title", e.currentTarget.value)}
+									/>
 								</label>
-								<input
-									name="title"
-									required
-									class="input input-bordered w-full"
-									value={formData.title}
-									onInput={(e) => setFormData("title", e.currentTarget.value)}
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Category</span>
+
+									<input
+										name="category"
+										class="input input-bordered w-full"
+										value={formData.category ?? ""}
+										onInput={(e) =>
+											setFormData("category", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="category"
-									class="input input-bordered w-full"
-									value={formData.category ?? ""}
-									onInput={(e) =>
-										setFormData("category", e.currentTarget.value)
-									}
-								/>
 							</div>
 						</div>
 
@@ -520,25 +532,29 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Address</span>
+
+									<input
+										name="address"
+										class="input input-bordered w-full"
+										value={formData.address ?? ""}
+										onInput={(e) =>
+											setFormData("address", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="address"
-									class="input input-bordered w-full"
-									value={formData.address ?? ""}
-									onInput={(e) => setFormData("address", e.currentTarget.value)}
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Link</span>
+
+									<input
+										name="link"
+										class="input input-bordered w-full"
+										value={formData.link}
+										onInput={(e) => setFormData("link", e.currentTarget.value)}
+									/>
 								</label>
-								<input
-									name="link"
-									class="input input-bordered w-full"
-									value={formData.link}
-									onInput={(e) => setFormData("link", e.currentTarget.value)}
-								/>
 							</div>
 						</div>
 
@@ -546,47 +562,50 @@ export default function OwnerPage() {
 							<div>
 								<label class="label">
 									<span class="label-text">Latitude</span>
+
+									<input
+										name="latitude"
+										class="input input-bordered w-full"
+										value={formData.latitude}
+										onInput={(e) =>
+											setFormData("latitude", Number(e.currentTarget.value))
+										}
+										type="number"
+										step="any"
+									/>
 								</label>
-								<input
-									name="latitude"
-									class="input input-bordered w-full"
-									value={formData.latitude}
-									onInput={(e) =>
-										setFormData("latitude", Number(e.currentTarget.value))
-									}
-									type="number"
-									step="any"
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Longitude</span>
+
+									<input
+										name="longitude"
+										class="input input-bordered w-full"
+										value={formData.longitude}
+										onInput={(e) =>
+											setFormData("longitude", Number(e.currentTarget.value))
+										}
+										type="number"
+										step="any"
+									/>
 								</label>
-								<input
-									name="longitude"
-									class="input input-bordered w-full"
-									value={formData.longitude}
-									onInput={(e) =>
-										setFormData("longitude", Number(e.currentTarget.value))
-									}
-									type="number"
-									step="any"
-								/>
 							</div>
 
 							<div>
 								<label class="label">
 									<span class="label-text">Thumbnail URL</span>
+
+									<input
+										name="thumbnail"
+										class="input input-bordered w-full"
+										value={formData.thumbnail}
+										onInput={(e) =>
+											setFormData("thumbnail", e.currentTarget.value)
+										}
+									/>
 								</label>
-								<input
-									name="thumbnail"
-									class="input input-bordered w-full"
-									value={formData.thumbnail}
-									onInput={(e) =>
-										setFormData("thumbnail", e.currentTarget.value)
-									}
-								/>
 							</div>
 						</div>
 
