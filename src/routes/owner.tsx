@@ -152,13 +152,13 @@ export default function OwnerPage() {
 						<input
 							type="search"
 							placeholder="Search by title..."
-							class="input input-bordered"
+							class="input w-40"
 							value={search()}
 							onInput={(e) => setSearch(e.currentTarget.value)}
 						/>
 
 						<select
-							class="select select-bordered"
+							class="select  w-40"
 							value={sortKey()}
 							onInput={(e) =>
 								setSortKey(v.parse(SortKeySchema,e.currentTarget.value))
@@ -170,7 +170,7 @@ export default function OwnerPage() {
 
 						<button
 							type="button"
-							class="btn btn-ghost"
+							class="btn btn-ghost btn-square"
 							onClick={() => setSortDir(sortDir() === "asc" ? "desc" : "asc")}
 							aria-label="Toggle sort direction"
 						>
