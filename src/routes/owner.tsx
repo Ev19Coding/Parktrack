@@ -1,6 +1,13 @@
 import { createAsync, query, revalidate } from "@solidjs/router";
+import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z";
+import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
+import ViewIcon from "lucide-solid/icons/eye";
+import EditIcon from "lucide-solid/icons/square-pen";
+import DeleteIcon from "lucide-solid/icons/trash-2";
 import { createMemo, createSignal, Index, Show } from "solid-js";
 import { createStore } from "solid-js/store";
+import type { Mutable } from "solidjs-use";
+import * as v from "valibot";
 import { BackNavigationButton, GenericButton } from "~/components/button";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
 import {
@@ -15,18 +22,11 @@ import {
 	updateUserRecreationalLocationTableEntry,
 } from "~/server/database/user/action";
 import { getRecreationalLocationFromDatabaseById } from "~/server/database/user/query";
+import { getCurrentUserInfo } from "~/server/user";
 import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import { getOwnerData } from "~/utils/user-query";
-import * as v from "valibot";
-import { Mutable } from "solidjs-use";
-import { getCurrentUserInfo } from "~/server/user";
-import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z";
-import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
-import ViewIcon from "lucide-solid/icons/eye";
-import EditIcon from "lucide-solid/icons/square-pen";
-import DeleteIcon from "lucide-solid/icons/trash-2";
 
 const { URL } = DEFAULTS;
 
@@ -67,7 +67,7 @@ export default function OwnerPage() {
 
 	const [formData, setFormData] = createStore<
 		Mutable<RecreationalLocationSchema>
-	>(DUMMY_RECREATIONAL_LOCATION_DATA);
+	>(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
 
 	async function setOwnerOnLocationData() {
 		const info = await getCurrentUserInfo();
@@ -135,7 +135,7 @@ export default function OwnerPage() {
 	}
 
 	function openCreateModal() {
-		setFormData(DUMMY_RECREATIONAL_LOCATION_DATA);
+		setFormData(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
 
 		showModal(createModalId);
 	}
@@ -171,7 +171,7 @@ export default function OwnerPage() {
 						/>
 
 						<select
-							class="select  w-40"
+							class="select w-40"
 							value={sortKey()}
 							onInput={(e) =>
 								setSortKey(v.parse(SortKeySchema, e.currentTarget.value))
@@ -196,10 +196,7 @@ export default function OwnerPage() {
 					</div>
 
 					<div>
-						<GenericButton
-							class="btn-primary"
-							onClick={() => showModal(createModalId)}
-						>
+						<GenericButton class="btn-primary" onClick={openCreateModal}>
 							Create Location
 						</GenericButton>
 					</div>
