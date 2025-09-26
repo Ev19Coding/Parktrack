@@ -103,12 +103,15 @@ const NullishStringSchema = v.nullish(v.string()),
 	);
 
 const IsoDateStringToDateSchema = v.union([
-  // Accept an ISO timestamp string and convert to Date
-  v.pipe(v.string(), v.isoTimestamp(), v.transform((s) => new Date(s))),
-  // Or accept a Date instance directly
-  v.date(),
+	// Accept an ISO timestamp string and convert to Date
+	v.pipe(
+		v.string(),
+		v.isoTimestamp(),
+		v.transform((s) => new Date(s)),
+	),
+	// Or accept a Date instance directly
+	v.date(),
 ]);
-
 
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({

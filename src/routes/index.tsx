@@ -43,9 +43,12 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
-				const [info] = await Promise.all([getCurrentUserInfo(),revalidateUserLoginData()])
+				const [info] = await Promise.all([
+					getCurrentUserInfo(),
+					revalidateUserLoginData(),
+				]);
 
-			info?.type === "owner" ? navigate("/owner"):navigate("/user");
+				info?.type === "owner" ? navigate("/owner") : navigate("/user");
 			}
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
@@ -73,7 +76,7 @@ export default function LoginPage() {
 			} else {
 				await revalidateUserLoginData();
 
-			 form.type === "user" ?	navigate("/user"):navigate("/owner")
+				form.type === "user" ? navigate("/user") : navigate("/owner");
 			}
 		} catch {
 			setError("An unexpected error occurred. Please try again.");

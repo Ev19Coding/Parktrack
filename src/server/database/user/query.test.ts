@@ -7,9 +7,7 @@ describe("database query functions", () => {
 
 		expect(module.getUserQueryResultFromDatabase).toBeDefined();
 		expect(module.getRecreationalLocationFromDatabaseById).toBeDefined();
-		expect(
-			module.getRecreationalLocationsFromDatabaseAtRandom,
-		).toBeDefined();
+		expect(module.getRecreationalLocationsFromDatabaseAtRandom).toBeDefined();
 		expect(
 			module.getRestaurantRecreationalLocationsFromDatabaseAtRandom,
 		).toBeDefined();

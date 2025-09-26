@@ -1,6 +1,6 @@
 import { createAsync, query, revalidate } from "@solidjs/router";
-import {  createMemo, createSignal, Index, Show } from "solid-js";
-import { createStore, } from "solid-js/store";
+import { createMemo, createSignal, Index, Show } from "solid-js";
+import { createStore } from "solid-js/store";
 import { BackNavigationButton, GenericButton } from "~/components/button";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
 import {
@@ -9,41 +9,51 @@ import {
 	showModal,
 } from "~/components/modal/generic-modal";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import { createUserRecreationalLocationTableEntry, deleteUserRecreationalLocationTableEntry, updateUserRecreationalLocationTableEntry } from "~/server/database/user/action";
+import {
+	createUserRecreationalLocationTableEntry,
+	deleteUserRecreationalLocationTableEntry,
+	updateUserRecreationalLocationTableEntry,
+} from "~/server/database/user/action";
 import { getRecreationalLocationFromDatabaseById } from "~/server/database/user/query";
 import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import { getOwnerData } from "~/utils/user-query";import * as v from "valibot"
+import { getOwnerData } from "~/utils/user-query";
+import * as v from "valibot";
 import { Mutable } from "solidjs-use";
 import { getCurrentUserInfo } from "~/server/user";
-import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z"
-import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a"
-import ViewIcon from "lucide-solid/icons/eye"
-import EditIcon from "lucide-solid/icons/square-pen"
-import DeleteIcon from "lucide-solid/icons/trash-2"
+import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z";
+import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
+import ViewIcon from "lucide-solid/icons/eye";
+import EditIcon from "lucide-solid/icons/square-pen";
+import DeleteIcon from "lucide-solid/icons/trash-2";
 
-const {URL} = DEFAULTS
+const { URL } = DEFAULTS;
 
 export default function OwnerPage() {
-  const queryOwnerRecreationalLocations = query(async () => {
+	const queryOwnerRecreationalLocations = query(async () => {
 		const { locations = [] } = (await getOwnerData()) ?? {};
 
 		const fullDataLocationPromises = locations.map((loc) =>
 			getRecreationalLocationFromDatabaseById(loc.id),
 		);
 
-		return (await Promise.allSettled(fullDataLocationPromises)).reduce<RecreationalLocationSchema[]>((acc,val)=>{
-		if (val.status === "fulfilled" && val.value) acc.push(val.value)
+		return (await Promise.allSettled(fullDataLocationPromises)).reduce<
+			RecreationalLocationSchema[]
+		>((acc, val) => {
+			if (val.status === "fulfilled" && val.value) acc.push(val.value);
 
-		return acc
-		}, [])
-	}, "get-owner-recreational-locations")
+			return acc;
+		}, []);
+	}, "get-owner-recreational-locations");
 
-	const ownerRecreationalLocations = createAsync(()=>queryOwnerRecreationalLocations(), {initialValue:[]});
+	const ownerRecreationalLocations = createAsync(
+		() => queryOwnerRecreationalLocations(),
+		{ initialValue: [] },
+	);
 
-	const SortKeySchema = v.union([v.literal("title"), v.literal("category")])
-	type SortKeySchema = v.InferOutput<typeof SortKeySchema>
+	const SortKeySchema = v.union([v.literal("title"), v.literal("category")]);
+	type SortKeySchema = v.InferOutput<typeof SortKeySchema>;
 
 	const [search, setSearch] = createSignal("");
 	const [sortKey, setSortKey] = createSignal<SortKeySchema>("title");
@@ -55,16 +65,16 @@ export default function OwnerPage() {
 	const viewModalId = generateRandomUUID();
 	const editModalId = generateRandomUUID();
 
-	const [formData, setFormData] = createStore<Mutable<RecreationalLocationSchema>>(
-		DUMMY_RECREATIONAL_LOCATION_DATA,
-	);
+	const [formData, setFormData] = createStore<
+		Mutable<RecreationalLocationSchema>
+	>(DUMMY_RECREATIONAL_LOCATION_DATA);
 
-	async function setOwnerOnLocationData(){
-	const info = await getCurrentUserInfo()
+	async function setOwnerOnLocationData() {
+		const info = await getCurrentUserInfo();
 
-	if (!info) throw Error("No owner data detected")
+		if (!info) throw Error("No owner data detected");
 
-	setFormData("owner", {id:info.id,name:info.name,link:URL})
+		setFormData("owner", { id: info.id, name: info.name, link: URL });
 	}
 
 	const locations = createMemo(() => {
@@ -81,7 +91,7 @@ export default function OwnerPage() {
 
 		const key = sortKey();
 		filtered.sort((a, b) => {
-			const av = (a[key] ??"").toLowerCase();
+			const av = (a[key] ?? "").toLowerCase();
 			const bv = (b[key] ?? "").toLowerCase();
 
 			if (av === bv) return 0;
@@ -95,15 +105,15 @@ export default function OwnerPage() {
 	function confirmDelete(id: string, title: string) {
 		triggerConfirmationModal(
 			async () => {
-			setIsActionLoading(true)
+				setIsActionLoading(true);
 
 				await deleteUserRecreationalLocationTableEntry(id);
 
-				await revalidate(queryOwnerRecreationalLocations.key)
+				await revalidate(queryOwnerRecreationalLocations.key);
 
 				closeModal(viewModalId);
 
-				setIsActionLoading(false)
+				setIsActionLoading(false);
 			},
 			<div>
 				Delete <span class="font-semibold text-primary">{title}</span>{" "}
@@ -112,22 +122,22 @@ export default function OwnerPage() {
 		);
 	}
 
-	function openViewModal(data:RecreationalLocationSchema){
-	setFormData(data)
+	function openViewModal(data: RecreationalLocationSchema) {
+		setFormData(data);
 
-	showModal(viewModalId)
+		showModal(viewModalId);
 	}
 
-	function openEditModal(data:RecreationalLocationSchema){
-	setFormData(data)
+	function openEditModal(data: RecreationalLocationSchema) {
+		setFormData(data);
 
-	showModal(editModalId)
+		showModal(editModalId);
 	}
 
-	function openCreateModal(){
-	setFormData(DUMMY_RECREATIONAL_LOCATION_DATA)
+	function openCreateModal() {
+		setFormData(DUMMY_RECREATIONAL_LOCATION_DATA);
 
-	showModal(createModalId)
+		showModal(createModalId);
 	}
 
 	return (
@@ -164,7 +174,7 @@ export default function OwnerPage() {
 							class="select  w-40"
 							value={sortKey()}
 							onInput={(e) =>
-								setSortKey(v.parse(SortKeySchema,e.currentTarget.value))
+								setSortKey(v.parse(SortKeySchema, e.currentTarget.value))
 							}
 						>
 							<option value="title">Title</option>
@@ -177,7 +187,11 @@ export default function OwnerPage() {
 							onClick={() => setSortDir(sortDir() === "asc" ? "desc" : "asc")}
 							aria-label="Toggle sort direction"
 						>
-							{sortDir() === "asc" ?  <AscendingOrderIcon/> : <DescendingOrderIcon/>}
+							{sortDir() === "asc" ? (
+								<AscendingOrderIcon />
+							) : (
+								<DescendingOrderIcon />
+							)}
 						</button>
 					</div>
 
@@ -222,9 +236,7 @@ export default function OwnerPage() {
 										<tr>
 											<td class="max-w-[6rem] p-2">
 												<img
-													src={getProxiedImageUrl(
-													loc().thumbnail
-													)}
+													src={getProxiedImageUrl(loc().thumbnail)}
 													alt={loc().title}
 													class="h-16 w-24 rounded object-cover"
 												/>
@@ -240,22 +252,25 @@ export default function OwnerPage() {
 														type="button"
 														class="btn btn-ghost btn-sm"
 														onClick={() => openViewModal(loc())}
-													><ViewIcon />
+													>
+														<ViewIcon />
 														<span class="hidden md:inline-block">View</span>
 													</button>
 													<button
 														type="button"
 														class="btn btn-outline btn-sm"
 														onClick={() => openEditModal(loc())}
-													><EditIcon />
-													<span class="hidden md:inline-block">Edit</span>
+													>
+														<EditIcon />
+														<span class="hidden md:inline-block">Edit</span>
 													</button>
 													<button
 														type="button"
 														class="btn btn-error btn-sm"
 														onClick={() => confirmDelete(loc().id, loc().title)}
-													><DeleteIcon />
-													<span class="hidden md:inline-block">Delete</span>
+													>
+														<DeleteIcon />
+														<span class="hidden md:inline-block">Delete</span>
 													</button>
 												</div>
 											</td>
@@ -295,7 +310,7 @@ export default function OwnerPage() {
 									required
 									class="input input-bordered w-full"
 									value={formData.title}
-									onInput={(e) => setFormData("title",e.currentTarget.value)}
+									onInput={(e) => setFormData("title", e.currentTarget.value)}
 								/>
 							</div>
 
@@ -306,7 +321,7 @@ export default function OwnerPage() {
 								<input
 									name="category"
 									class="input input-bordered w-full"
-									value={formData.category??""}
+									value={formData.category ?? ""}
 									onInput={(e) =>
 										setFormData("category", e.currentTarget.value)
 									}
@@ -322,10 +337,8 @@ export default function OwnerPage() {
 								<input
 									name="address"
 									class="input input-bordered w-full"
-									value={formData.address??""}
-									onInput={(e) =>
-										setFormData("address", e.currentTarget.value)
-									}
+									value={formData.address ?? ""}
+									onInput={(e) => setFormData("address", e.currentTarget.value)}
 								/>
 							</div>
 
@@ -399,21 +412,22 @@ export default function OwnerPage() {
 								Cancel
 							</GenericButton>
 
-							<GenericButton class="btn-primary" onClick={async _=>{
-							setIsActionLoading(true)
+							<GenericButton
+								class="btn-primary"
+								onClick={async (_) => {
+									setIsActionLoading(true);
 
-							await setOwnerOnLocationData()
+									await setOwnerOnLocationData();
 
-							await createUserRecreationalLocationTableEntry(formData)
+									await createUserRecreationalLocationTableEntry(formData);
 
+									await revalidate(queryOwnerRecreationalLocations.key);
 
-							await revalidate(queryOwnerRecreationalLocations.key)
+									closeModal(createModalId);
 
-							closeModal(createModalId)
-
-							setIsActionLoading(false)
-
-							}}>
+									setIsActionLoading(false);
+								}}
+							>
 								{isActionLoading() ? "Creating..." : "Create"}
 							</GenericButton>
 						</div>
@@ -439,7 +453,8 @@ export default function OwnerPage() {
 									<div>
 										<h3 class="font-semibold text-lg">{location().title}</h3>
 										<div class="text-base-content/70 text-sm">
-											{location().category ?? "Other"} • {location().address ?? "N/A"}
+											{location().category ?? "Other"} •{" "}
+											{location().address ?? "N/A"}
 										</div>
 									</div>
 								</div>
@@ -587,20 +602,25 @@ export default function OwnerPage() {
 								Cancel
 							</GenericButton>
 
-							<GenericButton class="btn-primary" onClick={async _=>{
-							setIsActionLoading(true)
+							<GenericButton
+								class="btn-primary"
+								onClick={async (_) => {
+									setIsActionLoading(true);
 
-							await setOwnerOnLocationData()
+									await setOwnerOnLocationData();
 
-							await updateUserRecreationalLocationTableEntry(formData.id, formData)
+									await updateUserRecreationalLocationTableEntry(
+										formData.id,
+										formData,
+									);
 
-							await revalidate(queryOwnerRecreationalLocations.key)
+									await revalidate(queryOwnerRecreationalLocations.key);
 
-							closeModal(editModalId)
+									closeModal(editModalId);
 
-							setIsActionLoading(false)
-
-							}}>
+									setIsActionLoading(false);
+								}}
+							>
 								{isActionLoading() ? "Saving..." : "Save Changes"}
 							</GenericButton>
 						</div>
