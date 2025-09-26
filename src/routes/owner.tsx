@@ -76,8 +76,8 @@ export default function OwnerPage() {
 
 		const key = sortKey();
 		filtered.sort((a, b) => {
-			const av = String(a[key] ?? "").toLowerCase();
-			const bv = String(b[key] ?? "").toLowerCase();
+			const av = (a[key] ??"").toLowerCase();
+			const bv = (b[key] ?? "").toLowerCase();
 
 			if (av === bv) return 0;
 			const res = av < bv ? -1 : 1;
