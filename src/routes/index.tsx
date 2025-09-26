@@ -43,9 +43,9 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
-				await revalidateUserLoginData();
+				const [info] = await Promise.all([getCurrentUserInfo(),revalidateUserLoginData()])
 
-				(await getCurrentUserInfo())?.type === "owner" ? navigate("/owner"):navigate("/user");
+			info?.type === "owner" ? navigate("/owner"):navigate("/user");
 			}
 		} catch {
 			setError("An unexpected error occurred. Please try again.");
