@@ -51,7 +51,7 @@ export default function SideBar() {
 						<TooltipButton
 							tooltipText="Sidebar"
 							tooltipDir="right"
-							class="btn-square z-[99999] m-2 p-2 hover:shadow-md hover:shadow-primary/50"
+							class="btn-square z-[99999] m-2 p-2 opacity-75 hover:opacity-100 hover:shadow-md hover:shadow-primary/50 hover:brightness-105"
 							// Make a draggable button
 							style={{ position: "fixed" }}
 							ref={(ref) => {
