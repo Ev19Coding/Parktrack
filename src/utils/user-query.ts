@@ -11,12 +11,11 @@ import {
 	isLocationInUserFavourites,
 } from "~/server/database/user/query";
 import {
-	isUserLoggedIn as isUserLoggedIn,
 	getCurrentUserInfo,
+	isUserLoggedIn,
 	isUserOwner,
 	isUserRegular,
 } from "~/server/user";
-import { generateRandomUUID } from "~/utils/random";
 
 // Query-wrapped read-only helpers that mirror server reads.
 // Keys are deterministic so `revalidate` can target them.
@@ -36,16 +35,16 @@ export const getOwnerData = query(async () => {
 		return { locations: ownerLocations } as const;
 	}
 	return null;
-}, generateRandomUUID());
+}, "auth/getOwnerData");
 
 export const getRegularUserData = query(async () => {
 	if (await isUserRegular()) return {};
 	return null;
-}, generateRandomUUID());
+}, "auth/getRegularUserData");
 
-export const queryUserLoggedIn = query(isUserLoggedIn, generateRandomUUID());
+export const queryUserLoggedIn = query(isUserLoggedIn, "auth/isUserLoggedIn");
 
-export const queryIsUserOwner = query(isUserOwner, generateRandomUUID());
+export const queryIsUserOwner = query(isUserOwner, "auth/isUserOwner");
 
 export async function revalidateUserLoginData() {
 	return revalidate([
@@ -62,12 +61,12 @@ export async function revalidateUserLoginData() {
 
 export const queryUserSearchForRecreationalLocations = query(
 	getUserQueryResultFromDatabase,
-	generateRandomUUID(),
+	"search/userRecreationalLocations",
 );
 
 export const queryRecreationalLocationById = query(
 	getRecreationalLocationFromDatabaseById,
-	generateRandomUUID(),
+	"location/byId",
 );
 
 export async function revalidateRecreationalLocationById() {
@@ -76,7 +75,7 @@ export async function revalidateRecreationalLocationById() {
 
 export const queryRecreationalLocationCategories = query(
 	getRecreationalLocationCategories,
-	generateRandomUUID(),
+	"location/categories",
 );
 
 export async function revalidateRecreationalLocationCategories() {
@@ -85,19 +84,19 @@ export async function revalidateRecreationalLocationCategories() {
 
 export const queryRecreationalLocationsAtRandom = query(
 	getRecreationalLocationsFromDatabaseAtRandom,
-	generateRandomUUID(),
+	"location/random",
 );
 
 export const queryRecreationalLocationsCloseToCoords = query(
 	getRecreationalLocationsCloseToCoords,
-	generateRandomUUID(),
+	"location/nearby",
 );
 
-export const queryUsersByType = query(getUsersByType, generateRandomUUID());
+export const queryUsersByType = query(getUsersByType, "users/byType");
 
 export const queryUserFavouriteLocations = query(
 	getUserFavouriteLocations,
-	generateRandomUUID(),
+	"user/favouriteLocations",
 );
 
 export async function revalidateUserFavourites() {
@@ -105,19 +104,25 @@ export async function revalidateUserFavourites() {
 }
 
 export async function revalidateUserFavouriteStatus() {
-	return revalidate([queryIsLocationInUserFavourites.key, queryUserFavouriteLocations.key]);
+	return revalidate([
+		queryIsLocationInUserFavourites.key,
+		queryUserFavouriteLocations.key,
+	]);
 }
 
 export const queryIsLocationInUserFavourites = query(
 	isLocationInUserFavourites,
-	generateRandomUUID(),
+	"user/isLocationInFavourites",
 );
 
 //
 // Owner queries
 //
 
-export const queryLocationsByOwner = query(getLocationsByOwner, generateRandomUUID());
+export const queryLocationsByOwner = query(
+	getLocationsByOwner,
+	"owner/locationsByOwner",
+);
 
 //
 // Convenience revalidation helpers
