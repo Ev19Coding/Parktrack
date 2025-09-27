@@ -162,12 +162,7 @@ export default function SideBar() {
 							</A>
 						</li>
 
-						<li>
-							<button type="button">
-								<SettingsIcon />
-								Settings
-							</button>
-						</li>
+						
 
 						<Suspense>
 							<Show when={isLoggedIn()}>
