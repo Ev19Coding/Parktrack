@@ -83,37 +83,25 @@ export default function SideBar() {
 								type="button"
 								onClick={async (_) => {
 									setIsLoading(true);
+									try {
+										if (isLoggedIn()) {
+											// Wait for signOut to complete so server cookie/state is updated first
+											await AUTH_CLIENT.signOut();
+										}
 
-									if (isLoggedIn()) {
-										AUTH_CLIENT.signOut({
-											fetchOptions: {
-												onResponse() {
-													setIsLoading(false);
-												},
-												onSuccess() {
-													revalidateUserLoginData().then(() => {
-														// Move to the log out page
-														navigate("/");
-
-														// Close the side bar
-														drawerToggle$.click();
-													});
-												},
-											},
-										});
-									} else {
 										await revalidateUserLoginData();
 
-										// Move to the log out page
 										navigate("/");
 
+										drawerToggle$.click();
+									} finally {
 										setIsLoading(false);
 									}
 								}}
 							>
 								<LogOutIcon />
 								<Suspense>
-									{isLoggedIn.latest ? "Log Out" : "Back to Login"}
+									{isLoggedIn() ? "Log Out" : "Back to Login"}
 								</Suspense>
 							</button>
 						</li>
@@ -181,9 +169,9 @@ export default function SideBar() {
 
 												await AUTH_CLIENT.deleteUser();
 
-												navigate("/");
-
 												await revalidateUserLoginData();
+
+												navigate("/");
 
 												setIsLoading(false);
 											}, "Account deletion is permanent. Are you sure?")
