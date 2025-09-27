@@ -28,7 +28,7 @@ import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import {
 	getOwnerData,
-	queryRecreationalLocationCategories,
+	queryAllRecreationalLocationCategories,
 	revalidateRecreationalLocationById,
 	revalidateRecreationalLocationCategories,
 } from "~/utils/user-query";
@@ -714,7 +714,7 @@ export default function OwnerPage() {
 
 	// categories suggestions resource (used by LocationForm datalist)
 	const categoriesAsync = createAsync(
-		() => queryRecreationalLocationCategories(),
+		() => queryAllRecreationalLocationCategories(),
 		{ initialValue: [] },
 	);
 	const categories = createMemo(() => categoriesAsync() ?? []);

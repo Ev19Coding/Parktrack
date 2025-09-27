@@ -1,7 +1,8 @@
 import { query, revalidate } from "@solidjs/router";
 import {
+	getAllRecreationalLocationCategories,
+	getCommonRecreationalLocationCategories,
 	getLocationsByOwner,
-	getRecreationalLocationCategories,
 	getRecreationalLocationFromDatabaseById,
 	getRecreationalLocationsCloseToCoords,
 	getRecreationalLocationsFromDatabaseAtRandom,
@@ -83,13 +84,21 @@ export async function revalidateRecreationalLocationById() {
 	return revalidate([queryRecreationalLocationById.key]);
 }
 
-export const queryRecreationalLocationCategories = query(
-	getRecreationalLocationCategories,
+export const queryAllRecreationalLocationCategories = query(
+	getAllRecreationalLocationCategories,
 	"location/categories",
 );
 
+export const queryCommonRecreationalLocationCategories = query(
+	getCommonRecreationalLocationCategories,
+	"location/common-categories",
+);
+
 export async function revalidateRecreationalLocationCategories() {
-	return revalidate([queryRecreationalLocationCategories.key]);
+	return revalidate([
+		queryAllRecreationalLocationCategories.key,
+		queryCommonRecreationalLocationCategories.key,
+	]);
 }
 
 export const queryRecreationalLocationsAtRandom = query(
