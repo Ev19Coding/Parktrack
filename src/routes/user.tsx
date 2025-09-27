@@ -8,9 +8,7 @@ import UserSearchBar from "~/components/user/search-bar";
 function Header() {
 	return (
 		<header class="flex items-center justify-around text-2xl lg:col-[1/3]">
-			<h1 class="text-center font-bold">
-				Parks {"&"} Restaurants in AMAC, Abuja
-			</h1>
+			<h1 class="text-center font-bold">Recreational Locations In Abuja</h1>
 		</header>
 	);
 }
