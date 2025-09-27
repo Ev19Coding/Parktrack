@@ -14,7 +14,6 @@ import {
 	queryCommonRecreationalLocationCategories,
 	queryRecreationalLocationById,
 	queryRecreationalLocationsAtRandom,
-	revalidateRecreationalLocationCategories,
 } from "~/utils/user-query";
 import { TooltipButton } from "../button";
 import LoadingSpinner from "../loading-spinner";
@@ -112,7 +111,9 @@ export function UserRecreationalLocationDisplay(prop: { class?: string }) {
 	const [commonCategory, setCommonCategory] = createSignal("Location");
 
 	const setCommonCategoryToRandomOne = () =>
-		setCommonCategory(getRandomElementInArray(commonCategories()));
+		setCommonCategory(
+			getRandomElementInArray(commonCategories()) ?? "Location",
+		);
 
 	onMount(setCommonCategoryToRandomOne);
 

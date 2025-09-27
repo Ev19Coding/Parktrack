@@ -4,12 +4,15 @@ export function generateRandomUUID() {
 
 export function getRandomElementInArray<TArrayElement>(
 	arr: ReadonlyArray<TArrayElement>,
-): TArrayElement {
-	if (arr.length === 0) {
-		throw new Error("cannot pick from an empty array");
-	}
-	const index = Math.floor(Math.random() * arr.length);
+): TArrayElement | undefined {
+	try {
+		if (arr.length === 0) {
+			throw new Error("cannot pick from an empty array");
+		}
+		const index = Math.floor(Math.random() * arr.length);
 
-	//@ts-expect-error This is valid
-	return arr[index];
+		return arr[index];
+	} catch {
+		return undefined;
+	}
 }
