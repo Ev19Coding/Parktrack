@@ -33,7 +33,7 @@ import {
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import { queryUserLoggedIn } from "~/utils/user-query";
+import { queryIsUserOwner, queryUserLoggedIn } from "~/utils/user-query";
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -482,8 +482,13 @@ export default function InformationRoute() {
 									initialValue: false,
 								});
 
+								const isNotOwner = createAsync(
+									async () => !(await queryIsUserOwner()),
+									{ initialValue: true },
+								);
+
 								return (
-									<Show when={isLoggedIn()}>
+									<Show when={isLoggedIn() && isNotOwner()}>
 										<button
 											type="button"
 											class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"

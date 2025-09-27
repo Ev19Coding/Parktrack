@@ -123,7 +123,7 @@ export default function SideBar() {
 						</Suspense>
 
 						<Suspense>
-							<Show when={isLoggedIn()}>
+							<Show when={isLoggedIn() && !isUserOwner()}>
 								<li>
 									<A
 										href="/favourite"
