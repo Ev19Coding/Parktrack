@@ -33,11 +33,7 @@ import {
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import {
-	queryUserLoggedIn,
-	revalidateUserFavouriteStatus,
-	revalidateUserFavourites,
-} from "~/utils/user-query";
+import { queryUserLoggedIn } from "~/utils/user-query";
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
