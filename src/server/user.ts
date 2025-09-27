@@ -61,10 +61,7 @@ function getCacheKeyFromHeaders(headers: Headers): string | null {
 	return null;
 }
 
-async function fetchSessionWithDelay(
-	headers: Headers,
-): Promise<Session | null> {
-	await new Promise((r) => setTimeout(r, 300));
+async function fetchSession(headers: Headers): Promise<Session | null> {
 	return AUTH.api.getSession({ headers });
 }
 
@@ -103,7 +100,7 @@ async function getSession(): Promise<Session | null> {
 		// No pending promise; create one and store it in the pending map.
 		const promise = (async () => {
 			try {
-				const session = await fetchSessionWithDelay(headers);
+				const session = await fetchSession(headers);
 				if (session) {
 					globalSessionCache.set(cacheKey, {
 						session,
@@ -126,7 +123,7 @@ async function getSession(): Promise<Session | null> {
 	}
 
 	// No safe cache key available (no cookie/authorization header). Only do per-request caching.
-	const session = await fetchSessionWithDelay(headers);
+	const session = await fetchSession(headers);
 	//@ts-expect-error store into locals for per-request reuse
 	event.locals.__session = session;
 	return session;
