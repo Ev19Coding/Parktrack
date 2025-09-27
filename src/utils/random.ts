@@ -5,6 +5,11 @@ export function generateRandomUUID() {
 export function getRandomElementInArray<TArrayElement>(
 	arr: ReadonlyArray<TArrayElement>,
 ): TArrayElement {
-	// biome-ignore lint/style/noNonNullAssertion: <this is valid>
-	return arr[Math.floor(Math.random() * (arr.length - 1))]!;
+	if (arr.length === 0) {
+		throw new Error("cannot pick from an empty array");
+	}
+	const index = Math.floor(Math.random() * arr.length);
+
+	//@ts-expect-error This is valid
+	return arr[index];
 }
