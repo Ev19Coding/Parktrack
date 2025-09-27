@@ -150,8 +150,6 @@ export default function SideBar() {
 							</A>
 						</li>
 
-						
-
 						<Suspense>
 							<Show when={isLoggedIn()}>
 								<li>
