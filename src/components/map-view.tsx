@@ -84,7 +84,7 @@ export default function UserMapView(prop: {
 				long: coords()[1],
 				maxResults: 55,
 				range: 55,
-			})
+			});
 
 			// Create markers for each recreational location
 			const newMarkers: Marker[] = [];
@@ -120,7 +120,7 @@ export default function UserMapView(prop: {
 						const clickListener = async () => {
 							setIsLoading(true);
 
-							const locationData = await queryRecreationalLocationById(id)
+							const locationData = await queryRecreationalLocationById(id);
 
 							if (locationData) {
 								// If already on info page, navigate away first

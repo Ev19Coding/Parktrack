@@ -4,7 +4,7 @@ import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
 import ViewIcon from "lucide-solid/icons/eye";
 import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
-import { createMemo, createSignal, Index, Show, For } from "solid-js";
+import { createMemo, createSignal, For, Index, Show } from "solid-js";
 import { createStore, type SetStoreFunction } from "solid-js/store";
 import type { Mutable } from "solidjs-use";
 import * as v from "valibot";
@@ -21,7 +21,6 @@ import {
 	deleteUserRecreationalLocationTableEntry,
 	updateUserRecreationalLocationTableEntry,
 } from "~/server/database/user/action";
-import { queryRecreationalLocationById } from "~/utils/user-query";
 import { getCurrentUserInfo } from "~/server/user";
 import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
@@ -29,6 +28,7 @@ import { generateRandomUUID } from "~/utils/random";
 import {
 	getOwnerData,
 	queryAllRecreationalLocationCategories,
+	queryRecreationalLocationById,
 	revalidateRecreationalLocationById,
 	revalidateRecreationalLocationCategories,
 } from "~/utils/user-query";
@@ -100,7 +100,9 @@ function LocationForm(props: {
 		const url = imageUrlInput().trim();
 		if (!url) return;
 		const item = { title: title || "Image", image: url };
-		const arr = props.formData.images ? [...props.formData.images, item] : [item];
+		const arr = props.formData.images
+			? [...props.formData.images, item]
+			: [item];
 		props.setFormData("images", arr);
 		setImageTitleInput("");
 		setImageUrlInput("");
@@ -118,7 +120,9 @@ function LocationForm(props: {
 		const tag = aboutTagInput().trim();
 		if (!tag) return;
 		const newAbout = aboutFromTag(tag);
-		const arr = props.formData.about ? [...props.formData.about, newAbout] : [newAbout];
+		const arr = props.formData.about
+			? [...props.formData.about, newAbout]
+			: [newAbout];
 		props.setFormData("about", arr);
 		setAboutTagInput("");
 	}
@@ -155,7 +159,9 @@ function LocationForm(props: {
 						class="input input-bordered w-full"
 						placeholder="e.g. Park, Trail, Beach"
 						value={props.formData.category ?? ""}
-						onInput={(e) => props.setFormData("category", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("category", e.currentTarget.value)
+						}
 					/>
 					<datalist id="category-suggestions">
 						<For each={props.categories}>{(c) => <option value={c} />}</For>
@@ -227,7 +233,9 @@ function LocationForm(props: {
 						class="input input-bordered w-full"
 						placeholder="Plus Code (optional)"
 						value={props.formData.plusCode ?? ""}
-						onInput={(e) => props.setFormData("plusCode", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("plusCode", e.currentTarget.value)
+						}
 					/>
 				</label>
 			</div>
@@ -241,7 +249,9 @@ function LocationForm(props: {
 						placeholder="Image URL (will use placeholder if empty)"
 						class="input input-bordered w-full"
 						value={props.formData.thumbnail ?? ""}
-						onInput={(e) => props.setFormData("thumbnail", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("thumbnail", e.currentTarget.value)
+						}
 					/>
 				</label>
 
@@ -252,7 +262,9 @@ function LocationForm(props: {
 						placeholder="Link to reviews page (optional)"
 						class="input input-bordered w-full"
 						value={props.formData.reviewsLink ?? ""}
-						onInput={(e) => props.setFormData("reviewsLink", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("reviewsLink", e.currentTarget.value)
+						}
 					/>
 				</label>
 			</div>
@@ -265,7 +277,9 @@ function LocationForm(props: {
 					placeholder="Short description or notes about the location"
 					class="textarea textarea-bordered w-full"
 					value={props.formData.description ?? ""}
-					onInput={(e) => props.setFormData("description", e.currentTarget.value)}
+					onInput={(e) =>
+						props.setFormData("description", e.currentTarget.value)
+					}
 					rows={4}
 				/>
 			</label>
@@ -357,7 +371,9 @@ function LocationForm(props: {
 						class="input input-bordered w-full"
 						placeholder="e.g. ₦₦, ₦25,000–30,000"
 						value={props.formData.priceRange ?? ""}
-						onInput={(e) => props.setFormData("priceRange", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("priceRange", e.currentTarget.value)
+						}
 					/>
 				</label>
 			</div>
@@ -371,7 +387,9 @@ function LocationForm(props: {
 						class="input input-bordered w-full"
 						placeholder="e.g. America/Los_Angeles"
 						value={props.formData.timezone ?? ""}
-						onInput={(e) => props.setFormData("timezone", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("timezone", e.currentTarget.value)
+						}
 					/>
 				</label>
 
@@ -406,19 +424,21 @@ function LocationForm(props: {
 						type="checkbox"
 						class="toggle toggle-primary"
 						checked={Boolean(props.formData.isActive)}
-						onInput={(e) => props.setFormData("isActive", e.currentTarget.checked)}
+						onInput={(e) =>
+							props.setFormData("isActive", e.currentTarget.checked)
+						}
 					/>
 				</div>
 			</label>
 
 			{/* ------------------ openHours UI ------------------ */}
-			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
+			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
+				<div class="mb-2 flex items-center justify-between">
 					<div class="font-semibold">Open Hours</div>
-					<div class="text-sm text-base-content/70">Enter as "Day: hours"</div>
+					<div class="text-base-content/70 text-sm">Enter as "Day: hours"</div>
 				</div>
 
-				<div class="flex flex-col sm:flex-row gap-2">
+				<div class="flex flex-col gap-2 sm:flex-row">
 					<input
 						class="input input-bordered flex-1"
 						placeholder="e.g. Monday: 8 am–5 pm"
@@ -454,13 +474,13 @@ function LocationForm(props: {
 			</div>
 
 			{/* ------------------ Images UI ------------------ */}
-			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
+			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
+				<div class="mb-2 flex items-center justify-between">
 					<div class="font-semibold">Images</div>
-					<div class="text-sm text-base-content/70">Add image title + URL</div>
+					<div class="text-base-content/70 text-sm">Add image title + URL</div>
 				</div>
 
-				<div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+				<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
 					<input
 						class="input input-bordered col-span-1"
 						placeholder="Title (optional)"
@@ -484,7 +504,7 @@ function LocationForm(props: {
 					</button>
 				</div>
 
-				<div class="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+				<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
 					<For each={props.formData.images ?? []}>
 						{(img, i) => (
 							<div class="card bg-base-200 p-2">
@@ -492,11 +512,11 @@ function LocationForm(props: {
 									<img
 										src={getProxiedImageUrl(img.image)}
 										alt={img.title}
-										class="h-12 w-20 object-cover rounded"
+										class="h-12 w-20 rounded object-cover"
 									/>
 									<div class="flex-1">
 										<div class="font-semibold text-sm">{img.title}</div>
-										<div class="text-xs text-base-content/60 truncate">
+										<div class="truncate text-base-content/60 text-xs">
 											{img.image}
 										</div>
 									</div>
@@ -515,10 +535,10 @@ function LocationForm(props: {
 			</div>
 
 			{/* ------------------ About tags UI ------------------ */}
-			<div class="mt-6 card bg-base-100 p-3 shadow-sm">
-				<div class="flex items-center justify-between mb-2">
+			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
+				<div class="mb-2 flex items-center justify-between">
 					<div class="font-semibold">About (tags)</div>
-					<div class="text-sm text-base-content/70">
+					<div class="text-base-content/70 text-sm">
 						Tags describing features/amenities
 					</div>
 				</div>
@@ -585,7 +605,11 @@ function CreateLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
 							Cancel
 						</GenericButton>
 
@@ -625,7 +649,11 @@ function EditLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
 							Cancel
 						</GenericButton>
 
@@ -647,7 +675,6 @@ function ViewLocationModal(props: {
 	formData: Mutable<RecreationalLocationSchema>;
 	onClose: () => void;
 }) {
-
 	return (
 		<GenericModal modalId={props.modalId} class="w-full max-w-4xl">
 			<div class="prose mx-auto max-w-full p-3">
@@ -664,7 +691,8 @@ function ViewLocationModal(props: {
 						<div>
 							<h3 class="font-semibold text-lg">{props.formData.title}</h3>
 							<div class="text-base-content/70 text-sm">
-								{props.formData.category ?? "Other"} • {props.formData.address ?? "N/A"}
+								{props.formData.category ?? "Other"} •{" "}
+								{props.formData.address ?? "N/A"}
 							</div>
 						</div>
 					</div>
