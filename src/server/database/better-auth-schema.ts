@@ -22,7 +22,7 @@ export const UserSchema = v.object({
 	updatedAt: v.date(),
 });
 
-export type User = v.InferOutput<typeof UserSchema>;
+export type UserSchema = v.InferOutput<typeof UserSchema>;
 
 // Session schema - matches the session table
 export const SessionSchema = v.object({
@@ -36,7 +36,7 @@ export const SessionSchema = v.object({
 	updatedAt: v.date(),
 });
 
-export type Session = v.InferOutput<typeof SessionSchema>;
+export type SessionSchema = v.InferOutput<typeof SessionSchema>;
 
 // Account schema - matches the account table
 export const AccountSchema = v.object({
@@ -167,11 +167,11 @@ export const BETTER_AUTH_TABLES = {
 } as const;
 
 // Helper function to validate data against schemas
-export function validateUser(data: unknown): User {
+export function validateUser(data: unknown): UserSchema {
 	return v.parse(UserSchema, data);
 }
 
-export function validateSession(data: unknown): Session {
+export function validateSession(data: unknown): SessionSchema {
 	return v.parse(SessionSchema, data);
 }
 
@@ -228,16 +228,16 @@ export interface BetterAuthError {
 
 // Session with user data (common pattern)
 export interface SessionWithUser {
-	session: Session;
-	user: User;
+	session: SessionSchema;
+	user: UserSchema;
 }
 
 // Extended user type for additional fields (can be extended by applications)
-export interface ExtendedUser extends User {
+export interface ExtendedUser extends UserSchema {
 	[key: string]: unknown;
 }
 
 // Extended session type for additional fields
-export interface ExtendedSession extends Session {
+export interface ExtendedSession extends SessionSchema {
 	[key: string]: unknown;
 }

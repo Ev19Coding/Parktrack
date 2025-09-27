@@ -2,7 +2,11 @@
 import { redirect } from "@solidjs/router";
 import { getRequestEvent } from "solid-js/web";
 import AUTH from "../server/lib/auth";
-import type { User, UserType } from "./database/better-auth-schema";
+import type {
+	SessionSchema,
+	UserSchema,
+	UserType,
+} from "./database/better-auth-schema";
 import {
 	addLocationToUserFavourites,
 	isLocationInUserFavourites,
@@ -12,29 +16,9 @@ import { getParkTrackDatabaseConnection } from "./database/util";
 
 // TODO: Write Tests
 
-// TODO: Update the user object with any new props added to the table
-type Session = {
-	session: {
-		id: string;
-		createdAt: Date;
-		updatedAt: Date;
-		userId: string;
-		expiresAt: Date;
-		token: string;
-		ipAddress?: string | null | undefined;
-		userAgent?: string | null | undefined;
-	};
-	user: {
-		id: string;
-		createdAt: Date;
-		updatedAt: Date;
-		email: string;
-		emailVerified: boolean;
-		name: string;
-		image?: string | null | undefined;
-		type: string;
-		favourites: string[];
-	};
+type SessionData = {
+	session: SessionSchema;
+	user: UserSchema;
 };
 
 // Short-lived global cache (process-local). TTL in ms.
@@ -43,11 +27,11 @@ const GLOBAL_CACHE_TTL_MS = 5_000;
 // Map from cacheKey -> { session, expiresAt }
 const globalSessionCache = new Map<
 	string,
-	{ session: Session; expiresAt: number }
+	{ session: SessionData; expiresAt: number }
 >();
 
 // Map from cacheKey -> pending promise to deduplicate concurrent requests
-const pendingSessionPromises = new Map<string, Promise<Session | null>>();
+const pendingSessionPromises = new Map<string, Promise<SessionData | null>>();
 
 function getCacheKeyFromHeaders(headers: Headers): string | null {
 	// Prefer cookie as the cache key; fall back to authorization header.
@@ -61,11 +45,12 @@ function getCacheKeyFromHeaders(headers: Headers): string | null {
 	return null;
 }
 
-async function fetchSession(headers: Headers): Promise<Session | null> {
+async function fetchSession(headers: Headers): Promise<SessionData | null> {
+	//@ts-expect-error pain
 	return AUTH.api.getSession({ headers });
 }
 
-async function getSession(): Promise<Session | null> {
+async function getSession(): Promise<SessionData | null> {
 	const event = getRequestEvent();
 	if (!event) return null;
 
@@ -73,7 +58,7 @@ async function getSession(): Promise<Session | null> {
 	// Avoid using type assertions; using an index property on locals is safe here.
 	if (event.locals && Object.hasOwn(event.locals, "__session")) {
 		//@ts-expect-error reading back the cached value
-		return event.locals.__session as Session | null;
+		return event.locals.__session as SessionData | null;
 	}
 
 	const headers = event.request.headers;
@@ -129,11 +114,11 @@ async function getSession(): Promise<Session | null> {
 	return session;
 }
 
-async function getCurrentUser(): Promise<User | null> {
+async function getCurrentUser(): Promise<UserSchema | null> {
 	const session = await getSession();
 	if (!session?.user) return null;
 
-	return session.user as User;
+	return session.user as UserSchema;
 }
 
 async function getUserType(): Promise<UserType | null> {
@@ -187,7 +172,7 @@ export async function updateUserType(
 }
 
 /** Get current user information */
-export async function getCurrentUserInfo(): Promise<User | null> {
+export async function getCurrentUserInfo(): Promise<UserSchema | null> {
 	return getCurrentUser();
 }
 
