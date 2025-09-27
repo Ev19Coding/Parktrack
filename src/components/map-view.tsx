@@ -1,5 +1,6 @@
 /** biome-ignore-all lint/style/noNonNullAssertion: <This is valid tbf> */
 import { useNavigate } from "@solidjs/router";
+import { clientOnly } from "@solidjs/start";
 import type { Map as LMap, Marker } from "leaflet";
 import {
 	createEffect,
@@ -8,8 +9,8 @@ import {
 	on,
 	onMount,
 	Show,
+	Suspense,
 } from "solid-js";
-import { SolidLeafletMap } from "solidjs-leaflet";
 import locationMarker from "~/assets/marker/location.svg";
 import generalMarker from "~/assets/marker/other.webp";
 import userMarker from "~/assets/marker/user.webp";
@@ -20,6 +21,10 @@ import {
 	queryRecreationalLocationsCloseToCoords,
 } from "~/utils/user-query";
 import LoadingSpinner from "./loading-spinner";
+
+const SolidLeafletMap = clientOnly(async () => ({
+	default: (await import("solidjs-leaflet")).SolidLeafletMap,
+}));
 
 export default function UserMapView(prop: {
 	label: string;
@@ -50,12 +55,7 @@ export default function UserMapView(prop: {
 		[],
 	);
 
-	// SSR workaround
-	const [loadMap, setLoadMap] = createSignal(false);
-
 	const [isLoading, setIsLoading] = createSignal(false);
-
-	onMount(() => setLoadMap(true));
 
 	createEffect(
 		on(coords, () => {
@@ -151,7 +151,7 @@ export default function UserMapView(prop: {
 
 	return (
 		<section class="relative h-full overflow-auto rounded-box bg-base-200 sm:w-170 sm:place-self-center lg:col-[1/3]">
-			<Show when={loadMap()} fallback={<div class="skeleton size-full"></div>}>
+			<Suspense fallback={<div class="skeleton size-full"></div>}>
 				<SolidLeafletMap
 					center={[...coords()]}
 					id={mapId}
@@ -174,7 +174,7 @@ export default function UserMapView(prop: {
 						setMarkerRef(marker);
 					}}
 				/>
-			</Show>
+			</Suspense>
 
 			<Show when={isLoading()}>
 				<LoadingSpinner />
