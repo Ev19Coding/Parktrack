@@ -1,12 +1,22 @@
 import { createAsync, createAsyncStore, useNavigate } from "@solidjs/router";
-import { createSignal, Index, type JSXElement, Show, Suspense } from "solid-js";
+import RefreshCwIcon from "lucide-solid/icons/refresh-cw";
+import {
+	createSignal,
+	Index,
+	type JSXElement,
+	onMount,
+	Show,
+	Suspense,
+} from "solid-js";
 import { getProxiedImageUrl } from "~/utils/image";
 import { getRandomElementInArray } from "~/utils/random";
 import {
 	queryCommonRecreationalLocationCategories,
 	queryRecreationalLocationById,
 	queryRecreationalLocationsAtRandom,
+	revalidateRecreationalLocationCategories,
 } from "~/utils/user-query";
+import { TooltipButton } from "../button";
 import LoadingSpinner from "../loading-spinner";
 import { RecreationalLocationDisplayButtonCard } from "../location-display-button-card";
 
@@ -14,6 +24,7 @@ function DataSection(prop: {
 	data: ReadonlyArray<{ id: string; title: string; thumbnail: string }>;
 	header: JSXElement;
 	class: string;
+	onRefresh: () => void;
 }) {
 	const navigate = useNavigate();
 
@@ -33,7 +44,16 @@ function DataSection(prop: {
 		<>
 			<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
 				<Suspense>
-					<h2 class="shrink font-bold text-xl">{prop.header}</h2>
+					<h2 class="flex shrink items-center justify-center gap-2 font-bold text-xl">
+						{prop.header}
+						<TooltipButton
+							tooltipText="Refresh Categories"
+							class="btn-ghost btn-circle"
+							onClick={prop.onRefresh}
+						>
+							<RefreshCwIcon />
+						</TooltipButton>
+					</h2>
 				</Suspense>
 
 				<div class="overflow-auto">
@@ -84,16 +104,20 @@ function DataSection(prop: {
 }
 
 export function UserRecreationalLocationDisplay(prop: { class?: string }) {
-	const randomCategory = createAsync(
-		async () =>
-			getRandomElementInArray(
-				await queryCommonRecreationalLocationCategories(6),
-			),
-		{ initialValue: "Locations" },
+	const commonCategories = createAsync(
+		() => queryCommonRecreationalLocationCategories(6),
+		{ initialValue: [] },
 	);
 
+	const [commonCategory, setCommonCategory] = createSignal("Location");
+
+	const setCommonCategoryToRandomOne = () =>
+		setCommonCategory(getRandomElementInArray(commonCategories()));
+
+	onMount(setCommonCategoryToRandomOne);
+
 	const randomParks = createAsyncStore(
-		() => queryRecreationalLocationsAtRandom(randomCategory()),
+		() => queryRecreationalLocationsAtRandom(commonCategory()),
 		{ initialValue: [], reconcile: { merge: true } },
 	);
 
@@ -101,7 +125,8 @@ export function UserRecreationalLocationDisplay(prop: { class?: string }) {
 		<DataSection
 			class={prop.class ?? ""}
 			data={randomParks()}
-			header={`${randomCategory()}(s) for You`}
+			header={`${commonCategory()}(s) for You`}
+			onRefresh={setCommonCategoryToRandomOne}
 		/>
 	);
 }
