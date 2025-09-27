@@ -1,6 +1,13 @@
-import { createAsync, createAsyncStore, useNavigate } from "@solidjs/router";
+import {
+	createAsync,
+	createAsyncStore,
+	revalidate,
+	useNavigate,
+} from "@solidjs/router";
 import RefreshCwIcon from "lucide-solid/icons/refresh-cw";
 import {
+	createEffect,
+	createMemo,
 	createSignal,
 	Index,
 	type JSXElement,
@@ -110,12 +117,20 @@ export function UserRecreationalLocationDisplay(prop: { class?: string }) {
 
 	const [commonCategory, setCommonCategory] = createSignal("Location");
 
-	const setCommonCategoryToRandomOne = () =>
-		setCommonCategory(
-			getRandomElementInArray(commonCategories()) ?? "Location",
-		);
+	const category = createMemo(
+		() => getRandomElementInArray(commonCategories()) ?? "Location",
+	);
 
-	onMount(setCommonCategoryToRandomOne);
+	const setCommonCategoryToRandomOne = () => {
+		const refreshedCategory =
+			getRandomElementInArray(commonCategories()) ?? "Location";
+
+		setCommonCategory(refreshedCategory);
+	};
+
+	createEffect(() => {
+		setCommonCategory(category);
+	});
 
 	const randomParks = createAsyncStore(
 		() => queryRecreationalLocationsAtRandom(commonCategory()),
