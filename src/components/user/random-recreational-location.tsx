@@ -54,6 +54,7 @@ function DataSection(prop: {
 						{prop.header}
 						<TooltipButton
 							tooltipText="Refresh Categories"
+							tooltipDir="right"
 							class="btn-ghost btn-circle"
 							onClick={prop.onRefresh}
 						>
