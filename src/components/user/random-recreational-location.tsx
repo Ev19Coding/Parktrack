@@ -51,7 +51,8 @@ function DataSection(prop: {
 			<section class={`flex flex-col gap-2 overflow-hidden ${prop.class}`}>
 				<Suspense>
 					<h2 class="flex shrink items-center justify-center gap-2 font-bold text-xl">
-						{prop.header}
+						<span class="text-center">{prop.header}</span>
+
 						<TooltipButton
 							tooltipText="Refresh Categories"
 							tooltipDir="left"
