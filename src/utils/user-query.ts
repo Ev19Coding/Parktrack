@@ -1,4 +1,4 @@
-import { query, revalidate } from "@solidjs/router";
+import { query, redirect, revalidate } from "@solidjs/router";
 import {
 	getAllRecreationalLocationCategories,
 	getCommonRecreationalLocationCategories,
@@ -158,3 +158,26 @@ export async function revalidateNearbyCoords() {
 export async function revalidateRandomCategory() {
 	return revalidate([queryRecreationalLocationsAtRandom.key]);
 }
+
+// If the client doesn't fulfill these assertions, they get redirected to the home page. Call them at the top of default components in protected routes
+
+export const assertUserIsLoggedIn = query(async ()=> {
+		"use server"
+	if (!(await isUserLoggedIn())) {
+		throw redirect("/");
+	}
+}, "assert/user-is-logged-in")
+
+export const assertUserIsOwner = query(async () => {
+		"use server"
+	if (!(await isUserOwner())) {
+		throw redirect("/");
+	}
+}, "assert/user-is-owner")
+
+export const assertUserIsRegular = query(async () => {
+		"use server"
+	if (!(await isUserRegular())) {
+	 throw	redirect("/");
+	}
+}, "assert/user-is-regular")

@@ -14,12 +14,15 @@ import { triggerConfirmationModal } from "~/components/modal/confirmation-modal"
 import { getCurrentUserId, removeFromFavourites } from "~/server/user";
 import { getProxiedImageUrl } from "~/utils/image";
 import {
+	assertUserIsLoggedIn,
 	queryRecreationalLocationById,
 	queryUserFavouriteLocations,
 	queryUserLoggedIn,
 } from "~/utils/user-query";
 
 export default function FavouritePage() {
+	assertUserIsLoggedIn();
+
 	const navigate = useNavigate();
 
 	const isLoggedIn = createAsync(() => queryUserLoggedIn(), {

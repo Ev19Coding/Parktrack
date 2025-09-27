@@ -1,5 +1,4 @@
 "use server";
-import { redirect } from "@solidjs/router";
 import { getRequestEvent } from "solid-js/web";
 import AUTH from "../server/lib/auth";
 import type {
@@ -195,32 +194,6 @@ export async function isUserOwner() {
 export async function isUserRegular() {
 	const userType = await getUserType();
 	return userType === "user";
-}
-
-// export async function isUserGuest() {
-// 	const session = await getSession();
-
-// 	if (session) return false;
-
-// 	return true;
-// }
-
-/** Check if user has permission to perform owner actions */
-
-/** Ensure user has specific type, otherwise redirect */
-export async function ensureUserType(requiredType: UserType | UserType[]) {
-	const userType = await getUserType();
-	if (!userType) throw redirect("/");
-
-	const allowedTypes = Array.isArray(requiredType)
-		? requiredType
-		: [requiredType];
-
-	if (!allowedTypes.includes(userType)) {
-		throw redirect("/"); // or redirect to unauthorized page
-	}
-
-	return true;
 }
 
 /**
