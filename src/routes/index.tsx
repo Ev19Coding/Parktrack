@@ -45,10 +45,9 @@ export default function LoginPage() {
 			if (result.error) {
 				setError(result.error.message || "Sign in failed");
 			} else {
-				const [info] = await Promise.all([
-					getCurrentUserInfo(),
-					revalidateUserLoginData(),
-				]);
+				await revalidateUserLoginData();
+
+				const info = await getCurrentUserInfo();
 
 				info?.type === "owner" ? navigate("/owner") : navigate("/user");
 			}

@@ -46,12 +46,22 @@ export const queryUserLoggedIn = query(isUserLoggedIn, "auth/isUserLoggedIn");
 
 export const queryIsUserOwner = query(isUserOwner, "auth/isUserOwner");
 
-export async function revalidateUserLoginData() {
+export async function revalidateUserLoginData(extraKeys: string[] = []) {
 	return revalidate([
+		// Core auth keys
 		queryUserLoggedIn.key,
 		getOwnerData.key,
 		getRegularUserData.key,
 		queryIsUserOwner.key,
+
+		// Additional user-dependent queries that should be refreshed when auth changes
+		queryUsersByType.key,
+		queryUserFavouriteLocations.key,
+		queryIsLocationInUserFavourites.key,
+		queryLocationsByOwner.key,
+
+		// Allow callers to pass dynamic keys (e.g. per-item keys like `is-location-${id}-favourite`)
+		...extraKeys,
 	]);
 }
 
