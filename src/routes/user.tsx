@@ -1,7 +1,7 @@
 import { createMemo } from "solid-js";
 import { useGeolocation } from "solidjs-use";
 import UserMapView from "~/components/map-view";
-import { UserRecreationalLocationDisplay } from "~/components/user/park-restaurant";
+import { UserRecreationalLocationDisplay } from "~/components/user/random-recreational-location";
 import UserSearchBar from "~/components/user/search-bar";
 
 // TODO: Move this out of here
