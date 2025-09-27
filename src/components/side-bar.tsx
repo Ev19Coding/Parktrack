@@ -10,8 +10,8 @@ import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
 import {
-	isUserLoggedIn,
 	queryIsUserOwner,
+	queryUserLoggedIn,
 	revalidateUserLoginData,
 } from "~/utils/user-query";
 import { TooltipButton } from "./button";
@@ -24,7 +24,7 @@ export default function SideBar() {
 
 	const [isLoading, setIsLoading] = createSignal(false);
 
-	const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+	const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 		initialValue: false,
 	});
 
@@ -83,37 +83,25 @@ export default function SideBar() {
 								type="button"
 								onClick={async (_) => {
 									setIsLoading(true);
+									try {
+										if (isLoggedIn()) {
+											// Wait for signOut to complete so server cookie/state is updated first
+											await AUTH_CLIENT.signOut();
+										}
 
-									if (isLoggedIn()) {
-										AUTH_CLIENT.signOut({
-											fetchOptions: {
-												onResponse() {
-													setIsLoading(false);
-												},
-												onSuccess() {
-													revalidateUserLoginData().then(() => {
-														// Move to the log out page
-														navigate("/");
-
-														// Close the side bar
-														drawerToggle$.click();
-													});
-												},
-											},
-										});
-									} else {
 										await revalidateUserLoginData();
 
-										// Move to the log out page
 										navigate("/");
 
+										drawerToggle$.click();
+									} finally {
 										setIsLoading(false);
 									}
 								}}
 							>
 								<LogOutIcon />
 								<Suspense>
-									{isLoggedIn.latest ? "Log Out" : "Back to Login"}
+									{isLoggedIn() ? "Log Out" : "Back to Login"}
 								</Suspense>
 							</button>
 						</li>
@@ -176,9 +164,9 @@ export default function SideBar() {
 
 												await AUTH_CLIENT.deleteUser();
 
-												navigate("/");
-
 												await revalidateUserLoginData();
+
+												navigate("/");
 
 												setIsLoading(false);
 											}, "Account deletion is permanent. Are you sure?")

@@ -2,11 +2,11 @@ import { createAsyncStore, query, useNavigate } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, Show, Suspense } from "solid-js";
 import { useThrottle } from "solidjs-use";
-import {
-	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
-	getUserQueryResultFromDatabase,
-} from "~/server/database/user/query";
 import { getProxiedImageUrl } from "~/utils/image";
+import {
+	queryRecreationalLocationById,
+	queryUserSearchForRecreationalLocations,
+} from "~/utils/user-query";
 import LoadingSpinner from "../loading-spinner";
 
 export default function UserSearchBar() {
@@ -21,11 +21,9 @@ export default function UserSearchBar() {
 
 	// const { coords } = useGeolocation({ enableHighAccuracy: true });
 
-	// This would be more reliable:
-	const _getSearchResultsFromDb = query(
-		getUserQueryResultFromDatabase,
-		"db-user-query-search",
-	);
+	// This would be more reliable: use the query-fied wrapper which provides caching + revalidate
+	const _getSearchResultsFromDb = (q: string) =>
+		queryUserSearchForRecreationalLocations(q);
 
 	const _throttledSearch = useThrottle(
 		() => _getSearchResultsFromDb(input()),
@@ -36,10 +34,8 @@ export default function UserSearchBar() {
 		return _throttledSearch();
 	});
 
-	const getRecreationalLocationFromDatabaseById = query(
-		_getRecreationalLocationFromDatabaseById,
-		"db-location-data-query",
-	);
+	const getRecreationalLocationFromDatabaseById = (id: string) =>
+		queryRecreationalLocationById(id);
 
 	// Move ref declaration outside
 	let inputRef: HTMLInputElement | undefined;

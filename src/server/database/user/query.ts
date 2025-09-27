@@ -318,7 +318,7 @@ export async function getRecreationalLocationFromDatabaseById(
 	return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
 }
 
-export async function getRecreationalLocationCategories(): Promise<
+export async function getAllRecreationalLocationCategories(): Promise<
 	ReadonlyArray<string>
 > {
 	const fetchedCategories = (
@@ -328,6 +328,45 @@ export async function getRecreationalLocationCategories(): Promise<
     SELECT DISTINCT category
     FROM user_recreational_locations
     WHERE category IS NOT NULL
+    `)
+	)
+		.getColumnsJson()
+		.flatMap((columnData) => {
+			try {
+				// Validate the data
+				const validatedData = v.parse(v.array(v.string()), columnData, {
+					abortEarly: true,
+				});
+
+				return validatedData;
+			} catch (e) {
+				throw new Error(
+					`Invalid column data: ${JSON.stringify(
+						e,
+						(_, value) =>
+							typeof value === "bigint" ? value.toString() : value,
+						2,
+					)}`,
+				);
+			}
+		});
+
+	return fetchedCategories;
+}
+
+/** Returns all the categories that occur at least a specified amount of times */
+export async function getCommonRecreationalLocationCategories(
+	frequency: number,
+): Promise<ReadonlyArray<string>> {
+	const fetchedCategories = (
+		await (
+			await getParkTrackDatabaseConnection()
+		).streamAndReadAll(`
+		SELECT category
+    FROM user_recreational_locations
+    WHERE category IS NOT NULL
+    GROUP BY category
+    HAVING COUNT(*) >= ${frequency};
     `)
 	)
 		.getColumnsJson()

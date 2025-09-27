@@ -1,18 +1,30 @@
 import { query, revalidate } from "@solidjs/router";
 import {
+	getAllRecreationalLocationCategories,
+	getCommonRecreationalLocationCategories,
 	getLocationsByOwner,
-	getRecreationalLocationCategories,
+	getRecreationalLocationFromDatabaseById,
+	getRecreationalLocationsCloseToCoords,
+	getRecreationalLocationsFromDatabaseAtRandom,
+	getUserFavouriteLocations,
+	getUserQueryResultFromDatabase,
+	getUsersByType,
+	isLocationInUserFavourites,
 } from "~/server/database/user/query";
 import {
-	_isUserLoggedIn,
 	getCurrentUserInfo,
+	isUserLoggedIn,
 	isUserOwner,
 	isUserRegular,
 } from "~/server/user";
 
-// These need to be wrapped with query to handle redirects properly
+// Query-wrapped read-only helpers that mirror server reads.
+// Keys are deterministic so `revalidate` can target them.
 
-/** Returns all the relevant data of the owner */
+//
+// Auth queries
+//
+
 export const getOwnerData = query(async () => {
 	if (await isUserOwner()) {
 		const ownerInfo = await getCurrentUserInfo();
@@ -24,27 +36,125 @@ export const getOwnerData = query(async () => {
 		return { locations: ownerLocations } as const;
 	}
 	return null;
-}, "owner-data");
+}, "auth/getOwnerData");
 
 export const getRegularUserData = query(async () => {
 	if (await isUserRegular()) return {};
 	return null;
-}, "regular-user-data");
+}, "auth/getRegularUserData");
 
-export const isUserLoggedIn = query(_isUserLoggedIn, "is-user-logged-in");
+export const queryUserLoggedIn = query(isUserLoggedIn, "auth/isUserLoggedIn");
 
-export const queryIsUserOwner = query(isUserOwner, "is-user-owner");
+export const queryIsUserOwner = query(isUserOwner, "auth/isUserOwner");
 
-export async function revalidateUserLoginData() {
+export async function revalidateUserLoginData(extraKeys: string[] = []) {
 	return revalidate([
-		isUserLoggedIn.key,
+		// Core auth keys
+		queryUserLoggedIn.key,
 		getOwnerData.key,
 		getRegularUserData.key,
 		queryIsUserOwner.key,
+
+		// Additional user-dependent queries that should be refreshed when auth changes
+		queryUsersByType.key,
+		queryUserFavouriteLocations.key,
+		queryIsLocationInUserFavourites.key,
+		queryLocationsByOwner.key,
+
+		// Allow callers to pass dynamic keys (e.g. per-item keys like `is-location-${id}-favourite`)
+		...extraKeys,
 	]);
 }
 
-export const queryRecreationalLocationCategories = query(
-	() => getRecreationalLocationCategories(),
-	"location-categories",
+//
+// Recreational location queries
+//
+
+export const queryUserSearchForRecreationalLocations = query(
+	getUserQueryResultFromDatabase,
+	"search/userRecreationalLocations",
 );
+
+export const queryRecreationalLocationById = query(
+	getRecreationalLocationFromDatabaseById,
+	"location/byId",
+);
+
+export async function revalidateRecreationalLocationById() {
+	return revalidate([queryRecreationalLocationById.key]);
+}
+
+export const queryAllRecreationalLocationCategories = query(
+	getAllRecreationalLocationCategories,
+	"location/categories",
+);
+
+export const queryCommonRecreationalLocationCategories = query(
+	getCommonRecreationalLocationCategories,
+	"location/common-categories",
+);
+
+export async function revalidateRecreationalLocationCategories() {
+	return revalidate([
+		queryAllRecreationalLocationCategories.key,
+		queryCommonRecreationalLocationCategories.key,
+	]);
+}
+
+export const queryRecreationalLocationsAtRandom = query(
+	getRecreationalLocationsFromDatabaseAtRandom,
+	"location/random",
+);
+
+export const queryRecreationalLocationsCloseToCoords = query(
+	getRecreationalLocationsCloseToCoords,
+	"location/nearby",
+);
+
+export const queryUsersByType = query(getUsersByType, "users/byType");
+
+export const queryUserFavouriteLocations = query(
+	getUserFavouriteLocations,
+	"user/favouriteLocations",
+);
+
+export async function revalidateUserFavourites() {
+	return revalidate([queryUserFavouriteLocations.key]);
+}
+
+export async function revalidateUserFavouriteStatus() {
+	return revalidate([
+		queryIsLocationInUserFavourites.key,
+		queryUserFavouriteLocations.key,
+	]);
+}
+
+export const queryIsLocationInUserFavourites = query(
+	isLocationInUserFavourites,
+	"user/isLocationInFavourites",
+);
+
+//
+// Owner queries
+//
+
+export const queryLocationsByOwner = query(
+	getLocationsByOwner,
+	"owner/locationsByOwner",
+);
+
+//
+// Convenience revalidation helpers
+//
+
+export async function revalidateSearchQuery() {
+	return revalidate([queryUserSearchForRecreationalLocations.key]);
+}
+
+export async function revalidateNearbyCoords() {
+	return revalidate(queryRecreationalLocationsCloseToCoords.key);
+}
+
+export async function revalidateRandomCategory() {
+	return revalidate([queryRecreationalLocationsAtRandom.key]);
+}

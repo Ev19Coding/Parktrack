@@ -11,18 +11,18 @@ import { BackNavigationButton } from "~/components/button";
 import LoadingSpinner from "~/components/loading-spinner";
 import { RecreationalLocationDisplayButtonCard } from "~/components/location-display-button-card";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
-import {
-	getRecreationalLocationFromDatabaseById as _getRecreationalLocationFromDatabaseById,
-	getUserFavouriteLocations,
-} from "~/server/database/user/query";
 import { getCurrentUserId, removeFromFavourites } from "~/server/user";
 import { getProxiedImageUrl } from "~/utils/image";
-import { isUserLoggedIn } from "~/utils/user-query";
+import {
+	queryRecreationalLocationById,
+	queryUserFavouriteLocations,
+	queryUserLoggedIn,
+} from "~/utils/user-query";
 
 export default function FavouritePage() {
 	const navigate = useNavigate();
 
-	const isLoggedIn = createAsync(() => isUserLoggedIn(), {
+	const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 		initialValue: false,
 	});
 
@@ -31,7 +31,7 @@ export default function FavouritePage() {
 
 		if (!userId) return [];
 
-		return getUserFavouriteLocations(userId);
+		return queryUserFavouriteLocations(userId);
 	}, "user-favourite-locations");
 
 	const favouriteLocations = createAsyncStore(() => favouriteLocationsQuery(), {
@@ -39,10 +39,8 @@ export default function FavouritePage() {
 		reconcile: { merge: true },
 	});
 
-	const getRecreationalLocationFromDatabaseById = query(
-		_getRecreationalLocationFromDatabaseById,
-		"db-location-data-query",
-	);
+	const getRecreationalLocationFromDatabaseById = (id: string) =>
+		queryRecreationalLocationById(id);
 
 	// local loading state for removal/navigation
 	const [isActionLoading, setIsActionLoading] = createSignal(false);
@@ -58,8 +56,23 @@ export default function FavouritePage() {
 
 		await removeFromFavourites(id);
 
-		// Revalidate the favourites list after mutation
-		await revalidate(favouriteLocationsQuery.key);
+		// Revalidate the favourites list and favourite status after the mutation.
+		// We prefer targeted revalidation by current user id when available.
+		try {
+			const userId = await getCurrentUserId();
+			if (userId) {
+				await revalidate([
+					`user-favourites:${userId}`,
+					`is-favourite:${userId}:${id}`,
+				]);
+			} else {
+				// Fallback to previous behaviour when user id can't be resolved
+				await revalidate(favouriteLocationsQuery.key);
+			}
+		} catch {
+			// Ensure we at least fall back to the previous behaviour on errors.
+			await revalidate(favouriteLocationsQuery.key);
+		}
 
 		setIsActionLoading(false);
 	}
