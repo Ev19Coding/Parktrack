@@ -12,7 +12,6 @@ import {
 	isLocationInUserFavourites,
 } from "~/server/database/user/query";
 import {
-	ensureUserType,
 	getCurrentUserInfo,
 	isUserLoggedIn,
 	isUserOwner,
@@ -28,10 +27,7 @@ import {
 
 export const getOwnerData = query(async () => {
 	if (await isUserOwner()) {
-		const [ownerInfo] = await Promise.all([
-			getCurrentUserInfo(),
-			ensureUserType("owner"),
-		]);
+		const ownerInfo = await getCurrentUserInfo();
 
 		if (!ownerInfo) return null;
 
