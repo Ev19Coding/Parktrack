@@ -132,7 +132,7 @@ export default function FavouritePage() {
 											{(loc) => (
 												<div class={buttonStyle}>
 													<RecreationalLocationDisplayButtonCard
-														href={`/info${loc().id}`}
+														href={`/info/${loc().id}`}
 														thumbnail={getProxiedImageUrl(loc().thumbnail)}
 														title={loc().title}
 													/>
