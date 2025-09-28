@@ -439,6 +439,18 @@ export default function InformationRoute() {
 
 		const { coords: userCoords } = useGeolocation();
 
+		const distance = createMemo(() =>
+			approximateNumberToDecimalPlaces(
+				getDistanceInKmBetweenCoords(
+					userCoords().latitude,
+					userCoords().longitude,
+					locationData().latitude,
+					locationData().longitude,
+				),
+				2,
+			),
+		);
+
 		return (
 			<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
 				<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
@@ -457,21 +469,12 @@ export default function InformationRoute() {
 									{locationData().category} • {locationData().address}
 								</p>
 
-								<p class="break-words text-info/70 text-xs sm:text-sm">
-									Roughly{" "}
-									<span class="font-bold">
-										{approximateNumberToDecimalPlaces(
-											getDistanceInKmBetweenCoords(
-												userCoords().latitude,
-												userCoords().longitude,
-												locationData().latitude,
-												locationData().longitude,
-											),
-											2,
-										)}
-									</span>{" "}
-									KM far from you.
-								</p>
+								<Show when={!Number.isNaN(distance())}>
+									<p class="break-words text-info/70 text-xs sm:text-sm">
+										Roughly <span class="font-bold">{distance()}</span> KM far
+										from you.
+									</p>
+								</Show>
 
 								{(() => {
 									const id = () => locationData().id;
@@ -525,17 +528,17 @@ export default function InformationRoute() {
 													<Show
 														when={isLoading()}
 														fallback={
-														isRecreationLocationUserFavourite() ? (
-															<>
-																<RemoveFavoriteIcon />
-																Remove from Favourites
-															</>
-														) : (
-															<>
-																<AddFavoriteIcon />
-																Add to Favourites
-															</>
-														)
+															isRecreationLocationUserFavourite() ? (
+																<>
+																	<RemoveFavoriteIcon />
+																	Remove from Favourites
+																</>
+															) : (
+																<>
+																	<AddFavoriteIcon />
+																	Add to Favourites
+																</>
+															)
 														}
 													>
 														<LoadingSpinner />
