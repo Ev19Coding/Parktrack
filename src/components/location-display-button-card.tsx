@@ -1,14 +1,15 @@
+import { A } from "@solidjs/router";
 import { Show } from "solid-js";
 
 type Props =
 	| {
-			onClick: () => void;
+			href: string;
 			thumbnail: string;
 			title: string;
 			isSkeleton?: never;
 	  }
 	| {
-			onClick?: never;
+			href?: never;
 			thumbnail?: never;
 			title?: never;
 			isSkeleton: true;
@@ -16,10 +17,10 @@ type Props =
 
 export function RecreationalLocationDisplayButtonCard(prop: Props) {
 	return (
-		<button
+		<A
 			type="button"
 			class={`relative size-36 cursor-pointer select-none place-self-center overflow-clip rounded-box bg-base-200 md:size-40 lg:size-44 ${prop.isSkeleton && "skeleton"}`}
-			onClick={prop.onClick}
+			href={prop.href ?? "#"}
 		>
 			<Show when={!prop.isSkeleton}>
 				<img
@@ -32,6 +33,6 @@ export function RecreationalLocationDisplayButtonCard(prop: Props) {
 					{prop.title}
 				</div>
 			</Show>
-		</button>
+		</A>
 	);
 }

@@ -1,4 +1,4 @@
-import { createAsync, query, revalidate, useLocation } from "@solidjs/router";
+import { createAsync, query, revalidate, useParams } from "@solidjs/router";
 import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
 import AddFavoriteIcon from "lucide-solid/icons/bookmark-plus";
 import CalendarIcon from "lucide-solid/icons/calendar";
@@ -15,7 +15,6 @@ import {
 	createSignal,
 	For,
 	type JSXElement,
-	onMount,
 	Show,
 	Suspense,
 } from "solid-js";
@@ -23,7 +22,7 @@ import * as v from "valibot";
 import { BackNavigationButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
 import { GenericModal, showModal } from "~/components/modal/generic-modal";
-import { RecreationalLocationSchema } from "~/server/database/schema";
+import type { RecreationalLocationSchema } from "~/server/database/schema";
 import {
 	addToFavourites,
 	getCurrentUserId,
@@ -33,7 +32,12 @@ import {
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import { queryIsUserOwner, queryUserLoggedIn } from "~/utils/user-query";
+import {
+	queryIsUserOwner,
+	queryRecreationalLocationById,
+	queryUserLoggedIn,
+} from "~/utils/user-query";
+import { IdParamSchema } from "~/utils/validation/url-param";
 
 function InfoCard(props: { children: JSXElement; class?: string }) {
 	return (
@@ -420,21 +424,17 @@ function BusinessDetails(props: {
 	);
 }
 
-/** Shows extra details about a recreational location the user selected */
+/** Shows extra details about a recreational location the user selected. Requires that id of the location is in the url parameters */
 export default function InformationRoute() {
-	const location = useLocation();
+  // Destructure the params since it's a proxy
+	const params = v.parse(IdParamSchema, {...useParams()})
 
-	// Use onMount to ensure this only runs on the client
-	const [locationData, setLocationData] = createSignal<
-		v.InferOutput<typeof RecreationalLocationSchema>
-	>(DUMMY_RECREATIONAL_LOCATION_DATA);
-
-	onMount(() => {
-		const result = v.safeParse(RecreationalLocationSchema, location.state);
-		if (result.success) {
-			setLocationData(result.output);
-		}
-	});
+	const locationData = createAsync(
+		async () =>
+			(await queryRecreationalLocationById(params.id)) ??
+			DUMMY_RECREATIONAL_LOCATION_DATA,
+		{ initialValue: DUMMY_RECREATIONAL_LOCATION_DATA },
+	);
 
 	return (
 		<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">

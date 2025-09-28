@@ -1,4 +1,4 @@
-import { createAsyncStore, query, useNavigate } from "@solidjs/router";
+import { A, createAsyncStore, query, useNavigate } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, Show, Suspense } from "solid-js";
 import { useThrottle } from "solidjs-use";
@@ -92,26 +92,11 @@ export default function UserSearchBar() {
 							{(park) => {
 								return (
 									<li>
-										<button
+										<A
 											type="button"
 											class="flex justify-between"
-											onClick={async () => {
-												setIsLoadingRecreationalLocationInfo(true);
-
-												const data =
-													await getRecreationalLocationFromDatabaseById(
-														park().id,
-													);
-
-												setIsLoadingRecreationalLocationInfo(false);
-
-												if (data) {
-													setAreSuggestionsOpen(false);
-
-													// Navigate to the info route and set the data to
-													navigate("/info", { state: data });
-												}
-											}}
+											href={`/info/${park().id}`}
+											onClick={() => setAreSuggestionsOpen(false)}
 										>
 											{park().title}
 
@@ -130,7 +115,7 @@ export default function UserSearchBar() {
 													);
 												}}
 											</Show>
-										</button>
+										</A>
 									</li>
 								);
 							}}

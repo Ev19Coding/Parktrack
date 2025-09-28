@@ -7,7 +7,6 @@ import {
 	createMemo,
 	createSignal,
 	on,
-	onMount,
 	Show,
 	Suspense,
 } from "solid-js";
@@ -16,10 +15,7 @@ import generalMarker from "~/assets/marker/other.webp";
 import userMarker from "~/assets/marker/user.webp";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
-import {
-	queryRecreationalLocationById,
-	queryRecreationalLocationsCloseToCoords,
-} from "~/utils/user-query";
+import { queryRecreationalLocationsCloseToCoords } from "~/utils/user-query";
 import LoadingSpinner from "./loading-spinner";
 
 const SolidLeafletMap = clientOnly(async () => ({
@@ -120,21 +116,16 @@ export default function UserMapView(prop: {
 						const clickListener = async () => {
 							setIsLoading(true);
 
-							const locationData = await queryRecreationalLocationById(id);
-
-							if (locationData) {
-								// If already on info page, navigate away first
-								if (window.location.pathname === "/info") {
-									navigate("/", { replace: true });
-									// Use setTimeout to ensure the navigation completes
-									setTimeout(() => {
-										navigate("/info", { replace: true, state: locationData });
-									}, 0);
-								} else {
-									navigate("/info", { replace: true, state: locationData });
-								}
+							// If already on info page, navigate away first
+							if (window.location.pathname === "/info") {
+								navigate("/", { replace: true });
+								// Use setTimeout to ensure the navigation completes
+								setTimeout(() => {
+									navigate(`/info/${id}`, { replace: true });
+								}, 0);
+							} else {
+								navigate(`/info/${id}`, { replace: true });
 							}
-
 							setIsLoading(false);
 						};
 

@@ -9,10 +9,10 @@ import {
 	getUserFavouriteLocations,
 	getUserQueryResultFromDatabase,
 	getUsersByType,
-	isLocationInUserFavourites,
 } from "~/server/database/user/query";
 import {
 	getCurrentUserInfo,
+	isLocationInFavourites,
 	isUserLoggedIn,
 	isUserOwner,
 	isUserRegular,
@@ -26,6 +26,7 @@ import {
 //
 
 export const getOwnerData = query(async () => {
+	"use server";
 	if (await isUserOwner()) {
 		const ownerInfo = await getCurrentUserInfo();
 
@@ -39,6 +40,7 @@ export const getOwnerData = query(async () => {
 }, "auth/getOwnerData");
 
 export const getRegularUserData = query(async () => {
+	"use server";
 	if (await isUserRegular()) return {};
 	return null;
 }, "auth/getRegularUserData");
@@ -130,7 +132,7 @@ export async function revalidateUserFavouriteStatus() {
 }
 
 export const queryIsLocationInUserFavourites = query(
-	isLocationInUserFavourites,
+	isLocationInFavourites,
 	"user/isLocationInFavourites",
 );
 
@@ -161,23 +163,23 @@ export async function revalidateRandomCategory() {
 
 // If the client doesn't fulfill these assertions, they get redirected to the home page. Call them at the top of default components in protected routes
 
-export const assertUserIsLoggedIn = query(async ()=> {
-		"use server"
+export const assertUserIsLoggedIn = query(async () => {
+	"use server";
 	if (!(await isUserLoggedIn())) {
 		throw redirect("/");
 	}
-}, "assert/user-is-logged-in")
+}, "assert/user-is-logged-in");
 
 export const assertUserIsOwner = query(async () => {
-		"use server"
+	"use server";
 	if (!(await isUserOwner())) {
 		throw redirect("/");
 	}
-}, "assert/user-is-owner")
+}, "assert/user-is-owner");
 
 export const assertUserIsRegular = query(async () => {
-		"use server"
+	"use server";
 	if (!(await isUserRegular())) {
-	 throw	redirect("/");
+		throw redirect("/");
 	}
-}, "assert/user-is-regular")
+}, "assert/user-is-regular");

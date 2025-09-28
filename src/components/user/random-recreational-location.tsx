@@ -76,21 +76,8 @@ function DataSection(prop: {
 							<Index each={prop.data}>
 								{(baseLocationData) => (
 									<RecreationalLocationDisplayButtonCard
-										onClick={async () => {
-											setIsLoadingRecreationalLocationInfo(true);
+									href={`/info/${baseLocationData().id}`}
 
-											const data =
-												await getRecreationalLocationFromDatabaseById(
-													baseLocationData().id,
-												);
-
-											if (data) {
-												// Navigate to the info route and set the data to
-												navigate("/info", { state: data });
-											}
-
-											setIsLoadingRecreationalLocationInfo(false);
-										}}
 										thumbnail={getProxiedImageUrl(baseLocationData().thumbnail)}
 										title={baseLocationData().title}
 									/>

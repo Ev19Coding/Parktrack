@@ -1,4 +1,4 @@
-import { A, useNavigate } from "@solidjs/router";
+import { useNavigate } from "@solidjs/router";
 import AnonymousIcon from "lucide-solid/icons/hat-glasses";
 import { createSelector, createSignal, Match, Show, Switch } from "solid-js";
 import { createStore } from "solid-js/store";

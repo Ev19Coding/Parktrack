@@ -3,7 +3,6 @@ import {
 	createAsyncStore,
 	query,
 	revalidate,
-	useNavigate,
 } from "@solidjs/router";
 import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
 import { createSignal, Index, Show, Suspense } from "solid-js";
@@ -15,15 +14,12 @@ import { getCurrentUserId, removeFromFavourites } from "~/server/user";
 import { getProxiedImageUrl } from "~/utils/image";
 import {
 	assertUserIsLoggedIn,
-	queryRecreationalLocationById,
 	queryUserFavouriteLocations,
 	queryUserLoggedIn,
 } from "~/utils/user-query";
 
 export default function FavouritePage() {
 	assertUserIsLoggedIn();
-
-	const navigate = useNavigate();
 
 	const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 		initialValue: false,
@@ -41,9 +37,6 @@ export default function FavouritePage() {
 		initialValue: [],
 		reconcile: { merge: true },
 	});
-
-	const getRecreationalLocationFromDatabaseById = (id: string) =>
-		queryRecreationalLocationById(id);
 
 	// local loading state for removal/navigation
 	const [isActionLoading, setIsActionLoading] = createSignal(false);
@@ -75,18 +68,6 @@ export default function FavouritePage() {
 		} catch {
 			// Ensure we at least fall back to the previous behaviour on errors.
 			await revalidate(favouriteLocationsQuery.key);
-		}
-
-		setIsActionLoading(false);
-	}
-
-	async function handleOpenInfo(id: string) {
-		setIsActionLoading(true);
-
-		const data = await getRecreationalLocationFromDatabaseById(id);
-
-		if (data) {
-			navigate("/info", { state: data });
 		}
 
 		setIsActionLoading(false);
@@ -151,9 +132,7 @@ export default function FavouritePage() {
 											{(loc) => (
 												<div class={buttonStyle}>
 													<RecreationalLocationDisplayButtonCard
-														onClick={async () => {
-															await handleOpenInfo(loc().id);
-														}}
+														href={`/info${loc().id}`}
 														thumbnail={getProxiedImageUrl(loc().thumbnail)}
 														title={loc().title}
 													/>
