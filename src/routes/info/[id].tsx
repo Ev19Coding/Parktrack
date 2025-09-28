@@ -18,6 +18,7 @@ import {
 	Show,
 	Suspense,
 } from "solid-js";
+import { useGeolocation } from "solidjs-use";
 import * as v from "valibot";
 import { BackNavigationButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
@@ -25,7 +26,9 @@ import { GenericModal, showModal } from "~/components/modal/generic-modal";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 import { addToFavourites, removeFromFavourites } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
+import { approximateNumberToDecimalPlaces } from "~/utils/formatting";
 import { getProxiedImageUrl } from "~/utils/image";
+import { getDistanceInKmBetweenCoords } from "~/utils/location";
 import { goBackToPreviousRoute } from "~/utils/navigation";
 import { generateRandomUUID } from "~/utils/random";
 import {
@@ -434,6 +437,8 @@ export default function InformationRoute() {
 			{ initialValue: DUMMY_RECREATIONAL_LOCATION_DATA },
 		);
 
+		const { coords: userCoords } = useGeolocation();
+
 		return (
 			<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
 				<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
@@ -450,6 +455,22 @@ export default function InformationRoute() {
 
 								<p class="break-words text-base-content/70 text-xs sm:text-sm">
 									{locationData().category} • {locationData().address}
+								</p>
+
+								<p class="break-words text-info/70 text-xs sm:text-sm">
+									Roughly{" "}
+									<span class="font-bold">
+										{approximateNumberToDecimalPlaces(
+											getDistanceInKmBetweenCoords(
+												userCoords().latitude,
+												userCoords().longitude,
+												locationData().latitude,
+												locationData().longitude,
+											),
+											2,
+										)}
+									</span>{" "}
+									KM far from you.
 								</p>
 
 								{(() => {
@@ -484,7 +505,7 @@ export default function InformationRoute() {
 										<Show when={isLoggedIn() && isNotOwner()}>
 											<button
 												type="button"
-												class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+												class="m-auto link link-primary flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
 												disabled={isLoading()}
 												onClick={async (_) => {
 													setIsLoading(true);
@@ -504,17 +525,17 @@ export default function InformationRoute() {
 													<Show
 														when={isLoading()}
 														fallback={
-															isRecreationLocationUserFavourite() ? (
-																<>
-																	<RemoveFavoriteIcon />
-																	Remove from Favourites
-																</>
-															) : (
-																<>
-																	<AddFavoriteIcon />
-																	Add to Favourites
-																</>
-															)
+														isRecreationLocationUserFavourite() ? (
+															<>
+																<RemoveFavoriteIcon />
+																Remove from Favourites
+															</>
+														) : (
+															<>
+																<AddFavoriteIcon />
+																Add to Favourites
+															</>
+														)
 														}
 													>
 														<LoadingSpinner />
