@@ -1,7 +1,7 @@
 import { A, createAsyncStore } from "@solidjs/router";
 import SearchIcon from "lucide-solid/icons/search";
 import { createSignal, Index, Show, Suspense } from "solid-js";
-import { useThrottle } from "solidjs-use";
+import { useGeolocation, useThrottle } from "solidjs-use";
 import { getProxiedImageUrl } from "~/utils/image";
 import { queryUserSearchForRecreationalLocations } from "~/utils/user-query";
 
@@ -9,14 +9,14 @@ export default function UserSearchBar() {
 	const [input, setInput] = createSignal("");
 	const [areSuggestionsOpen, setAreSuggestionsOpen] = createSignal(false);
 
-	// const { coords } = useGeolocation({ enableHighAccuracy: true });
-
-	// This would be more reliable: use the query-fied wrapper which provides caching + revalidate
-	const _getSearchResultsFromDb = (q: string) =>
-		queryUserSearchForRecreationalLocations(q);
+	const { coords } = useGeolocation({ enableHighAccuracy: true });
 
 	const _throttledSearch = useThrottle(
-		() => _getSearchResultsFromDb(input()),
+		() =>
+			queryUserSearchForRecreationalLocations(input(), [
+				coords().latitude,
+				coords().longitude,
+			]),
 		1000,
 	);
 
@@ -80,11 +80,26 @@ export default function UserSearchBar() {
 								<li>
 									<A
 										type="button"
-										class="flex justify-between"
+										class="flex justify-between gap-2"
 										href={`/info/${park().id}`}
 										onClick={() => setAreSuggestionsOpen(false)}
 									>
 										{park().title}
+
+										<Show when={park().distanceKm}>
+											{(distance) => (
+												<>
+													<div class="ml-auto hidden text-info sm:block">
+														~{distance()} KM
+													</div>
+
+													{/* Mobile */}
+													<div class="ml-auto block whitespace-nowrap text-info text-sm sm:hidden">
+														{distance().toFixed(1)} KM
+													</div>
+												</>
+											)}
+										</Show>
 
 										<Show when={park().thumbnail}>
 											{(thumbnail) => {

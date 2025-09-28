@@ -8,6 +8,7 @@ import QuickLRU from "quick-lru";
 import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/types/generics";
+import { getDistanceInKmBetweenCoords } from "~/utils/location";
 import { tryParseObject } from "~/utils/parse";
 import type { UserType } from "../better-auth-schema";
 import { RecreationalLocationSchema } from "../schema";
@@ -45,6 +46,9 @@ const LightweightRecreationalLocationSchema = v.object({
 	thumbnail: ImageUrlWithDefaultSchema,
 	category: CategoryStringSchema,
 	address: AddressStringSchema,
+	latitude: v.number(),
+
+	longitude: v.number(),
 	// Keep this loose since `about` is a structured field (categories + options).
 	// We'll derive a searchable string from it for Fuse.js instead of indexing the raw object.
 	about: v.nullish(v.array(v.any())),
@@ -156,9 +160,7 @@ const CACHE_DURATION_IN_MS = 1000 * 60 * 5; // 5 minutes
 
 let recreationalLocationsCache: {
 	data: LightweightRecreationalLocationSchema[];
-	fuseIndex: Fuse<
-		LightweightRecreationalLocationSchema & { aboutText?: string }
-	>;
+	fuseIndex: Fuse<LightweightRecreationalLocationSchema>;
 	cachedOn: Date;
 } = { cachedOn: new Date(0), data: [], fuseIndex: new Fuse([]) };
 
@@ -174,19 +176,21 @@ async function getAllRecreationalLocations() {
 			LightweightRecreationalLocationSchema & {
 				aboutText?: string;
 				ownerName?: string;
+				latitude?: number;
+				longitude?: number;
 			}
 		> = (
 			await (
 				await getParkTrackDatabaseConnection()
 			).streamAndReadAll(`
-         SELECT id, title, thumbnail, category, address, description, about
+         SELECT id, title, thumbnail, category, address, description, about, latitude, longitude
          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          `)
 		)
 			.getRowObjectsJS()
 			.map((rowObjectData) => {
 				try {
-					// Validate the data
+					// Validate the data (only the lightweight fields)
 					const validatedData = v.parse(
 						LightweightRecreationalLocationSchema,
 						tryParseObject(rowObjectData),
@@ -195,12 +199,37 @@ async function getAllRecreationalLocations() {
 
 					// Compute searchable strings from structured fields
 					const aboutText = computeAboutText(validatedData.about);
-					const ownerName = computeOwnerName((validatedData as any).owner);
+					const ownerName = computeOwnerName(validatedData.owner);
 
 					// Build augmented object only including fields when present
-					const augment: Partial<{ aboutText: string; ownerName: string }> = {};
+					const augment: Partial<{
+						aboutText: string;
+						ownerName: string;
+						latitude: number;
+						longitude: number;
+					}> = {};
 					if (typeof aboutText === "string") augment["aboutText"] = aboutText;
 					if (typeof ownerName === "string") augment["ownerName"] = ownerName;
+
+					// Attach coords from the raw DB row (if available and finite)
+					try {
+						const rawLat = rowObjectData["latitude"];
+						const rawLon = rowObjectData["longitude"];
+						const lat =
+							typeof rawLat === "string" || typeof rawLat === "number"
+								? Number(rawLat)
+								: NaN;
+						const lon =
+							typeof rawLon === "string" || typeof rawLon === "number"
+								? Number(rawLon)
+								: NaN;
+						if (Number.isFinite(lat) && Number.isFinite(lon)) {
+							augment["latitude"] = lat;
+							augment["longitude"] = lon;
+						}
+					} catch {
+						/* ignore malformed coords */
+					}
 
 					if (Object.keys(augment).length) {
 						return { ...validatedData, ...augment };
@@ -218,13 +247,7 @@ async function getAllRecreationalLocations() {
 				}
 			});
 
-		// The inferred type of `fetchedData` can include elements where `aboutText` is
-		// present on some items and absent on others, which TypeScript widens to
-		// `aboutText: string | undefined`. The Fuse generic expects `aboutText?: string`.
-		// With `exactOptionalPropertyTypes` enabled this becomes a type mismatch even
-		// though the runtime shape is compatible. Rather than overcomplicate the
-		// typing here, acknowledge the mismatch and proceed.
-
+		// Build Fuse index with the augmented shape (aboutText & ownerName included, coords ignored by Fuse)
 		const fuse = new Fuse(fetchedData, {
 			keys: [
 				// Prioritize title heavily.
@@ -237,9 +260,7 @@ async function getAllRecreationalLocations() {
 				{ name: "description", weight: 1.2 },
 				{ name: "address", weight: 1 },
 				{ name: "category", weight: 1.5 },
-				// { name: "phone", weight: 0.5 },
 			],
-			// Slightly relax threshold so partial matches in about/description still surface.
 			threshold: 0.3,
 			includeScore: true,
 			ignoreLocation: true,
@@ -256,19 +277,56 @@ async function getAllRecreationalLocations() {
 	return recreationalLocationsCache;
 }
 
-/** Returns a fuzzy searched result array of the recreation areas based off a user's search query. Only contains the id, title, and thumbnail to be as light as possible */
+/** Returns a fuzzy searched result array of the recreation areas based off a user's search query. Only contains the id, title, and thumbnail to be as light as possible.
+ *
+ * If the user coordinates are given, the requests are sorted with closer ones at the beginning of the array
+ */
 export async function getUserQueryResultFromDatabase(
 	query: string,
+	coords: [lat: number, long: number] | null = null,
 	maxResults = DEFAULT_MAX_RESULTS,
-): Promise<ReadonlyArray<BareMinimumRecreationalLocationSchema>> {
+): Promise<
+	ReadonlyArray<BareMinimumRecreationalLocationSchema & { distanceKm?: number }>
+> {
 	const { fuseIndex } = await getAllRecreationalLocations();
 
-	const results = fuseIndex.search(query);
-	return results.slice(0, maxResults).map((result) => {
-		const { id, title, thumbnail } = result.item;
+	// Run Fuse search
+	const fuseResults = fuseIndex.search(query);
 
-		return { id, title, thumbnail };
+	// Map fuse results (keep Fuse ordering). If coords were provided and the item has coords,
+	// compute distanceKm and attach it. No DB roundtrip.
+	const enriched = fuseResults.map(({ item }) => {
+		const { id, title, thumbnail } = item;
+		const base: BareMinimumRecreationalLocationSchema = {
+			id,
+			title,
+			thumbnail,
+		};
+
+		if (!coords) {
+			return base;
+		}
+
+		const [userLat, userLong] = coords;
+		const latitude = item.latitude;
+		const longitude = item.longitude;
+
+		if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
+			const distanceKm =
+				Math.round(
+					getDistanceInKmBetweenCoords(
+						userLat,
+						userLong,
+						Number(latitude),
+						Number(longitude),
+					) * 100,
+				) / 100;
+			return { ...base, distanceKm };
+		}
+		return base;
 	});
+
+	return enriched.slice(0, maxResults);
 }
 
 const recreationalLocationLruCache = new QuickLRU<
