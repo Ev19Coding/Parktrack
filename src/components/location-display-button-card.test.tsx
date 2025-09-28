@@ -1,54 +1,28 @@
+import { Route, Router } from "@solidjs/router";
 import { render, screen } from "@solidjs/testing-library";
-import type { JSX } from "solid-js";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
+import { RecreationalLocationDisplayButtonCard } from "./location-display-button-card";
 
 /**
- * Typed props for the mocked router `A` component.
- * Avoids any usage.
+ * Tests use the real router API by wrapping the component in a Router.
+ * This follows Solid testing guidance and avoids mocking @solidjs/router.
  */
-type RouterAProps = JSX.AnchorHTMLAttributes<HTMLAnchorElement> & {
-	children?: JSX.Element | string | Array<JSX.Element | string>;
-	href?: string | undefined;
-	type?: string | undefined;
-	class?: string | undefined;
-	[index: string]: unknown;
-};
 
-// Register a module mock for @solidjs/router before importing the SUT.
-// The mock returns a thin passthrough to a native <a> element so the component
-// can be imported and rendered in the JSDOM test environment.
-vi.mock("@solidjs/router", () => {
-	const A = (props: RouterAProps) => {
-		const { children, href, type, class: className, ...rest } = props;
-
-		// Cast rest to the expected Anchor props for the JSX spread.
-		const anchorProps = {
-			href,
-			type,
-			class: className,
-			...rest,
-		} as JSX.AnchorHTMLAttributes<HTMLAnchorElement>;
-
-		// Render a native anchor that mirrors the router `A` interface closely.
-		return <a {...anchorProps}>{children as JSX.Element}</a>;
-	};
-
-	return { A };
-});
-
-// Import the component after the mock registration so the module receives the mocked `A`.
-const { RecreationalLocationDisplayButtonCard } = await import(
-	"./location-display-button-card"
-);
-
-describe("RecreationalLocationDisplayButtonCard (co-located)", () => {
+describe("RecreationalLocationDisplayButtonCard (with real Router)", () => {
 	it("renders image, title and uses provided href when not a skeleton", () => {
 		render(() => (
-			<RecreationalLocationDisplayButtonCard
-				href="/info/park-123"
-				thumbnail="/images/park-123.jpg"
-				title="My Test Park"
-			/>
+			<Router root={(props) => <div>{props.children}</div>}>
+				<Route
+					path="*"
+					component={() => (
+						<RecreationalLocationDisplayButtonCard
+							href="/info/park-123"
+							thumbnail="/images/park-123.jpg"
+							title="My Test Park"
+						/>
+					)}
+				/>
+			</Router>
 		));
 
 		// Image should be present with correct src and alt attributes.
@@ -62,11 +36,19 @@ describe("RecreationalLocationDisplayButtonCard (co-located)", () => {
 		// Anchor wrapper should contain the provided href.
 		const link = screen.getByRole("link") as HTMLAnchorElement;
 		expect(link).toBeDefined();
+		// Router may render absolute or relative href; assert it contains the path.
 		expect(link.getAttribute("href")).toContain("/info/park-123");
 	});
 
 	it("renders skeleton state when isSkeleton is true and does not render an image or title", () => {
-		render(() => <RecreationalLocationDisplayButtonCard isSkeleton />);
+		render(() => (
+			<Router root={(props) => <div>{props.children}</div>}>
+				<Route
+					path="*"
+					component={() => <RecreationalLocationDisplayButtonCard isSkeleton />}
+				/>
+			</Router>
+		));
 
 		// No image should exist in skeleton state.
 		expect(document.querySelector("img")).toBeNull();
@@ -85,11 +67,18 @@ describe("RecreationalLocationDisplayButtonCard (co-located)", () => {
 
 	it("keeps expected structural classes and image src when not skeleton", () => {
 		render(() => (
-			<RecreationalLocationDisplayButtonCard
-				href="/info/abc"
-				thumbnail="/img.png"
-				title="Park ABC"
-			/>
+			<Router root={(props) => <div>{props.children}</div>}>
+				<Route
+					path="*"
+					component={() => (
+						<RecreationalLocationDisplayButtonCard
+							href="/info/abc"
+							thumbnail="/img.png"
+							title="Park ABC"
+						/>
+					)}
+				/>
+			</Router>
 		));
 
 		const link = screen.getByRole("link") as HTMLAnchorElement;

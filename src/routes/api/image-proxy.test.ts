@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GET } from "./image-proxy";
 
-// Only mock fetch - let everything else run real
+// Create a vitest-managed stub for global.fetch so Vitest can restore it automatically.
 const mockFetch = vi.fn();
-global.fetch = mockFetch;
+vi.stubGlobal("fetch", mockFetch);
 
 describe("image proxy API", () => {
 	beforeEach(() => {
@@ -26,7 +26,7 @@ describe("image proxy API", () => {
 		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			arrayBuffer: () => Promise.resolve(mockImageData),
-			headers: new Map([["Content-Type", "image/jpeg"]]),
+			headers: new Headers([["Content-Type", "image/jpeg"]]),
 		});
 
 		const request = new Request(
