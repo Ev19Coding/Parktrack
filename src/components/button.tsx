@@ -1,6 +1,6 @@
-import { useNavigate } from "@solidjs/router";
 import ArrowLeftIcon from "lucide-solid/icons/arrow-left";
 import type { JSX, JSXElement } from "solid-js";
+import { goBackToPreviousRoute } from "~/utils/navigation";
 
 interface ButtonProps extends JSX.ButtonHTMLAttributes<HTMLButtonElement> {
 	children: JSXElement;
@@ -45,20 +45,9 @@ function TooltipButton(
 
 /** Moves back to the previous page in history */
 function BackNavigationButton() {
-	const navigate = useNavigate();
-
-	const handleBack = () => {
-		// Try to go back in history first, fallback to home if no history
-		if (window.history.length > 1) {
-			window.history.back();
-		} else {
-			navigate("/");
-		}
-	};
-
 	return (
 		<Button
-			onClick={handleBack}
+			onClick={goBackToPreviousRoute}
 			class="btn-ghost btn-sm absolute z-10 gap-2"
 			aria-label="Go back"
 		>

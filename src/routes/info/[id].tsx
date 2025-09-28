@@ -26,6 +26,7 @@ import type { RecreationalLocationSchema } from "~/server/database/schema";
 import { addToFavourites, removeFromFavourites } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
+import { goBackToPreviousRoute } from "~/utils/navigation";
 import { generateRandomUUID } from "~/utils/random";
 import {
 	queryIsLocationInUserFavourites,
