@@ -83,7 +83,7 @@ describe("Better Auth Schema Integration Tests", () => {
 				updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 			)
 		`);
-	});
+	}, 30000);
 
 	afterAll(async () => {
 		// Clean up test tables

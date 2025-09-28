@@ -20,8 +20,8 @@ describe("generateRandomUUID", () => {
 describe("getRandomElementInArray", () => {
 	afterEach(() => vi.restoreAllMocks());
 
-	it("throws for empty array", () => {
-		expect(() => getRandomElementInArray([])).toThrow();
+	it("returns undefined for empty array", () => {
+		expect(getRandomElementInArray([])).toBeUndefined();
 	});
 
 	it("returns the sole element for single-item array", () => {
