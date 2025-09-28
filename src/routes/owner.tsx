@@ -36,22 +36,23 @@ import {
 
 const { URL } = DEFAULTS;
 
-/** Utility to generate a minimal about-category object from a tag string */
+/** Minimal about-category generator from a tag string */
 function aboutFromTag(tag: string) {
 	return { id: generateRandomUUID(), name: tag, options: [] };
 }
+
 function LocationForm(props: {
 	formData: Mutable<RecreationalLocationSchema>;
 	setFormData: SetStoreFunction<Mutable<RecreationalLocationSchema>>;
 	categories: readonly string[];
 }) {
-	// Local signals for the small interactive lists
+	// interactive inputs
 	const [openHourInput, setOpenHourInput] = createSignal("");
 	const [imageTitleInput, setImageTitleInput] = createSignal("");
 	const [imageUrlInput, setImageUrlInput] = createSignal("");
 	const [aboutTagInput, setAboutTagInput] = createSignal("");
 
-	// Email helper: comma-separated to string[]
+	// Helper: parse comma-separated emails
 	function onEmailsInput(value: string) {
 		const list = value
 			.split(",")
@@ -75,7 +76,6 @@ function LocationForm(props: {
 		if (!dayPart || rest.length === 0) return;
 		const day = dayPart.trim();
 		const hours = rest.join(":").trim();
-		// merge into existing openHours
 		const existing = props.formData.openHours ?? {};
 		const prev = existing[day] ?? [];
 		props.setFormData("openHours", { ...existing, [day]: [...prev, hours] });
@@ -95,15 +95,13 @@ function LocationForm(props: {
 		props.setFormData("openHours", { ...existing, [day]: arr });
 	}
 
-	// images: simple title + url inputs produce { title, image }
+	// images list
 	function addImage() {
 		const title = imageTitleInput().trim();
 		const url = imageUrlInput().trim();
 		if (!url) return;
 		const item = { title: title || "Image", image: url };
-		const arr = props.formData.images
-			? [...props.formData.images, item]
-			: [item];
+		const arr = props.formData.images ? [...props.formData.images, item] : [item];
 		props.setFormData("images", arr);
 		setImageTitleInput("");
 		setImageUrlInput("");
@@ -116,14 +114,12 @@ function LocationForm(props: {
 		props.setFormData("images", arr.length ? arr : []);
 	}
 
-	// about: treat as simple tags -> convert to about categories
+	// about tags
 	function addAboutTag() {
 		const tag = aboutTagInput().trim();
 		if (!tag) return;
 		const newAbout = aboutFromTag(tag);
-		const arr = props.formData.about
-			? [...props.formData.about, newAbout]
-			: [newAbout];
+		const arr = props.formData.about ? [...props.formData.about, newAbout] : [newAbout];
 		props.setFormData("about", arr);
 		setAboutTagInput("");
 	}
@@ -135,447 +131,417 @@ function LocationForm(props: {
 		props.setFormData("about", arr.length ? arr : undefined);
 	}
 
+	// Use daisyUI fieldsets to group related inputs for cleaner UI and spacing
 	return (
 		<>
-			{/* Basic / header */}
-			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<label class="form-control">
-					<span class="label-text">Title</span>
-					<input
-						name="title"
-						placeholder="Name of the location"
-						class="input input-bordered input-primary w-full"
-						value={props.formData.title}
-						onInput={(e) => props.setFormData("title", e.currentTarget.value)}
-						required
-					/>
-				</label>
+			{/* Basic Info */}
+			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Basic</legend>
 
-				{/* category as plain text with datalist suggestions */}
-				<label class="form-control">
-					<span class="label-text">Category</span>
-					<input
-						name="category"
-						list="category-suggestions"
-						class="input input-bordered w-full"
-						placeholder="e.g. Park, Trail, Beach"
-						value={props.formData.category ?? ""}
-						onInput={(e) =>
-							props.setFormData("category", e.currentTarget.value)
-						}
-					/>
-					<datalist id="category-suggestions">
-						<For each={props.categories}>{(c) => <option value={c} />}</For>
-					</datalist>
-				</label>
-			</div>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<label class="form-control">
+						<span class="label-text">Title</span>
+						<input
+							name="title"
+							placeholder="Name of the location"
+							class="input input-bordered input-primary w-full"
+							value={props.formData.title}
+							onInput={(e) => props.setFormData("title", e.currentTarget.value)}
+							required
+						/>
+					</label>
+
+					<label class="form-control">
+						<span class="label-text">Category</span>
+						<input
+							name="category"
+							list="category-suggestions"
+							class="input input-bordered w-full"
+							placeholder="e.g. Park, Trail, Beach"
+							value={props.formData.category ?? ""}
+							onInput={(e) => props.setFormData("category", e.currentTarget.value)}
+						/>
+						<datalist id="category-suggestions">
+							<For each={props.categories}>{(c) => <option value={c} />}</For>
+						</datalist>
+					</label>
+				</div>
+			</fieldset>
 
 			{/* Address & Link */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<label class="form-control">
-					<span class="label-text">Address</span>
-					<input
-						name="address"
-						placeholder="Full address or landmark"
-						class="input input-bordered w-full"
-						value={props.formData.address ?? ""}
-						onInput={(e) => props.setFormData("address", e.currentTarget.value)}
-					/>
-				</label>
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Address & Link</legend>
 
-				<label class="form-control">
-					<span class="label-text">Direct Link</span>
-					<input
-						name="link"
-						placeholder="Direct map/listing URL"
-						class="input input-bordered w-full"
-						value={props.formData.link}
-						onInput={(e) => props.setFormData("link", e.currentTarget.value)}
-					/>
-				</label>
-			</div>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<label class="form-control">
+						<span class="label-text">Address</span>
+						<input
+							name="address"
+							placeholder="Full address or landmark"
+							class="input input-bordered w-full"
+							value={props.formData.address ?? ""}
+							onInput={(e) => props.setFormData("address", e.currentTarget.value)}
+						/>
+					</label>
 
-			{/* Coordinates / Plus Code */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-				<label class="form-control">
-					<span class="label-text">Latitude</span>
-					<input
-						name="latitude"
-						class="input input-bordered w-full"
-						placeholder="e.g. 34.0522"
-						value={props.formData.latitude ?? ""}
-						onInput={(e) =>
-							props.setFormData("latitude", Number(e.currentTarget.value))
-						}
-						type="number"
-						step="any"
-					/>
-				</label>
+					<label class="form-control">
+						<span class="label-text">Direct Link</span>
+						<input
+							name="link"
+							placeholder="Direct map/listing URL"
+							class="input input-bordered w-full"
+							value={props.formData.link}
+							onInput={(e) => props.setFormData("link", e.currentTarget.value)}
+						/>
+					</label>
+				</div>
+			</fieldset>
 
-				<label class="form-control">
-					<span class="label-text">Longitude</span>
-					<input
-						name="longitude"
-						class="input input-bordered w-full"
-						placeholder="e.g. -118.2437"
-						value={props.formData.longitude ?? ""}
-						onInput={(e) =>
-							props.setFormData("longitude", Number(e.currentTarget.value))
-						}
-						type="number"
-						step="any"
-					/>
-				</label>
+			{/* Coordinates */}
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Coordinates</legend>
 
-				<label class="form-control">
-					<span class="label-text">Plus Code</span>
-					<input
-						name="plusCode"
-						class="input input-bordered w-full"
-						placeholder="Plus Code (optional)"
-						value={props.formData.plusCode ?? ""}
-						onInput={(e) =>
-							props.setFormData("plusCode", e.currentTarget.value)
-						}
-					/>
-				</label>
-			</div>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<label class="form-control">
+						<span class="label-text">Latitude</span>
+						<input
+							name="latitude"
+							class="input input-bordered w-full"
+							placeholder="e.g. 34.0522"
+							value={props.formData.latitude ?? ""}
+							onInput={(e) =>
+								props.setFormData("latitude", Number(e.currentTarget.value))
+							}
+							type="number"
+							step="any"
+						/>
+					</label>
 
-			{/* Thumbnail / Reviews Link */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-				<label class="form-control">
-					<span class="label-text">Thumbnail URL</span>
-					<input
-						name="thumbnail"
-						placeholder="Image URL (will use placeholder if empty)"
-						class="input input-bordered w-full"
-						value={props.formData.thumbnail ?? ""}
-						onInput={(e) =>
-							props.setFormData("thumbnail", e.currentTarget.value)
-						}
-					/>
-				</label>
+					<label class="form-control">
+						<span class="label-text">Longitude</span>
+						<input
+							name="longitude"
+							class="input input-bordered w-full"
+							placeholder="e.g. -118.2437"
+							value={props.formData.longitude ?? ""}
+							onInput={(e) =>
+								props.setFormData("longitude", Number(e.currentTarget.value))
+							}
+							type="number"
+							step="any"
+						/>
+					</label>
 
-				<label class="form-control">
-					<span class="label-text">Reviews Link</span>
-					<input
-						name="reviewsLink"
-						placeholder="Link to reviews page (optional)"
-						class="input input-bordered w-full"
-						value={props.formData.reviewsLink ?? ""}
-						onInput={(e) =>
-							props.setFormData("reviewsLink", e.currentTarget.value)
-						}
-					/>
-				</label>
-			</div>
+					<label class="form-control">
+						<span class="label-text">Plus Code</span>
+						<input
+							name="plusCode"
+							class="input input-bordered w-full"
+							placeholder="Plus Code (optional)"
+							value={props.formData.plusCode ?? ""}
+							onInput={(e) => props.setFormData("plusCode", e.currentTarget.value)}
+						/>
+					</label>
+				</div>
+			</fieldset>
+
+			{/* Media */}
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Media</legend>
+
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<label class="form-control">
+						<span class="label-text">Thumbnail URL</span>
+						<input
+							name="thumbnail"
+							placeholder="Image URL (will use placeholder if empty)"
+							class="input input-bordered w-full"
+							value={props.formData.thumbnail ?? ""}
+							onInput={(e) => props.setFormData("thumbnail", e.currentTarget.value)}
+						/>
+					</label>
+
+					{/* intentionally removed reviews link field for owners */}
+				</div>
+			</fieldset>
 
 			{/* Description */}
-			<label class="form-control mt-4">
-				<span class="label-text">Description</span>
-				<textarea
-					name="description"
-					placeholder="Short description or notes about the location"
-					class="textarea textarea-bordered w-full"
-					value={props.formData.description ?? ""}
-					onInput={(e) =>
-						props.setFormData("description", e.currentTarget.value)
-					}
-					rows={4}
-				/>
-			</label>
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Description</legend>
+				<label class="form-control">
+					<textarea
+						name="description"
+						placeholder="Short description or notes about the location"
+						class="textarea textarea-bordered w-full"
+						value={props.formData.description ?? ""}
+						onInput={(e) => props.setFormData("description", e.currentTarget.value)}
+						rows={4}
+					/>
+				</label>
+			</fieldset>
 
 			{/* Contact */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-				<label class="form-control">
-					<span class="label-text">Phone</span>
-					<input
-						name="phone"
-						placeholder="+1 555-555-5555"
-						class="input input-bordered w-full"
-						value={props.formData.phone ?? ""}
-						onInput={(e) => props.setFormData("phone", e.currentTarget.value)}
-					/>
-				</label>
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Contact</legend>
 
-				<label class="form-control">
-					<span class="label-text">Website</span>
-					<input
-						name="website"
-						placeholder="https://example.com"
-						class="input input-bordered w-full"
-						value={props.formData.website ?? ""}
-						onInput={(e) => props.setFormData("website", e.currentTarget.value)}
-					/>
-				</label>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<label class="form-control">
+						<span class="label-text">Phone</span>
+						<input
+							name="phone"
+							placeholder="+1 555-555-5555"
+							class="input input-bordered w-full"
+							value={props.formData.phone ?? ""}
+							onInput={(e) => props.setFormData("phone", e.currentTarget.value)}
+						/>
+					</label>
 
-				<label class="form-control">
-					<span class="label-text">Emails (comma separated)</span>
-					<input
-						name="emails"
-						placeholder="owner@example.com, info@example.com"
-						class="input input-bordered w-full"
-						value={(props.formData.emails ?? []).join(", ")}
-						onInput={(e) => onEmailsInput(e.currentTarget.value)}
-					/>
-				</label>
-			</div>
+					<label class="form-control">
+						<span class="label-text">Website</span>
+						<input
+							name="website"
+							placeholder="https://example.com"
+							class="input input-bordered w-full"
+							value={props.formData.website ?? ""}
+							onInput={(e) => props.setFormData("website", e.currentTarget.value)}
+						/>
+					</label>
 
-			{/* Rating / ReviewCount / PriceRange */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-				<label class="form-control">
-					<span class="label-text">Rating</span>
-					<input
-						name="rating"
-						type="number"
-						step="0.1"
-						min="0"
-						max="5"
-						placeholder="0.0 - 5.0"
-						class="input input-bordered w-full"
-						value={props.formData.rating ?? ""}
-						onInput={(e) =>
-							props.setFormData(
-								"rating",
-								e.currentTarget.value === ""
-									? undefined
-									: Number(e.currentTarget.value),
-							)
-						}
-					/>
-				</label>
-
-				<label class="form-control">
-					<span class="label-text">Review Count</span>
-					<input
-						name="reviewCount"
-						type="number"
-						min="0"
-						placeholder="Total reviews"
-						class="input input-bordered w-full"
-						value={props.formData.reviewCount ?? ""}
-						onInput={(e) =>
-							props.setFormData(
-								"reviewCount",
-								e.currentTarget.value === ""
-									? undefined
-									: Number(e.currentTarget.value),
-							)
-						}
-					/>
-				</label>
-
-				<label class="form-control">
-					<span class="label-text">Price Range</span>
-					<input
-						name="priceRange"
-						class="input input-bordered w-full"
-						placeholder="e.g. ₦₦, ₦25,000–30,000"
-						value={props.formData.priceRange ?? ""}
-						onInput={(e) =>
-							props.setFormData("priceRange", e.currentTarget.value)
-						}
-					/>
-				</label>
-			</div>
-
-			{/* Timezone / Owner */}
-			<div class="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-				<label class="form-control">
-					<span class="label-text">Timezone</span>
-					<input
-						name="timezone"
-						class="input input-bordered w-full"
-						placeholder="e.g. America/Los_Angeles"
-						value={props.formData.timezone ?? ""}
-						onInput={(e) =>
-							props.setFormData("timezone", e.currentTarget.value)
-						}
-					/>
-				</label>
-
-				<label class="form-control">
-					<span class="label-text">Owner Name</span>
-					<input
-						name="ownerName"
-						placeholder="Owner name"
-						class="input input-bordered w-full"
-						value={props.formData.owner?.name ?? ""}
-						onInput={(e) => upsertOwner({ name: e.currentTarget.value })}
-					/>
-				</label>
-
-				<label class="form-control">
-					<span class="label-text">Owner Link</span>
-					<input
-						name="ownerLink"
-						placeholder="https://owner.example.com"
-						class="input input-bordered w-full"
-						value={props.formData.owner?.link ?? ""}
-						onInput={(e) => upsertOwner({ link: e.currentTarget.value })}
-					/>
-				</label>
-			</div>
-
-			{/* Active toggle */}
-			<label class="form-control mt-4 cursor-pointer">
-				<div class="flex items-center gap-3">
-					<span class="label-text">Active in system</span>
-					<input
-						type="checkbox"
-						class="toggle toggle-primary"
-						checked={Boolean(props.formData.isActive)}
-						onInput={(e) =>
-							props.setFormData("isActive", e.currentTarget.checked)
-						}
-					/>
+					<label class="form-control">
+						<span class="label-text">Emails (comma separated)</span>
+						<input
+							name="emails"
+							placeholder="owner@example.com, info@example.com"
+							class="input input-bordered w-full"
+							value={(props.formData.emails ?? []).join(", ")}
+							onInput={(e) => onEmailsInput(e.currentTarget.value)}
+						/>
+					</label>
 				</div>
-			</label>
+			</fieldset>
 
-			{/* ------------------ openHours UI ------------------ */}
-			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
-				<div class="mb-2 flex items-center justify-between">
-					<div class="font-semibold">Open Hours</div>
-					<div class="text-base-content/70 text-sm">Enter as "Day: hours"</div>
+			{/* Pricing & Owner */}
+			<fieldset class="fieldset mt-4">
+				<legend class="fieldset-legend">Pricing & Owner</legend>
+
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+					<label class="form-control">
+						<span class="label-text">Price Range</span>
+						<input
+							name="priceRange"
+							class="input input-bordered w-full"
+							placeholder="e.g. ₦₦, ₦25,000–30,000"
+							value={props.formData.priceRange ?? ""}
+							onInput={(e) => props.setFormData("priceRange", e.currentTarget.value)}
+						/>
+					</label>
+
+					<label class="form-control">
+						<span class="label-text">Timezone</span>
+						<input
+							name="timezone"
+							class="input input-bordered w-full"
+							placeholder="e.g. America/Los_Angeles"
+							value={props.formData.timezone ?? ""}
+							onInput={(e) => props.setFormData("timezone", e.currentTarget.value)}
+						/>
+					</label>
+
+					<label class="form-control">
+						<span class="label-text">Owner Name</span>
+						<input
+							name="ownerName"
+							placeholder="Owner name"
+							class="input input-bordered w-full"
+							value={props.formData.owner?.name ?? ""}
+							onInput={(e) => upsertOwner({ name: e.currentTarget.value })}
+						/>
+					</label>
+
+					{/* Owner Link sits below to avoid tight horizontal packing on small screens */}
+					<label class="form-control sm:col-span-3">
+						<span class="label-text">Owner Link</span>
+						<input
+							name="ownerLink"
+							placeholder="https://owner.example.com"
+							class="input input-bordered w-full"
+							value={props.formData.owner?.link ?? ""}
+							onInput={(e) => upsertOwner({ link: e.currentTarget.value })}
+						/>
+					</label>
+
+					<label class="form-control cursor-pointer mt-2">
+						<div class="flex items-center gap-3">
+							<span class="label-text">Active in system</span>
+							<input
+								type="checkbox"
+								class="toggle toggle-primary"
+								checked={Boolean(props.formData.isActive)}
+								onInput={(e) =>
+									props.setFormData("isActive", e.currentTarget.checked)
+								}
+							/>
+						</div>
+					</label>
 				</div>
+			</fieldset>
 
-				<div class="flex flex-col gap-2 sm:flex-row">
-					<input
-						class="input input-bordered flex-1"
-						placeholder="e.g. Monday: 8 am–5 pm"
-						value={openHourInput()}
-						onInput={(e) => setOpenHourInput(e.currentTarget.value)}
-						onKeyDown={(e) =>
-							e.key === "Enter" && (e.preventDefault(), addOpenHour())
-						}
-					/>
-					<button type="button" class="btn btn-primary" onClick={addOpenHour}>
-						Add
-					</button>
-				</div>
+			{/* Open Hours (compact card inside fieldset) */}
+			<fieldset class="fieldset mt-6">
+				<legend class="fieldset-legend">Open Hours</legend>
 
-				<div class="mt-3 flex flex-wrap gap-2">
-					{Object.entries(props.formData.openHours ?? {}).map(([day, arr]) =>
-						arr.map((h, idx) => (
-							<div class="badge badge-outline" role="listitem">
-								<span class="mr-2">
-									{day}: {h}
-								</span>
-								<button
-									type="button"
-									class="btn btn-xs btn-ghost"
-									onClick={() => removeOpenHour(day, idx)}
-								>
-									✕
-								</button>
-							</div>
-						)),
-					)}
-				</div>
-			</div>
+				<div class="card bg-base-100 p-3 shadow-sm">
+					<div class="mb-2 flex items-center justify-between">
+						<div class="font-semibold">Open Hours</div>
+						<div class="text-base-content/70 text-sm">Enter as "Day: hours"</div>
+					</div>
 
-			{/* ------------------ Images UI ------------------ */}
-			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
-				<div class="mb-2 flex items-center justify-between">
-					<div class="font-semibold">Images</div>
-					<div class="text-base-content/70 text-sm">Add image title + URL</div>
-				</div>
+					<div class="flex flex-col gap-2 sm:flex-row">
+						<input
+							class="input input-bordered flex-1"
+							placeholder="e.g. Monday: 8 am–5 pm"
+							value={openHourInput()}
+							onInput={(e) => setOpenHourInput(e.currentTarget.value)}
+							onKeyDown={(e) =>
+								e.key === "Enter" && (e.preventDefault(), addOpenHour())
+							}
+						/>
+						<button type="button" class="btn btn-primary" onClick={addOpenHour}>
+							Add
+						</button>
+					</div>
 
-				<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
-					<input
-						class="input input-bordered col-span-1"
-						placeholder="Title (optional)"
-						value={imageTitleInput()}
-						onInput={(e) => setImageTitleInput(e.currentTarget.value)}
-					/>
-					<input
-						class="input input-bordered col-span-1 sm:col-span-2"
-						placeholder="Image URL"
-						value={imageUrlInput()}
-						onInput={(e) => setImageUrlInput(e.currentTarget.value)}
-						onKeyDown={(e) =>
-							e.key === "Enter" && (e.preventDefault(), addImage())
-						}
-					/>
-				</div>
-
-				<div class="mt-2 flex gap-2">
-					<button type="button" class="btn btn-primary" onClick={addImage}>
-						Add Image
-					</button>
-				</div>
-
-				<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-					<For each={props.formData.images ?? []}>
-						{(img, i) => (
-							<div class="card bg-base-200 p-2">
-								<div class="flex items-center gap-2">
-									<img
-										src={getProxiedImageUrl(img.image)}
-										alt={img.title}
-										class="h-12 w-20 rounded object-cover"
-									/>
-									<div class="flex-1">
-										<div class="font-semibold text-sm">{img.title}</div>
-										<div class="truncate text-base-content/60 text-xs">
-											{img.image}
-										</div>
-									</div>
+					<div class="mt-3 flex flex-wrap gap-2">
+						{Object.entries(props.formData.openHours ?? {}).map(([day, arr]) =>
+							arr.map((h, idx) => (
+								<div class="badge badge-outline" role="listitem">
+									<span class="mr-2">
+										{day}: {h}
+									</span>
 									<button
 										type="button"
-										class="btn btn-ghost btn-sm"
-										onClick={() => removeImage(i())}
+										class="btn btn-xs btn-ghost"
+										onClick={() => removeOpenHour(day, idx)}
 									>
-										Remove
+										✕
 									</button>
 								</div>
-							</div>
+							)),
 						)}
-					</For>
-				</div>
-			</div>
-
-			{/* ------------------ About tags UI ------------------ */}
-			<div class="card mt-6 bg-base-100 p-3 shadow-sm">
-				<div class="mb-2 flex items-center justify-between">
-					<div class="font-semibold">About (tags)</div>
-					<div class="text-base-content/70 text-sm">
-						Tags describing features/amenities
 					</div>
 				</div>
+			</fieldset>
 
-				<div class="flex gap-2">
-					<input
-						class="input input-bordered flex-1"
-						placeholder="Add tag (e.g. playground)"
-						value={aboutTagInput()}
-						onInput={(e) => setAboutTagInput(e.currentTarget.value)}
-						onKeyDown={(e) =>
-							e.key === "Enter" && (e.preventDefault(), addAboutTag())
-						}
-					/>
-					<button type="button" class="btn btn-primary" onClick={addAboutTag}>
-						Add
-					</button>
-				</div>
+			{/* Images */}
+			<fieldset class="fieldset mt-6">
+				<legend class="fieldset-legend">Images</legend>
 
-				<div class="mt-3 flex flex-wrap gap-2">
-					<For each={props.formData.about ?? []}>
-						{(a, idx) => (
-							<div class="badge badge-lg" role="listitem">
-								<span class="mr-2">{a.name}</span>
-								<button
-									type="button"
-									class="btn btn-xs btn-ghost"
-									onClick={() => removeAbout(idx())}
-								>
-									✕
-								</button>
-							</div>
-						)}
-					</For>
+				<div class="card bg-base-100 p-3 shadow-sm">
+					<div class="mb-2 flex items-center justify-between">
+						<div class="font-semibold">Images</div>
+						<div class="text-base-content/70 text-sm">Add image title + URL</div>
+					</div>
+
+					<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
+						<input
+							class="input input-bordered col-span-1"
+							placeholder="Title (optional)"
+							value={imageTitleInput()}
+							onInput={(e) => setImageTitleInput(e.currentTarget.value)}
+						/>
+						<input
+							class="input input-bordered col-span-1 sm:col-span-2"
+							placeholder="Image URL"
+							value={imageUrlInput()}
+							onInput={(e) => setImageUrlInput(e.currentTarget.value)}
+							onKeyDown={(e) =>
+								e.key === "Enter" && (e.preventDefault(), addImage())
+							}
+						/>
+					</div>
+
+					<div class="mt-2 flex gap-2">
+						<button type="button" class="btn btn-primary" onClick={addImage}>
+							Add Image
+						</button>
+					</div>
+
+					<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+						<For each={props.formData.images ?? []}>
+							{(img, i) => (
+								<div class="card bg-base-200 p-2">
+									<div class="flex items-center gap-2">
+										<img
+											src={getProxiedImageUrl(img.image)}
+											alt={img.title}
+											class="h-12 w-20 rounded object-cover"
+										/>
+										<div class="flex-1">
+											<div class="font-semibold text-sm">{img.title}</div>
+											<div class="truncate text-base-content/60 text-xs">
+												{img.image}
+											</div>
+										</div>
+										<button
+											type="button"
+											class="btn btn-ghost btn-sm"
+											onClick={() => removeImage(i())}
+										>
+											Remove
+										</button>
+									</div>
+								</div>
+							)}
+						</For>
+					</div>
 				</div>
-			</div>
+			</fieldset>
+
+			{/* About tags */}
+			<fieldset class="fieldset mt-6">
+				<legend class="fieldset-legend">About (tags)</legend>
+
+				<div class="card bg-base-100 p-3 shadow-sm">
+					<div class="mb-2 flex items-center justify-between">
+						<div class="font-semibold">About (tags)</div>
+						<div class="text-base-content/70 text-sm">
+							Tags describing features/amenities
+						</div>
+					</div>
+
+					<div class="flex gap-2">
+						<input
+							class="input input-bordered flex-1"
+							placeholder="Add tag (e.g. playground)"
+							value={aboutTagInput()}
+							onInput={(e) => setAboutTagInput(e.currentTarget.value)}
+							onKeyDown={(e) =>
+								e.key === "Enter" && (e.preventDefault(), addAboutTag())
+							}
+						/>
+						<button type="button" class="btn btn-primary" onClick={addAboutTag}>
+							Add
+						</button>
+					</div>
+
+					<div class="mt-3 flex flex-wrap gap-2">
+						<For each={props.formData.about ?? []}>
+							{(a, idx) => (
+								<div class="badge badge-lg" role="listitem">
+									<span class="mr-2">{a.name}</span>
+									<button
+										type="button"
+										class="btn btn-xs btn-ghost"
+										onClick={() => removeAbout(idx())}
+									>
+										✕
+									</button>
+								</div>
+							)}
+						</For>
+					</div>
+				</div>
+			</fieldset>
 		</>
 	);
 }
@@ -594,11 +560,7 @@ function CreateLocationModal(props: {
 			<div class="prose mx-auto max-w-full p-3">
 				<h2 class="font-bold text-xl">Create Location</h2>
 
-				<form
-					method="post"
-					class="grid gap-3"
-					onSubmit={(e) => e.preventDefault()}
-				>
+				<form method="post" class="grid gap-3" onSubmit={(e) => e.preventDefault()}>
 					<LocationForm
 						formData={props.formData}
 						setFormData={props.setFormData}
@@ -606,11 +568,7 @@ function CreateLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton
-							class="btn-ghost"
-							type="button"
-							onClick={props.onCancel}
-						>
+						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
 							Cancel
 						</GenericButton>
 
@@ -650,11 +608,7 @@ function EditLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton
-							class="btn-ghost"
-							type="button"
-							onClick={props.onCancel}
-						>
+						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
 							Cancel
 						</GenericButton>
 
@@ -692,8 +646,7 @@ function ViewLocationModal(props: {
 						<div>
 							<h3 class="font-semibold text-lg">{props.formData.title}</h3>
 							<div class="text-base-content/70 text-sm">
-								{props.formData.category ?? "Other"} •{" "}
-								{props.formData.address ?? "N/A"}
+								{props.formData.category ?? "Other"} • {props.formData.address ?? "N/A"}
 							</div>
 						</div>
 					</div>
@@ -722,7 +675,7 @@ function ViewLocationModal(props: {
 export default function OwnerPage() {
 	assertUserIsOwner();
 
-	// fetch owner's locations (existing)
+	// fetch owner's locations
 	const queryOwnerRecreationalLocations = query(async () => {
 		const { locations = [] } = (await getOwnerData()) ?? {};
 
@@ -743,7 +696,7 @@ export default function OwnerPage() {
 		{ initialValue: [] },
 	);
 
-	// categories suggestions resource (used by LocationForm datalist)
+	// categories suggestions
 	const categoriesAsync = createAsync(
 		() => queryAllRecreationalLocationCategories(),
 		{ initialValue: [] },
@@ -762,9 +715,9 @@ export default function OwnerPage() {
 	const viewModalId = generateRandomUUID();
 	const editModalId = generateRandomUUID();
 
-	const [formData, setFormData] = createStore<
-		Mutable<RecreationalLocationSchema>
-	>(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
+	const [formData, setFormData] = createStore<Mutable<RecreationalLocationSchema>>(
+		structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA),
+	);
 
 	async function setOwnerOnLocationData() {
 		const info = await getCurrentUserInfo();
@@ -780,7 +733,7 @@ export default function OwnerPage() {
 					String(l.title ?? "")
 						.toLowerCase()
 						.includes(term),
-				)
+			  )
 			: base.slice();
 
 		const key = sortKey();
@@ -800,7 +753,6 @@ export default function OwnerPage() {
 			async () => {
 				setIsActionLoading(true);
 				await deleteUserRecreationalLocationTableEntry(id);
-				// Revalidate owner list, categories and the specific location cache
 				try {
 					await Promise.all([
 						revalidateRecreationalLocationById(),
@@ -808,15 +760,13 @@ export default function OwnerPage() {
 						revalidate(queryOwnerRecreationalLocations.key),
 					]);
 				} catch {
-					// Fallback to revalidating the owner query key if any helper fails
 					await revalidate(queryOwnerRecreationalLocations.key);
 				}
 				closeModal(viewModalId);
 				setIsActionLoading(false);
 			},
 			<div>
-				Delete <span class="font-semibold text-primary">{title}</span>{" "}
-				permanently?
+				Delete <span class="font-semibold text-primary">{title}</span> permanently?
 			</div>,
 		);
 	}
@@ -839,8 +789,7 @@ export default function OwnerPage() {
 	async function handleCreate() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
-		const created = await createUserRecreationalLocationTableEntry(formData);
-		// Revalidate owner list, categories and the newly created record if possible
+		await createUserRecreationalLocationTableEntry(formData);
 		try {
 			await Promise.all([
 				revalidateRecreationalLocationById(),
@@ -848,7 +797,6 @@ export default function OwnerPage() {
 				revalidate(queryOwnerRecreationalLocations.key),
 			]);
 		} catch {
-			// Ensure the owner listing is at least revalidated on error
 			await revalidate(queryOwnerRecreationalLocations.key);
 		}
 		closeModal(createModalId);
@@ -859,7 +807,6 @@ export default function OwnerPage() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
 		await updateUserRecreationalLocationTableEntry(formData.id, formData);
-		// Revalidate owner list, categories and the updated record
 		try {
 			await Promise.all([
 				revalidateRecreationalLocationById(),
@@ -881,12 +828,10 @@ export default function OwnerPage() {
 				<div class="hero rounded-box bg-base-100 shadow-md">
 					<div class="hero-content px-4 py-6 text-center">
 						<div class="max-w-full space-y-2">
-							<h1 class="break-words font-bold text-xl sm:text-2xl">
-								Owner Portal
-							</h1>
+							<h1 class="break-words font-bold text-xl sm:text-2xl">Owner Portal</h1>
 							<p class="break-words text-base-content/70 text-xs sm:text-sm">
-								Manage the recreational locations you created. Use the buttons
-								to create, view, edit, or remove items.
+								Manage the recreational locations you created. Use the buttons to create,
+								view, edit, or remove items.
 							</p>
 						</div>
 					</div>
@@ -920,11 +865,7 @@ export default function OwnerPage() {
 							onClick={() => setSortDir(sortDir() === "asc" ? "desc" : "asc")}
 							aria-label="Toggle sort direction"
 						>
-							{sortDir() === "asc" ? (
-								<AscendingOrderIcon />
-							) : (
-								<DescendingOrderIcon />
-							)}
+							{sortDir() === "asc" ? <AscendingOrderIcon /> : <DescendingOrderIcon />}
 						</button>
 					</div>
 
@@ -954,9 +895,7 @@ export default function OwnerPage() {
 								fallback={
 									<tr>
 										<td colSpan={5}>
-											<div class="p-4 text-center text-base-content/70">
-												No locations found.
-											</div>
+											<div class="p-4 text-center text-base-content/70">No locations found.</div>
 										</td>
 									</tr>
 								}
@@ -973,9 +912,7 @@ export default function OwnerPage() {
 											</td>
 											<td class="break-words">{loc().title}</td>
 											<td class="break-words">{loc().category ?? "Other"}</td>
-											<td class="hidden break-words sm:table-cell">
-												{loc().address ?? "N/A"}
-											</td>
+											<td class="hidden break-words sm:table-cell">{loc().address ?? "N/A"}</td>
 											<td>
 												<div class="flex gap-2">
 													<button
