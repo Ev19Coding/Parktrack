@@ -1,4 +1,4 @@
-import { createAsync, query, revalidate, useParams } from "@solidjs/router";
+import { createAsync, revalidate, useParams } from "@solidjs/router";
 import RemoveFavoriteIcon from "lucide-solid/icons/bookmark-minus";
 import AddFavoriteIcon from "lucide-solid/icons/bookmark-plus";
 import CalendarIcon from "lucide-solid/icons/calendar";
@@ -23,16 +23,12 @@ import { BackNavigationButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
 import { GenericModal, showModal } from "~/components/modal/generic-modal";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import {
-	addToFavourites,
-	getCurrentUserId,
-	isLocationInFavourites,
-	removeFromFavourites,
-} from "~/server/user";
+import { addToFavourites, removeFromFavourites } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import {
+	queryIsLocationInUserFavourites,
 	queryIsUserOwner,
 	queryRecreationalLocationById,
 	queryUserLoggedIn,
@@ -457,13 +453,8 @@ export default function InformationRoute() {
 							{(() => {
 								const id = () => locationData().id;
 
-								const queryfied = query(
-									() => isLocationInFavourites(id()),
-									`is-location-${id()}-favourite`,
-								);
-
 								const isRecreationLocationUserFavourite = createAsync(
-									() => queryfied(),
+									() => queryIsLocationInUserFavourites(id()),
 									{ initialValue: false },
 								);
 
@@ -502,23 +493,7 @@ export default function InformationRoute() {
 													await addToFavourites(id());
 												}
 
-												// Prefer targeted revalidation: per-user favourites list and per-item status.
-												try {
-													const userId = await getCurrentUserId();
-													if (userId) {
-														// Revalidate both the user's favourites collection and the per-item flag.
-														await revalidate([
-															`user-favourites:${userId}`,
-															`is-favourite:${userId}:${id()}`,
-														]);
-													} else {
-														// Fallback to the original query key if we can't resolve the user id.
-														await revalidate(queryfied.key);
-													}
-												} catch {
-													// Ensure fallback on any error.
-													await revalidate(queryfied.key);
-												}
+												await revalidate(queryIsLocationInUserFavourites.key);
 
 												setIsLoading(false);
 											}}
