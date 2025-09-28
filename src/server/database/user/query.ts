@@ -8,6 +8,7 @@ import QuickLRU from "quick-lru";
 import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/types/generics";
+import { approximateNumberToDecimalPlaces } from "~/utils/formatting";
 import { getDistanceInKmBetweenCoords } from "~/utils/location";
 import { tryParseObject } from "~/utils/parse";
 import type { UserType } from "../better-auth-schema";
@@ -312,15 +313,15 @@ export async function getUserQueryResultFromDatabase(
 		const longitude = item.longitude;
 
 		if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-			const distanceKm =
-				Math.round(
-					getDistanceInKmBetweenCoords(
-						userLat,
-						userLong,
-						Number(latitude),
-						Number(longitude),
-					) * 100,
-				) / 100;
+			const distanceKm = approximateNumberToDecimalPlaces(
+				getDistanceInKmBetweenCoords(
+					userLat,
+					userLong,
+					Number(latitude),
+					Number(longitude),
+				),
+				2,
+			);
 			return { ...base, distanceKm };
 		}
 		return base;
