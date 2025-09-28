@@ -76,8 +76,7 @@ function DataSection(prop: {
 							<Index each={prop.data}>
 								{(baseLocationData) => (
 									<RecreationalLocationDisplayButtonCard
-									href={`/info/${baseLocationData().id}`}
-
+										href={`/info/${baseLocationData().id}`}
 										thumbnail={getProxiedImageUrl(baseLocationData().thumbnail)}
 										title={baseLocationData().title}
 									/>

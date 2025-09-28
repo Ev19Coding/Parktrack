@@ -423,145 +423,145 @@ function BusinessDetails(props: {
 
 /** Shows extra details about a recreational location the user selected. Requires that id of the location is in the url parameters */
 export default function InformationRoute() {
-  try {
-    // Destructure the params since it's a proxy
-	const params = v.parse(IdParamSchema, {...useParams()})
+	try {
+		// Destructure the params since it's a proxy
+		const params = v.parse(IdParamSchema, { ...useParams() });
 
-	const locationData = createAsync(
-		async () =>
-			(await queryRecreationalLocationById(params.id)) ??
-			DUMMY_RECREATIONAL_LOCATION_DATA,
-		{ initialValue: DUMMY_RECREATIONAL_LOCATION_DATA },
-	);
+		const locationData = createAsync(
+			async () =>
+				(await queryRecreationalLocationById(params.id)) ??
+				DUMMY_RECREATIONAL_LOCATION_DATA,
+			{ initialValue: DUMMY_RECREATIONAL_LOCATION_DATA },
+		);
 
-	return (
-		<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
-			<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
-				{/* Back Button */}
-				<BackNavigationButton />
+		return (
+			<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
+				<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
+					{/* Back Button */}
+					<BackNavigationButton />
 
-				{/* Header Section */}
-				<div class="hero rounded-box bg-base-100 shadow-md">
-					<div class="hero-content px-4 py-6 text-center">
-						<div class="max-w-full space-y-2">
-							<h1 class="break-words font-bold text-xl sm:text-2xl">
-								{locationData().title}
-							</h1>
+					{/* Header Section */}
+					<div class="hero rounded-box bg-base-100 shadow-md">
+						<div class="hero-content px-4 py-6 text-center">
+							<div class="max-w-full space-y-2">
+								<h1 class="break-words font-bold text-xl sm:text-2xl">
+									{locationData().title}
+								</h1>
 
-							<p class="break-words text-base-content/70 text-xs sm:text-sm">
-								{locationData().category} • {locationData().address}
-							</p>
+								<p class="break-words text-base-content/70 text-xs sm:text-sm">
+									{locationData().category} • {locationData().address}
+								</p>
 
-							{(() => {
-								const id = () => locationData().id;
+								{(() => {
+									const id = () => locationData().id;
 
-								const isRecreationLocationUserFavourite = createAsync(
-									() => queryIsLocationInUserFavourites(id()),
-									{ initialValue: false },
-								);
-
-								const [isLoading, setIsLoading] = createSignal(false);
-
-								function LoadingSpinner() {
-									return (
-										<>
-											<span class="loading loading-spinner"></span>
-											Please wait...
-										</>
+									const isRecreationLocationUserFavourite = createAsync(
+										() => queryIsLocationInUserFavourites(id()),
+										{ initialValue: false },
 									);
-								}
 
-								const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
-									initialValue: false,
-								});
+									const [isLoading, setIsLoading] = createSignal(false);
 
-								const isNotOwner = createAsync(
-									async () => !(await queryIsUserOwner()),
-									{ initialValue: true },
-								);
+									function LoadingSpinner() {
+										return (
+											<>
+												<span class="loading loading-spinner"></span>
+												Please wait...
+											</>
+										);
+									}
 
-								return (
-									<Show when={isLoggedIn() && isNotOwner()}>
-										<button
-											type="button"
-											class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
-											disabled={isLoading()}
-											onClick={async (_) => {
-												setIsLoading(true);
+									const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
+										initialValue: false,
+									});
 
-												if (isRecreationLocationUserFavourite()) {
-													await removeFromFavourites(id());
-												} else {
-													await addToFavourites(id());
-												}
+									const isNotOwner = createAsync(
+										async () => !(await queryIsUserOwner()),
+										{ initialValue: true },
+									);
 
-												await revalidate(queryIsLocationInUserFavourites.key);
+									return (
+										<Show when={isLoggedIn() && isNotOwner()}>
+											<button
+												type="button"
+												class="link link-primary inline-flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+												disabled={isLoading()}
+												onClick={async (_) => {
+													setIsLoading(true);
 
-												setIsLoading(false);
-											}}
-										>
-											<Suspense fallback={<LoadingSpinner />}>
-												<Show
-													when={isLoading()}
-													fallback={
-														isRecreationLocationUserFavourite() ? (
-															<>
-																<RemoveFavoriteIcon />
-																Remove from Favourites
-															</>
-														) : (
-															<>
-																<AddFavoriteIcon />
-																Add to Favourites
-															</>
-														)
+													if (isRecreationLocationUserFavourite()) {
+														await removeFromFavourites(id());
+													} else {
+														await addToFavourites(id());
 													}
-												>
-													<LoadingSpinner />
-												</Show>
-											</Suspense>
-										</button>
-									</Show>
-								);
-							})()}
+
+													await revalidate(queryIsLocationInUserFavourites.key);
+
+													setIsLoading(false);
+												}}
+											>
+												<Suspense fallback={<LoadingSpinner />}>
+													<Show
+														when={isLoading()}
+														fallback={
+															isRecreationLocationUserFavourite() ? (
+																<>
+																	<RemoveFavoriteIcon />
+																	Remove from Favourites
+																</>
+															) : (
+																<>
+																	<AddFavoriteIcon />
+																	Add to Favourites
+																</>
+															)
+														}
+													>
+														<LoadingSpinner />
+													</Show>
+												</Suspense>
+											</button>
+										</Show>
+									);
+								})()}
+							</div>
 						</div>
 					</div>
-				</div>
 
-				{/* Main Content Grid */}
-				<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
-					{/* Map Section - Full width on mobile, spans 2 cols on desktop */}
-					<div class="h-48 min-w-0 sm:h-64 lg:col-span-2 lg:h-full">
-						<UserMapView
-							coords={[locationData().latitude, locationData().longitude]}
-							label={locationData().title}
-							markerType="location"
-							// Uncomment to display nearby locations around the shown recreational location
-							// showNearby={true}
-							// zoom={16}
-						/>
-					</div>
+					{/* Main Content Grid */}
+					<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-3">
+						{/* Map Section - Full width on mobile, spans 2 cols on desktop */}
+						<div class="h-48 min-w-0 sm:h-64 lg:col-span-2 lg:h-full">
+							<UserMapView
+								coords={[locationData().latitude, locationData().longitude]}
+								label={locationData().title}
+								markerType="location"
+								// Uncomment to display nearby locations around the shown recreational location
+								// showNearby={true}
+								// zoom={16}
+							/>
+						</div>
 
-					{/* Contact Info - Always visible in sidebar on desktop */}
-					<div class="min-w-0 space-y-4 sm:space-y-6">
-						<ContactInfo location={locationData()} />
-						<RatingInfo location={locationData()} />
-						<OpeningHours location={locationData()} />
-					</div>
+						{/* Contact Info - Always visible in sidebar on desktop */}
+						<div class="min-w-0 space-y-4 sm:space-y-6">
+							<ContactInfo location={locationData()} />
+							<RatingInfo location={locationData()} />
+							<OpeningHours location={locationData()} />
+						</div>
 
-					{/* Full width sections */}
-					<div class="min-w-0 space-y-4 sm:space-y-6 lg:col-span-3">
-						<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
-							<BusinessDetails location={locationData()} />
-							<ImageGallery location={locationData()} />
+						{/* Full width sections */}
+						<div class="min-w-0 space-y-4 sm:space-y-6 lg:col-span-3">
+							<div class="grid grid-cols-1 gap-4 sm:gap-6 lg:grid-cols-2">
+								<BusinessDetails location={locationData()} />
+								<ImageGallery location={locationData()} />
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
-		</div>
-	);
-  } catch{
-    goBackToPreviousRoute()
-    return""
-  }
+		);
+	} catch {
+		goBackToPreviousRoute();
+		return "";
+	}
 }

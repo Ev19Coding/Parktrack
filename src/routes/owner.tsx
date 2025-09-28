@@ -26,7 +26,7 @@ import { DEFAULTS, DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { getProxiedImageUrl } from "~/utils/image";
 import { generateRandomUUID } from "~/utils/random";
 import {
-    assertUserIsOwner,
+	assertUserIsOwner,
 	getOwnerData,
 	queryAllRecreationalLocationCategories,
 	queryRecreationalLocationById,
@@ -720,7 +720,7 @@ function ViewLocationModal(props: {
 }
 
 export default function OwnerPage() {
-  assertUserIsOwner()
+	assertUserIsOwner();
 
 	// fetch owner's locations (existing)
 	const queryOwnerRecreationalLocations = query(async () => {
