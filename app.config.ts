@@ -9,7 +9,13 @@ export default defineConfig({
 		compressPublicAssets: true,
 		prerender: {
 			crawlLinks: true,
-			routes: ["/", "/user", "/info", "/owner", "/favourite"],
+			routes: [
+				"/",
+				"/user",
+				"/owner",
+				"/favourite",
+				...Array.from({ length: 1100 }, (_, i) => `/info/${i}`),
+			],
 		},
 	},
 });
