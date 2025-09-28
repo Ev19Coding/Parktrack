@@ -1,7 +1,8 @@
 /** biome-ignore-all lint/complexity/useLiteralKeys: <Typescript prefers if we use string literals in dynamic access> */
 "use server";
-// This contains functions for reading from the database
 
+// This contains functions for reading from the database
+import { redirect } from "@solidjs/router";
 import Fuse from "fuse.js";
 import QuickLRU from "quick-lru";
 import * as v from "valibot";
@@ -282,40 +283,44 @@ export async function getRecreationalLocationFromDatabaseById(
 
 	if (possiblyCachedLocation) return possiblyCachedLocation;
 
-	const fetchedLocation = (
-		await (
-			await getParkTrackDatabaseConnection()
-		).streamAndReadAll(`
+	try {
+		const fetchedLocation = (
+			await (
+				await getParkTrackDatabaseConnection()
+			).streamAndReadAll(`
          SELECT *
          FROM ${USER_RECREATIONAL_LOCATION_TABLE}
          WHERE id = ${id}
          `)
-	)
-		.getRowObjectsJS()
-		.map((rowObjectData) => {
-			try {
-				// Validate the data
-				const validatedData = v.parse(
-					RecreationalLocationSchema,
-					tryParseObject(rowObjectData),
-					{ abortEarly: true },
-				);
+		)
+			.getRowObjectsJS()
+			.map((rowObjectData) => {
+				try {
+					// Validate the data
+					const validatedData = v.parse(
+						RecreationalLocationSchema,
+						tryParseObject(rowObjectData),
+						{ abortEarly: true },
+					);
 
-				return validatedData;
-			} catch (e) {
-				throw new Error(
-					`Invalid recreational location data: ${JSON.stringify(
-						e,
-						(_, value) =>
-							typeof value === "bigint" ? value.toString() : value,
-						2,
-					)}`,
-				);
-			}
-		});
+					return validatedData;
+				} catch (e) {
+					throw new Error(
+						`Invalid recreational location data: ${JSON.stringify(
+							e,
+							(_, value) =>
+								typeof value === "bigint" ? value.toString() : value,
+							2,
+						)}`,
+					);
+				}
+			});
 
-	// Our data should be in the first index
-	return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
+		// Our data should be in the first index
+		return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
+	} catch {
+		throw redirect("/");
+	}
 }
 
 export async function getAllRecreationalLocationCategories(): Promise<
