@@ -423,7 +423,8 @@ function BusinessDetails(props: {
 
 /** Shows extra details about a recreational location the user selected. Requires that id of the location is in the url parameters */
 export default function InformationRoute() {
-  // Destructure the params since it's a proxy
+  try {
+    // Destructure the params since it's a proxy
 	const params = v.parse(IdParamSchema, {...useParams()})
 
 	const locationData = createAsync(
@@ -559,4 +560,8 @@ export default function InformationRoute() {
 			</div>
 		</div>
 	);
+  } catch{
+    goBackToPreviousRoute()
+    return""
+  }
 }
