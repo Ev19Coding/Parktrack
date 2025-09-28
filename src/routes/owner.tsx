@@ -6,9 +6,14 @@ import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
 import { createMemo, createSignal, For, Index, Show } from "solid-js";
 import { createStore, type SetStoreFunction } from "solid-js/store";
+import { useGeolocation } from "solidjs-use";
 import type { Mutable } from "solidjs-use";
 import * as v from "valibot";
-import { BackNavigationButton, GenericButton } from "~/components/button";
+import {
+	BackNavigationButton,
+	GenericButton,
+	TooltipButton,
+} from "~/components/button";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
 import {
 	closeModal,
@@ -51,6 +56,8 @@ function LocationForm(props: {
 	const [imageTitleInput, setImageTitleInput] = createSignal("");
 	const [imageUrlInput, setImageUrlInput] = createSignal("");
 	const [aboutTagInput, setAboutTagInput] = createSignal("");
+
+	const { coords: geoCoords } = useGeolocation({ enableHighAccuracy: true });
 
 	// Helper: parse comma-separated emails
 	function onEmailsInput(value: string) {
@@ -101,7 +108,9 @@ function LocationForm(props: {
 		const url = imageUrlInput().trim();
 		if (!url) return;
 		const item = { title: title || "Image", image: url };
-		const arr = props.formData.images ? [...props.formData.images, item] : [item];
+		const arr = props.formData.images
+			? [...props.formData.images, item]
+			: [item];
 		props.setFormData("images", arr);
 		setImageTitleInput("");
 		setImageUrlInput("");
@@ -119,7 +128,9 @@ function LocationForm(props: {
 		const tag = aboutTagInput().trim();
 		if (!tag) return;
 		const newAbout = aboutFromTag(tag);
-		const arr = props.formData.about ? [...props.formData.about, newAbout] : [newAbout];
+		const arr = props.formData.about
+			? [...props.formData.about, newAbout]
+			: [newAbout];
 		props.setFormData("about", arr);
 		setAboutTagInput("");
 	}
@@ -129,6 +140,15 @@ function LocationForm(props: {
 		const arr = [...props.formData.about];
 		arr.splice(idx, 1);
 		props.setFormData("about", arr.length ? arr : undefined);
+	}
+
+	// Provide a small helper to autofill coordinates using device geolocation.
+	function autofillCoords() {
+		const c = geoCoords();
+		if (!c || typeof c.latitude !== "number" || typeof c.longitude !== "number")
+			return;
+		props.setFormData("latitude", c.latitude);
+		props.setFormData("longitude", c.longitude);
 	}
 
 	// Use daisyUI fieldsets to group related inputs for cleaner UI and spacing
@@ -159,7 +179,9 @@ function LocationForm(props: {
 							class="input input-bordered w-full"
 							placeholder="e.g. Park, Trail, Beach"
 							value={props.formData.category ?? ""}
-							onInput={(e) => props.setFormData("category", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("category", e.currentTarget.value)
+							}
 						/>
 						<datalist id="category-suggestions">
 							<For each={props.categories}>{(c) => <option value={c} />}</For>
@@ -180,7 +202,9 @@ function LocationForm(props: {
 							placeholder="Full address or landmark"
 							class="input input-bordered w-full"
 							value={props.formData.address ?? ""}
-							onInput={(e) => props.setFormData("address", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("address", e.currentTarget.value)
+							}
 						/>
 					</label>
 
@@ -239,9 +263,26 @@ function LocationForm(props: {
 							class="input input-bordered w-full"
 							placeholder="Plus Code (optional)"
 							value={props.formData.plusCode ?? ""}
-							onInput={(e) => props.setFormData("plusCode", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("plusCode", e.currentTarget.value)
+							}
 						/>
 					</label>
+
+					<div class="sm:col-span-3 flex items-center gap-2">
+						<TooltipButton
+							class="btn-outline"
+							tooltipText={
+								<div class="w-48">
+									Auto-fill latitude & longitude from your device (requires
+									permission)
+								</div>
+							}
+							onClick={autofillCoords}
+						>
+							Use current location
+						</TooltipButton>
+					</div>
 				</div>
 			</fieldset>
 
@@ -257,7 +298,9 @@ function LocationForm(props: {
 							placeholder="Image URL (will use placeholder if empty)"
 							class="input input-bordered w-full"
 							value={props.formData.thumbnail ?? ""}
-							onInput={(e) => props.setFormData("thumbnail", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("thumbnail", e.currentTarget.value)
+							}
 						/>
 					</label>
 
@@ -274,7 +317,9 @@ function LocationForm(props: {
 						placeholder="Short description or notes about the location"
 						class="textarea textarea-bordered w-full"
 						value={props.formData.description ?? ""}
-						onInput={(e) => props.setFormData("description", e.currentTarget.value)}
+						onInput={(e) =>
+							props.setFormData("description", e.currentTarget.value)
+						}
 						rows={4}
 					/>
 				</label>
@@ -303,7 +348,9 @@ function LocationForm(props: {
 							placeholder="https://example.com"
 							class="input input-bordered w-full"
 							value={props.formData.website ?? ""}
-							onInput={(e) => props.setFormData("website", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("website", e.currentTarget.value)
+							}
 						/>
 					</label>
 
@@ -332,7 +379,9 @@ function LocationForm(props: {
 							class="input input-bordered w-full"
 							placeholder="e.g. ₦₦, ₦25,000–30,000"
 							value={props.formData.priceRange ?? ""}
-							onInput={(e) => props.setFormData("priceRange", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("priceRange", e.currentTarget.value)
+							}
 						/>
 					</label>
 
@@ -343,7 +392,9 @@ function LocationForm(props: {
 							class="input input-bordered w-full"
 							placeholder="e.g. America/Los_Angeles"
 							value={props.formData.timezone ?? ""}
-							onInput={(e) => props.setFormData("timezone", e.currentTarget.value)}
+							onInput={(e) =>
+								props.setFormData("timezone", e.currentTarget.value)
+							}
 						/>
 					</label>
 
@@ -393,7 +444,9 @@ function LocationForm(props: {
 				<div class="card bg-base-100 p-3 shadow-sm">
 					<div class="mb-2 flex items-center justify-between">
 						<div class="font-semibold">Open Hours</div>
-						<div class="text-base-content/70 text-sm">Enter as "Day: hours"</div>
+						<div class="text-base-content/70 text-sm">
+							Enter as "Day: hours"
+						</div>
 					</div>
 
 					<div class="flex flex-col gap-2 sm:flex-row">
@@ -439,7 +492,9 @@ function LocationForm(props: {
 				<div class="card bg-base-100 p-3 shadow-sm">
 					<div class="mb-2 flex items-center justify-between">
 						<div class="font-semibold">Images</div>
-						<div class="text-base-content/70 text-sm">Add image title + URL</div>
+						<div class="text-base-content/70 text-sm">
+							Add image title + URL
+						</div>
 					</div>
 
 					<div class="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -560,7 +615,11 @@ function CreateLocationModal(props: {
 			<div class="prose mx-auto max-w-full p-3">
 				<h2 class="font-bold text-xl">Create Location</h2>
 
-				<form method="post" class="grid gap-3" onSubmit={(e) => e.preventDefault()}>
+				<form
+					method="post"
+					class="grid gap-3"
+					onSubmit={(e) => e.preventDefault()}
+				>
 					<LocationForm
 						formData={props.formData}
 						setFormData={props.setFormData}
@@ -568,7 +627,11 @@ function CreateLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
 							Cancel
 						</GenericButton>
 
@@ -608,7 +671,11 @@ function EditLocationModal(props: {
 					/>
 
 					<div class="flex justify-end gap-2 pt-2">
-						<GenericButton class="btn-ghost" type="button" onClick={props.onCancel}>
+						<GenericButton
+							class="btn-ghost"
+							type="button"
+							onClick={props.onCancel}
+						>
 							Cancel
 						</GenericButton>
 
@@ -646,7 +713,8 @@ function ViewLocationModal(props: {
 						<div>
 							<h3 class="font-semibold text-lg">{props.formData.title}</h3>
 							<div class="text-base-content/70 text-sm">
-								{props.formData.category ?? "Other"} • {props.formData.address ?? "N/A"}
+								{props.formData.category ?? "Other"} •{" "}
+								{props.formData.address ?? "N/A"}
 							</div>
 						</div>
 					</div>
@@ -715,9 +783,9 @@ export default function OwnerPage() {
 	const viewModalId = generateRandomUUID();
 	const editModalId = generateRandomUUID();
 
-	const [formData, setFormData] = createStore<Mutable<RecreationalLocationSchema>>(
-		structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA),
-	);
+	const [formData, setFormData] = createStore<
+		Mutable<RecreationalLocationSchema>
+	>(structuredClone(DUMMY_RECREATIONAL_LOCATION_DATA));
 
 	async function setOwnerOnLocationData() {
 		const info = await getCurrentUserInfo();
@@ -733,7 +801,7 @@ export default function OwnerPage() {
 					String(l.title ?? "")
 						.toLowerCase()
 						.includes(term),
-			  )
+				)
 			: base.slice();
 
 		const key = sortKey();
@@ -766,7 +834,8 @@ export default function OwnerPage() {
 				setIsActionLoading(false);
 			},
 			<div>
-				Delete <span class="font-semibold text-primary">{title}</span> permanently?
+				Delete <span class="font-semibold text-primary">{title}</span>{" "}
+				permanently?
 			</div>,
 		);
 	}
@@ -828,10 +897,12 @@ export default function OwnerPage() {
 				<div class="hero rounded-box bg-base-100 shadow-md">
 					<div class="hero-content px-4 py-6 text-center">
 						<div class="max-w-full space-y-2">
-							<h1 class="break-words font-bold text-xl sm:text-2xl">Owner Portal</h1>
+							<h1 class="break-words font-bold text-xl sm:text-2xl">
+								Owner Portal
+							</h1>
 							<p class="break-words text-base-content/70 text-xs sm:text-sm">
-								Manage the recreational locations you created. Use the buttons to create,
-								view, edit, or remove items.
+								Manage the recreational locations you created. Use the buttons
+								to create, view, edit, or remove items.
 							</p>
 						</div>
 					</div>
@@ -865,7 +936,11 @@ export default function OwnerPage() {
 							onClick={() => setSortDir(sortDir() === "asc" ? "desc" : "asc")}
 							aria-label="Toggle sort direction"
 						>
-							{sortDir() === "asc" ? <AscendingOrderIcon /> : <DescendingOrderIcon />}
+							{sortDir() === "asc" ? (
+								<AscendingOrderIcon />
+							) : (
+								<DescendingOrderIcon />
+							)}
 						</button>
 					</div>
 
@@ -895,7 +970,9 @@ export default function OwnerPage() {
 								fallback={
 									<tr>
 										<td colSpan={5}>
-											<div class="p-4 text-center text-base-content/70">No locations found.</div>
+											<div class="p-4 text-center text-base-content/70">
+												No locations found.
+											</div>
 										</td>
 									</tr>
 								}
@@ -912,7 +989,9 @@ export default function OwnerPage() {
 											</td>
 											<td class="break-words">{loc().title}</td>
 											<td class="break-words">{loc().category ?? "Other"}</td>
-											<td class="hidden break-words sm:table-cell">{loc().address ?? "N/A"}</td>
+											<td class="hidden break-words sm:table-cell">
+												{loc().address ?? "N/A"}
+											</td>
 											<td>
 												<div class="flex gap-2">
 													<button
