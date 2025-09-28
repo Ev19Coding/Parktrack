@@ -14,7 +14,7 @@ function Header() {
 }
 
 export default function Home() {
-	const { coords } = useGeolocation();
+	const { coords } = useGeolocation({ enableHighAccuracy: true });
 
 	const latAndLong = createMemo(() => {
 		const { latitude, longitude } = coords();

@@ -437,7 +437,7 @@ export default function InformationRoute() {
 			{ initialValue: DUMMY_RECREATIONAL_LOCATION_DATA },
 		);
 
-		const { coords: userCoords } = useGeolocation();
+		const { coords: userCoords } = useGeolocation({ enableHighAccuracy: true });
 
 		const distance = createMemo(() =>
 			approximateNumberToDecimalPlaces(
