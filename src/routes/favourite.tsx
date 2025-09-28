@@ -52,23 +52,7 @@ export default function FavouritePage() {
 
 		await removeFromFavourites(id);
 
-		// Revalidate the favourites list and favourite status after the mutation.
-		// We prefer targeted revalidation by current user id when available.
-		try {
-			const userId = await getCurrentUserId();
-			if (userId) {
-				await revalidate([
-					`user-favourites:${userId}`,
-					`is-favourite:${userId}:${id}`,
-				]);
-			} else {
-				// Fallback to previous behaviour when user id can't be resolved
-				await revalidate(favouriteLocationsQuery.key);
-			}
-		} catch {
-			// Ensure we at least fall back to the previous behaviour on errors.
-			await revalidate(favouriteLocationsQuery.key);
-		}
+		await revalidate(favouriteLocationsQuery.key);
 
 		setIsActionLoading(false);
 	}
