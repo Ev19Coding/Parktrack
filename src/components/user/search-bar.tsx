@@ -69,11 +69,20 @@ export default function UserSearchBar() {
 				class="menu dropdown-content mt-2 max-h-96 w-full flex-nowrap overflow-y-auto rounded-box border bg-base-300 p-2 shadow-sm"
 				style={{ "z-index": 1001 }}
 			>
+				<li>
+					<div class="block text-info">
+						Can't find what you're looking for? Use{" "}
+						<A href="/search" class="link link-primary">
+							Advanced Search...
+						</A>
+					</div>
+				</li>
+
 				{/* Wrap suspenses right around any stuff relying on `createAsync` */}
 				<Suspense>
 					<Index
 						each={[...(basicSearchResults.latest ?? [])]}
-						fallback={<div class="px-3 py-2">No results found</div>}
+						fallback={<div class="px-3 py-2">No results found...</div>}
 					>
 						{(park) => {
 							return (
