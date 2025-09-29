@@ -80,7 +80,7 @@ export async function createUserRecreationalLocationTableEntry(
         ${toSqlJson(locationData.orderOnline)} AS orderOnline,
         ${toSqlJson(locationData.menu)} AS menu,
         ${toSqlJson(ownerPayload)} AS owner,
-        ${toSqlJson(locationData.about)} AS about,
+        ${toSqlJson(locationData.about ?? [])} AS about,
         ${toSqlJson(locationData.userReviews)} AS userReviews,
         ${toSqlJson(locationData.userReviewsExtended)} AS userReviewsExtended,
         ${locationData.isActive ? "TRUE" : "FALSE"} AS isActive
@@ -234,7 +234,7 @@ export async function updateUserRecreationalLocationTableEntry(
     orderOnline = ${toSqlJson(locationData.orderOnline)},
     menu = ${toSqlJson(locationData.menu)},
     owner = ${toSqlJson(locationData.owner)},
-    about = ${toSqlJson(locationData.about)},
+    about = ${toSqlJson(locationData.about ?? [])},
     userReviews = ${toSqlJson(locationData.userReviews)},
     userReviewsExtended = ${toSqlJson(locationData.userReviewsExtended)},
     updatedAt = CURRENT_TIMESTAMP,

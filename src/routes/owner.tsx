@@ -6,8 +6,8 @@ import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
 import { createMemo, createSignal, For, Index, Show } from "solid-js";
 import { createStore, type SetStoreFunction } from "solid-js/store";
-import { useGeolocation } from "solidjs-use";
 import type { Mutable } from "solidjs-use";
+import { useGeolocation } from "solidjs-use";
 import * as v from "valibot";
 import {
 	BackNavigationButton,
@@ -41,9 +41,25 @@ import {
 
 const { URL } = DEFAULTS;
 
-/** Minimal about-category generator from a tag string */
+/** Minimal about-category generator from a tag string
+ * Accepts "Category: Option" to pre-populate a single option otherwise creates empty category
+ */
 function aboutFromTag(tag: string) {
-	return { id: generateRandomUUID(), name: tag, options: [] };
+	const raw = tag.trim();
+	const parts = raw.split(":");
+	const catPart = parts[0] ?? "";
+	const rest = parts.slice(1);
+	const name = catPart.trim();
+	const option = rest.join(":").trim();
+	const base = {
+		id: generateRandomUUID(),
+		name,
+		options: [] as { name: string; enabled: boolean }[],
+	};
+	if (option) {
+		base.options.push({ name: option, enabled: true });
+	}
+	return base;
 }
 
 function LocationForm(props: {
@@ -56,6 +72,10 @@ function LocationForm(props: {
 	const [imageTitleInput, setImageTitleInput] = createSignal("");
 	const [imageUrlInput, setImageUrlInput] = createSignal("");
 	const [aboutTagInput, setAboutTagInput] = createSignal("");
+	// per-category temporary input for adding options (keyed by category id)
+	const [aboutOptionInputs, setAboutOptionInputs] = createSignal<
+		Record<string, string>
+	>({});
 
 	const { coords: geoCoords } = useGeolocation({ enableHighAccuracy: true });
 
@@ -125,13 +145,39 @@ function LocationForm(props: {
 
 	// about tags
 	function addAboutTag() {
-		const tag = aboutTagInput().trim();
-		if (!tag) return;
-		const newAbout = aboutFromTag(tag);
-		const arr = props.formData.about
-			? [...props.formData.about, newAbout]
-			: [newAbout];
-		props.setFormData("about", arr);
+		const raw = aboutTagInput().trim();
+		if (!raw) return;
+
+		// Support "Category: Option" to create a category with a prefilled option,
+		// or add the option to an existing category if the category already exists.
+		const parts = raw.split(":");
+		const catPart = parts[0] ?? "";
+		const rest = parts.slice(1);
+		const name = catPart.trim();
+		const option = rest.join(":").trim();
+
+		const existing = props.formData.about ?? [];
+		const idx = existing.findIndex(
+			(c) => c.name.toLowerCase() === name.toLowerCase(),
+		);
+
+		if (idx !== -1) {
+			// Category exists, append option if provided
+			if (option) {
+				const updated = existing.map((c, i) =>
+					i === idx
+						? { ...c, options: [...c.options, { name: option, enabled: true }] }
+						: c,
+				);
+				props.setFormData("about", updated);
+			}
+		} else {
+			// Create new category (aboutFromTag will add the option if passed)
+			const newAbout = aboutFromTag(raw);
+			const arr = existing ? [...existing, newAbout] : [newAbout];
+			props.setFormData("about", arr);
+		}
+
 		setAboutTagInput("");
 	}
 
@@ -140,6 +186,52 @@ function LocationForm(props: {
 		const arr = [...props.formData.about];
 		arr.splice(idx, 1);
 		props.setFormData("about", arr.length ? arr : undefined);
+	}
+
+	function addAboutOptionToCategory(categoryId: string) {
+		const val = (aboutOptionInputs()[categoryId] || "").trim();
+		if (!val) return;
+		const existing = props.formData.about ?? [];
+		const idx = existing.findIndex((c) => c.id === categoryId);
+		if (idx === -1) return;
+		const updated = existing.map((c, i) =>
+			i === idx
+				? { ...c, options: [...c.options, { name: val, enabled: true }] }
+				: c,
+		);
+		props.setFormData("about", updated);
+		setAboutOptionInputs({ ...aboutOptionInputs(), [categoryId]: "" });
+	}
+
+	function removeAboutOption(categoryId: string, optionIdx: number) {
+		const existing = props.formData.about ?? [];
+		const catIdx = existing.findIndex((c) => c.id === categoryId);
+		if (catIdx === -1) return;
+		const cat = existing[catIdx] ?? {
+			options: [] as { name: string; enabled: boolean }[],
+		};
+		const opts = [...(cat.options ?? [])];
+		opts.splice(optionIdx, 1);
+		const updated = existing.map((c, i) =>
+			i === catIdx ? { ...c, options: opts } : c,
+		);
+		props.setFormData("about", updated);
+	}
+
+	function toggleAboutOption(categoryId: string, optionIdx: number) {
+		const existing = props.formData.about ?? [];
+		const catIdx = existing.findIndex((c) => c.id === categoryId);
+		if (catIdx === -1) return;
+		const cat = existing[catIdx] ?? {
+			options: [] as { name: string; enabled: boolean }[],
+		};
+		const opts = (cat.options ?? []).map((o, i) =>
+			i === optionIdx ? { ...o, enabled: !o.enabled } : o,
+		);
+		const updated = existing.map((c, i) =>
+			i === catIdx ? { ...c, options: opts } : c,
+		);
+		props.setFormData("about", updated);
 	}
 
 	// Provide a small helper to autofill coordinates using device geolocation.
@@ -269,7 +361,7 @@ function LocationForm(props: {
 						/>
 					</label>
 
-					<div class="sm:col-span-3 flex items-center gap-2">
+					<div class="flex items-center gap-2 sm:col-span-3">
 						<TooltipButton
 							class="btn-outline"
 							tooltipText={
@@ -421,7 +513,7 @@ function LocationForm(props: {
 						/>
 					</label>
 
-					<label class="form-control cursor-pointer mt-2">
+					<label class="form-control mt-2 cursor-pointer">
 						<div class="flex items-center gap-3">
 							<span class="label-text">Active in system</span>
 							<input
@@ -455,9 +547,12 @@ function LocationForm(props: {
 							placeholder="e.g. Monday: 8 am–5 pm"
 							value={openHourInput()}
 							onInput={(e) => setOpenHourInput(e.currentTarget.value)}
-							onKeyDown={(e) =>
-								e.key === "Enter" && (e.preventDefault(), addOpenHour())
-							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addOpenHour();
+								}
+							}}
 						/>
 						<button type="button" class="btn btn-primary" onClick={addOpenHour}>
 							Add
@@ -467,7 +562,7 @@ function LocationForm(props: {
 					<div class="mt-3 flex flex-wrap gap-2">
 						{Object.entries(props.formData.openHours ?? {}).map(([day, arr]) =>
 							arr.map((h, idx) => (
-								<div class="badge badge-outline" role="listitem">
+								<div class="badge badge-outline">
 									<span class="mr-2">
 										{day}: {h}
 									</span>
@@ -509,9 +604,12 @@ function LocationForm(props: {
 							placeholder="Image URL"
 							value={imageUrlInput()}
 							onInput={(e) => setImageUrlInput(e.currentTarget.value)}
-							onKeyDown={(e) =>
-								e.key === "Enter" && (e.preventDefault(), addImage())
-							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addImage();
+								}
+							}}
 						/>
 					</div>
 
@@ -560,37 +658,97 @@ function LocationForm(props: {
 					<div class="mb-2 flex items-center justify-between">
 						<div class="font-semibold">About (tags)</div>
 						<div class="text-base-content/70 text-sm">
-							Tags describing features/amenities
+							Tags describing features/amenities. You can add "Category" or
+							"Category: Option"
 						</div>
 					</div>
 
 					<div class="flex gap-2">
 						<input
 							class="input input-bordered flex-1"
-							placeholder="Add tag (e.g. playground)"
+							placeholder="Add tag (e.g. 'Amenities' or 'Amenities: Restroom')"
 							value={aboutTagInput()}
 							onInput={(e) => setAboutTagInput(e.currentTarget.value)}
-							onKeyDown={(e) =>
-								e.key === "Enter" && (e.preventDefault(), addAboutTag())
-							}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addAboutTag();
+								}
+							}}
 						/>
 						<button type="button" class="btn btn-primary" onClick={addAboutTag}>
 							Add
 						</button>
 					</div>
 
-					<div class="mt-3 flex flex-wrap gap-2">
+					<div class="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
 						<For each={props.formData.about ?? []}>
 							{(a, idx) => (
-								<div class="badge badge-lg" role="listitem">
-									<span class="mr-2">{a.name}</span>
-									<button
-										type="button"
-										class="btn btn-xs btn-ghost"
-										onClick={() => removeAbout(idx())}
-									>
-										✕
-									</button>
+								<div class="card bg-base-200 p-2">
+									<div class="flex items-center justify-between">
+										<div class="font-semibold">{a.name}</div>
+										<div class="flex items-center gap-2">
+											<button
+												type="button"
+												class="btn btn-xs btn-ghost"
+												onClick={() => removeAbout(idx())}
+											>
+												Remove
+											</button>
+										</div>
+									</div>
+
+									<div class="mt-2 flex flex-wrap gap-2">
+										<For each={a.options ?? []}>
+											{(opt, oi) => (
+												<div class="badge badge-outline flex items-center gap-2">
+													<label class="flex items-center gap-2">
+														<input
+															type="checkbox"
+															checked={opt.enabled}
+															onInput={() => toggleAboutOption(a.id, oi())}
+															class="checkbox checkbox-sm"
+														/>
+														<span>{opt.name}</span>
+													</label>
+													<button
+														type="button"
+														class="btn btn-xs btn-ghost"
+														onClick={() => removeAboutOption(a.id, oi())}
+													>
+														✕
+													</button>
+												</div>
+											)}
+										</For>
+									</div>
+
+									<div class="mt-2 flex gap-2">
+										<input
+											class="input input-bordered flex-1"
+											placeholder="Add option to this category"
+											value={aboutOptionInputs()[a.id] ?? ""}
+											onInput={(e) =>
+												setAboutOptionInputs({
+													...aboutOptionInputs(),
+													[a.id]: e.currentTarget.value,
+												})
+											}
+											onKeyDown={(e) => {
+												if (e.key === "Enter") {
+													e.preventDefault();
+													addAboutOptionToCategory(a.id);
+												}
+											}}
+										/>
+										<button
+											type="button"
+											class="btn btn-sm btn-primary"
+											onClick={() => addAboutOptionToCategory(a.id)}
+										>
+											Add Option
+										</button>
+									</div>
 								</div>
 							)}
 						</For>
@@ -859,15 +1017,13 @@ export default function OwnerPage() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
 		await createUserRecreationalLocationTableEntry(formData);
-		try {
-			await Promise.all([
-				revalidateRecreationalLocationById(),
-				revalidateRecreationalLocationCategories(),
-				revalidate(queryOwnerRecreationalLocations.key),
-			]);
-		} catch {
-			await revalidate(queryOwnerRecreationalLocations.key);
-		}
+
+		await Promise.all([
+			revalidateRecreationalLocationById(),
+			revalidateRecreationalLocationCategories(),
+			revalidate(queryOwnerRecreationalLocations.key),
+		]);
+
 		closeModal(createModalId);
 		setIsActionLoading(false);
 	}
@@ -876,15 +1032,13 @@ export default function OwnerPage() {
 		setIsActionLoading(true);
 		await setOwnerOnLocationData();
 		await updateUserRecreationalLocationTableEntry(formData.id, formData);
-		try {
-			await Promise.all([
-				revalidateRecreationalLocationById(),
-				revalidateRecreationalLocationCategories(),
-				revalidate(queryOwnerRecreationalLocations.key),
-			]);
-		} catch {
-			await revalidate(queryOwnerRecreationalLocations.key);
-		}
+
+		await Promise.all([
+			revalidateRecreationalLocationById(),
+			revalidateRecreationalLocationCategories(),
+			revalidate(queryOwnerRecreationalLocations.key),
+		]);
+
 		closeModal(editModalId);
 		setIsActionLoading(false);
 	}
