@@ -20,6 +20,7 @@ export const DUMMY_RECREATIONAL_LOCATION_DATA = {
 	longitude: NUMBER,
 	link: URL,
 	thumbnail: URL,
+	about: [],
 	images: [],
 	openHours: {},
 	popularTimes: {},
