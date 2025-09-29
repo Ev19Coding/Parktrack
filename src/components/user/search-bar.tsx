@@ -79,7 +79,6 @@ export default function UserSearchBar() {
 							return (
 								<li>
 									<A
-										type="button"
 										class="flex justify-between gap-2"
 										href={`/info/${park().id}`}
 										onClick={() => setAreSuggestionsOpen(false)}
@@ -101,21 +100,12 @@ export default function UserSearchBar() {
 											)}
 										</Show>
 
-										<Show when={park().thumbnail}>
-											{(thumbnail) => {
-												const proxiedImgUrl = () =>
-													getProxiedImageUrl(thumbnail());
-
-												return (
-													<img
-														alt={park().title}
-														class="aspect-square h-7"
-														src={proxiedImgUrl()}
-														loading="lazy"
-													/>
-												);
-											}}
-										</Show>
+										<img
+											alt={park().title}
+											class="aspect-square h-7"
+											src={getProxiedImageUrl(park().thumbnail)}
+											loading="lazy"
+										/>
 									</A>
 								</li>
 							);
