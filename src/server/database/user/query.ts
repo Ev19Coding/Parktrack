@@ -330,18 +330,9 @@ export async function getUserQueryResultFromDatabase(
 	return enriched.slice(0, maxResults);
 }
 
-const recreationalLocationLruCache = new QuickLRU<
-	string | bigint,
-	RecreationalLocationSchema | undefined
->({ maxAge: CACHE_DURATION_IN_MS, maxSize: 100 });
-
 export async function getRecreationalLocationFromDatabaseById(
 	id: string,
 ): Promise<RecreationalLocationSchema | undefined> {
-	const possiblyCachedLocation = recreationalLocationLruCache.get(id);
-
-	if (possiblyCachedLocation) return possiblyCachedLocation;
-
 	try {
 		const fetchedLocation = (
 			await (
@@ -376,7 +367,7 @@ export async function getRecreationalLocationFromDatabaseById(
 			});
 
 		// Our data should be in the first index
-		return recreationalLocationLruCache.set(id, fetchedLocation[0]).get(id);
+		return fetchedLocation[0];
 	} catch {
 		throw redirect("/");
 	}
