@@ -82,7 +82,13 @@ export default function UserSearchBar() {
 				<Suspense>
 					<Index
 						each={[...(basicSearchResults.latest ?? [])]}
-						fallback={<div class="px-3 py-2">No results found...</div>}
+						fallback={
+							<div class="px-3 py-2">
+								<Show when={input()} fallback={"Try searching for something."}>
+									No results found...
+								</Show>
+							</div>
+						}
 					>
 						{(park) => {
 							return (
