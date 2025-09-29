@@ -37,6 +37,10 @@ export default function SideBar() {
 
 	let drawerToggle$!: HTMLInputElement;
 
+	const toggleDrawer = () => {
+		drawerToggle$.click();
+	};
+
 	return (
 		// No use of showing this on the login page
 		<Show when={location.pathname !== "/"}>
@@ -62,9 +66,7 @@ export default function SideBar() {
 									listeners();
 								});
 							}}
-							onClick={(_) => {
-								drawerToggle$.click();
-							}}
+							onClick={toggleDrawer}
 						>
 							<SettingsIcon class="size-8 text-base-content/50" />
 						</TooltipButton>
@@ -94,7 +96,7 @@ export default function SideBar() {
 
 										navigate("/");
 
-										drawerToggle$.click();
+										toggleDrawer();
 									} finally {
 										setIsLoading(false);
 									}
@@ -108,13 +110,7 @@ export default function SideBar() {
 						</li>
 
 						<li>
-							<A
-								href="/search"
-								onClick={(_) => {
-									// Close the side bar
-									drawerToggle$.click();
-								}}
-							>
+							<A href="/search" onClick={toggleDrawer}>
 								<SearchIcon />
 								Search
 							</A>
@@ -123,13 +119,7 @@ export default function SideBar() {
 						<Suspense>
 							<Show when={isUserOwner()}>
 								<li>
-									<A
-										href="/owner"
-										onClick={(_) => {
-											// Close the side bar
-											drawerToggle$.click();
-										}}
-									>
+									<A href="/owner" onClick={toggleDrawer}>
 										<ListingsIcon /> Your Listings
 									</A>
 								</li>
@@ -139,13 +129,7 @@ export default function SideBar() {
 						<Suspense>
 							<Show when={isLoggedIn() && !isUserOwner()}>
 								<li>
-									<A
-										href="/favourite"
-										onClick={(_) => {
-											// Close the side bar
-											drawerToggle$.click();
-										}}
-									>
+									<A href="/favourite" onClick={toggleDrawer}>
 										<StarIcon /> Favourites
 									</A>
 								</li>
@@ -153,13 +137,7 @@ export default function SideBar() {
 						</Suspense>
 
 						<li>
-							<A
-								href="/user"
-								onClick={(_) => {
-									// Close the side bar
-									drawerToggle$.click();
-								}}
-							>
+							<A href="/user" onClick={toggleDrawer}>
 								<HomePageIcon /> Homepage
 							</A>
 						</li>
@@ -179,6 +157,8 @@ export default function SideBar() {
 												await revalidateUserLoginData();
 
 												navigate("/");
+
+												toggleDrawer();
 
 												setIsLoading(false);
 											}, "Account deletion is permanent. Are you sure?")
