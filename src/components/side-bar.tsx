@@ -3,6 +3,7 @@ import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import ListingsIcon from "lucide-solid/icons/map";
 import SettingsIcon from "lucide-solid/icons/menu";
+import SearchIcon from "lucide-solid/icons/search";
 import StarIcon from "lucide-solid/icons/star";
 import TrashIcon from "lucide-solid/icons/trash-2";
 import { createSignal, onCleanup, Show, Suspense } from "solid-js";
@@ -104,6 +105,19 @@ export default function SideBar() {
 									{isLoggedIn() ? "Log Out" : "Back to Login"}
 								</Suspense>
 							</button>
+						</li>
+
+						<li>
+							<A
+								href="/search"
+								onClick={(_) => {
+									// Close the side bar
+									drawerToggle$.click();
+								}}
+							>
+								<SearchIcon />
+								Search
+							</A>
 						</li>
 
 						<Suspense>
