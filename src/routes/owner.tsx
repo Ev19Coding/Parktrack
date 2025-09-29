@@ -979,15 +979,11 @@ export default function OwnerPage() {
 			async () => {
 				setIsActionLoading(true);
 				await deleteUserRecreationalLocationTableEntry(id);
-				try {
-					await Promise.all([
-						revalidateRecreationalLocationById(),
-						revalidateRecreationalLocationCategories(),
-						revalidate(queryOwnerRecreationalLocations.key),
-					]);
-				} catch {
-					await revalidate(queryOwnerRecreationalLocations.key);
-				}
+				await Promise.all([
+					revalidateRecreationalLocationById(),
+					revalidateRecreationalLocationCategories(),
+					revalidate(queryOwnerRecreationalLocations.key),
+				]);
 				closeModal(viewModalId);
 				setIsActionLoading(false);
 			},
