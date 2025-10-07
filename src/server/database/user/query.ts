@@ -16,7 +16,7 @@ import { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATIONAL_LOCATION_TABLE } from "./constants";
 
-const DEFAULT_MAX_RESULTS = 10;
+const DEFAULT_MAX_RESULTS = 30;
 
 const UrlSchema = v.pipe(
 	v.string(),

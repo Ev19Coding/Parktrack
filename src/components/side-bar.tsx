@@ -1,4 +1,5 @@
 import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
+import AlertTriangleIcon from "lucide-solid/icons/alert-triangle";
 import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import ListingsIcon from "lucide-solid/icons/map";
@@ -117,6 +118,17 @@ export default function SideBar() {
 										}}
 									>
 										<ListingsIcon /> Your Listings
+									</A>
+								</li>
+								<li>
+									<A
+										href="/owner/reports"
+										onClick={(_) => {
+											// Close the side bar
+											drawerToggle$.click();
+										}}
+									>
+										<AlertTriangleIcon /> Location Reports
 									</A>
 								</li>
 							</Show>
