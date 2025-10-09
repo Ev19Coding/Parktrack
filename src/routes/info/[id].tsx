@@ -508,7 +508,7 @@ export default function InformationRoute() {
 										<Show when={isLoggedIn() && isNotOwner()}>
 											<button
 												type="button"
-												class="m-auto link link-primary flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+												class="link link-primary m-auto flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
 												disabled={isLoading()}
 												onClick={async (_) => {
 													setIsLoading(true);
