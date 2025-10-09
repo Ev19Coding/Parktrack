@@ -22,6 +22,8 @@ export const UserSchema = v.object({
 	updatedAt: v.date(),
 });
 
+
+
 export type UserSchema = v.InferOutput<typeof UserSchema>;
 
 // Session schema - matches the session table
@@ -117,6 +119,31 @@ export const CreateVerificationSchema = v.object({
 });
 
 export type CreateVerification = v.InferOutput<typeof CreateVerificationSchema>;
+
+// Report schema - matches the reports table
+export const ReportSchema = v.object({
+	id: v.string(),
+	locationId: v.string(),
+	ownerId: v.string(),
+	userEmail: v.pipe(v.string(), v.email()),
+	reason: v.string(),
+	description: v.string(),
+	date: v.date(),
+	createdAt: v.date(),
+	updatedAt: v.date(),
+});
+
+export type ReportSchema = v.InferOutput<typeof ReportSchema>;
+
+export const CreateReportSchema = v.object({
+	id: v.optional(v.string()),
+	locationId: v.string(),
+	ownerId: v.string(),
+	userEmail: v.pipe(v.string(), v.email()),
+	reason: v.string(),
+	description: v.string(),
+	date: v.optional(v.date()),
+});
 
 // Update types (all fields optional except id)
 export const UpdateUserSchema = v.object({

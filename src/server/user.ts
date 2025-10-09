@@ -157,6 +157,7 @@ export async function isLocationInFavourites(
 	return await isLocationInUserFavourites(user.id, locationId);
 }
 
+
 export async function updateUserType(
 	userId: string,
 	newType: UserType,

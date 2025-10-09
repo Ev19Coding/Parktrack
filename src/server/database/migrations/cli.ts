@@ -28,7 +28,7 @@ program
 	.option("-v, --verbose", "Show verbose output")
 	.action(async (options) => {
 		try {
-			console.log("🚀 Better Auth Migration CLI");
+			console.log(" Better Auth Migration CLI");
 			console.log("================================\n");
 
 			if (options.verbose) {
@@ -37,10 +37,10 @@ program
 
 			await runMigrations();
 
-			console.log("\n✅ Migration process completed successfully!");
+			console.log("\nMigration process completed successfully!");
 			process.exit(0);
 		} catch (error) {
-			console.error("\n❌ Migration failed:");
+			console.error("\n Migration failed:");
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exit(1);
 		}
@@ -52,7 +52,7 @@ program
 	.description("Show migration status")
 	.action(async () => {
 		try {
-			console.log("📊 Migration Status");
+			console.log(" Migration Status");
 			console.log("==================\n");
 
 			const status = await getMigrationStatus();
@@ -79,15 +79,15 @@ program
 
 			if (status.pending > 0) {
 				console.log(
-					`\n💡 Run 'bun run migrate up' to apply ${status.pending} pending migration(s)`,
+					`\n Run 'bun run migrate up' to apply ${status.pending} pending migration(s)`,
 				);
 			} else {
-				console.log("\n✨ Database is up to date!");
+				console.log("\n Database is up to date!");
 			}
 
 			process.exit(0);
 		} catch (error) {
-			console.error("❌ Failed to get migration status:");
+			console.error(" Failed to get migration status:");
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exit(1);
 		}
@@ -99,20 +99,20 @@ program
 	.description("Validate migration integrity")
 	.action(async () => {
 		try {
-			console.log("🔍 Validating Migrations");
+			console.log(" Validating Migrations");
 			console.log("========================\n");
 
 			const isValid = await validateMigrations();
 
 			if (isValid) {
-				console.log("\n✅ All migrations are valid!");
+				console.log("\nAll migrations are valid!");
 				process.exit(0);
 			} else {
-				console.log("\n❌ Migration validation failed!");
+				console.log("\n Migration validation failed!");
 				process.exit(1);
 			}
 		} catch (error) {
-			console.error("❌ Validation failed:");
+			console.error("Validation failed:");
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exit(1);
 		}
@@ -124,7 +124,7 @@ program
 	.description("Check if Better Auth tables exist")
 	.action(async () => {
 		try {
-			console.log("🔍 Checking Better Auth Tables");
+			console.log("Checking Better Auth Tables");
 			console.log("==============================\n");
 
 			const tables = await checkTablesExist();
@@ -141,16 +141,16 @@ program
 			const allExist = Object.values(tables).every((exists) => exists);
 
 			if (allExist) {
-				console.log("\n✅ All Better Auth tables are present!");
+				console.log("\n All Better Auth tables are present!");
 			} else {
 				console.log(
-					"\n⚠️  Some tables are missing. Run 'bun run migrate up' to create them.",
+					"\n  Some tables are missing. Run 'bun run migrate up' to create them.",
 				);
 			}
 
 			process.exit(0);
 		} catch (error) {
-			console.error("❌ Failed to check tables:");
+			console.error("Failed to check tables:");
 			console.error(error instanceof Error ? error.message : String(error));
 			process.exit(1);
 		}
