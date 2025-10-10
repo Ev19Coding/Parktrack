@@ -113,6 +113,36 @@ const IsoDateStringToDateSchema = v.union([
 	v.date(),
 ]);
 
+export const ReportSchema = v.pipe(
+	v.object({
+		/** Report ID (auto-generated) */
+		id: v.string(),
+
+		/** ID of the recreational location being reported */
+		locationId: v.string(),
+
+		/** ID of the user making the report */
+		userId: v.string(),
+
+		/** Report title/category */
+		title: v.pipe(v.string(), v.nonEmpty()),
+
+		/** Detailed report message */
+		message: v.string(),
+
+		/** When the report was created */
+		createdAt: IsoDateStringToDateSchema,
+
+		/** When the report was last updated */
+		updatedAt: IsoDateStringToDateSchema,
+
+		/** Whether the report has been resolved */
+		isResolved: v.boolean(),
+	}),
+	v.readonly(),
+);
+
+
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({
 		/** Id of the entry in the database (converted to ) */
