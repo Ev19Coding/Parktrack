@@ -25,4 +25,5 @@ export const DUMMY_RECREATIONAL_LOCATION_DATA = {
 	openHours: {},
 	popularTimes: {},
 	isActive: true,
+	events: [],
 } as const satisfies RecreationalLocationSchema;

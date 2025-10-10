@@ -142,6 +142,15 @@ export const ReportSchema = v.pipe(
 	v.readonly(),
 );
 
+const EventSchema = v.pipe(
+	v.object({
+		id: v.string(),
+		name: v.string(),
+		description: v.string(),
+		dueFor: IsoDateStringToDateSchema,
+	}),
+	v.readonly(),
+);
 
 export const RecreationalLocationSchema = v.pipe(
 	v.looseObject({
@@ -269,6 +278,8 @@ export const RecreationalLocationSchema = v.pipe(
 
 		/** Whether the location is currently active in our system */
 		isActive: v.nullish(v.boolean(), true),
+
+		events: v.nullish(v.array(EventSchema), []),
 	}),
 	v.readonly(),
 );
