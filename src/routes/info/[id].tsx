@@ -4,6 +4,7 @@ import AddFavoriteIcon from "lucide-solid/icons/bookmark-plus";
 import CalendarIcon from "lucide-solid/icons/calendar";
 import ClockIcon from "lucide-solid/icons/clock";
 import ExternalLinkIcon from "lucide-solid/icons/external-link";
+import FlagIcon from "lucide-solid/icons/flag";
 import GlobeIcon from "lucide-solid/icons/globe";
 import ImageIcon from "lucide-solid/icons/image";
 import MailIcon from "lucide-solid/icons/mail";
@@ -23,6 +24,10 @@ import * as v from "valibot";
 import { BackNavigationButton } from "~/components/button";
 import UserMapView from "~/components/map-view";
 import { GenericModal, showModal } from "~/components/modal/generic-modal";
+import {
+	ReportModal,
+	triggerReportModal,
+} from "~/components/modal/report-modal";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
 import { addToFavourites, removeFromFavourites } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
@@ -31,6 +36,7 @@ import { getProxiedImageUrl } from "~/utils/image";
 import { getDistanceInKmBetweenCoords } from "~/utils/location";
 import { goBackToPreviousRoute } from "~/utils/navigation";
 import { generateRandomUUID } from "~/utils/random";
+import { queryLocationReports } from "~/utils/report-query";
 import {
 	queryIsLocationInUserFavourites,
 	queryIsUserOwner,
@@ -506,45 +512,67 @@ export default function InformationRoute() {
 
 									return (
 										<Show when={isLoggedIn() && isNotOwner()}>
-											<button
-												type="button"
-												class="link link-primary m-auto flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
-												disabled={isLoading()}
-												onClick={async (_) => {
-													setIsLoading(true);
+											<div class="flex flex-wrap items-center justify-center gap-3">
+												<button
+													type="button"
+													class="link link-primary flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+													disabled={isLoading()}
+													onClick={async (_) => {
+														setIsLoading(true);
 
-													if (isRecreationLocationUserFavourite()) {
-														await removeFromFavourites(id());
-													} else {
-														await addToFavourites(id());
-													}
-
-													await revalidate(queryIsLocationInUserFavourites.key);
-
-													setIsLoading(false);
-												}}
-											>
-												<Suspense fallback={<LoadingSpinner />}>
-													<Show
-														when={isLoading()}
-														fallback={
-															isRecreationLocationUserFavourite() ? (
-																<>
-																	<RemoveFavoriteIcon />
-																	Remove from Favourites
-																</>
-															) : (
-																<>
-																	<AddFavoriteIcon />
-																	Add to Favourites
-																</>
-															)
+														if (isRecreationLocationUserFavourite()) {
+															await removeFromFavourites(id());
+														} else {
+															await addToFavourites(id());
 														}
-													>
-														<LoadingSpinner />
-													</Show>
-												</Suspense>
-											</button>
+
+														await revalidate(
+															queryIsLocationInUserFavourites.key,
+														);
+
+														setIsLoading(false);
+													}}
+												>
+													<Suspense fallback={<LoadingSpinner />}>
+														<Show
+															when={isLoading()}
+															fallback={
+																isRecreationLocationUserFavourite() ? (
+																	<>
+																		<RemoveFavoriteIcon />
+																		Remove from Favourites
+																	</>
+																) : (
+																	<>
+																		<AddFavoriteIcon />
+																		Add to Favourites
+																	</>
+																)
+															}
+														>
+															<LoadingSpinner />
+														</Show>
+													</Suspense>
+												</button>
+
+												<button
+													type="button"
+													class="link link-error flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+													onClick={() => {
+														triggerReportModal(
+															id(),
+															locationData().title,
+															async () => {
+																// Refresh location reports after submission
+																await revalidate(queryLocationReports.key);
+															},
+														);
+													}}
+												>
+													<FlagIcon size={16} />
+													Report Issue
+												</button>
+											</div>
 										</Show>
 									);
 								})()}
@@ -581,6 +609,9 @@ export default function InformationRoute() {
 							</div>
 						</div>
 					</div>
+
+					{/* Report Modal */}
+					<ReportModal />
 				</div>
 			</div>
 		);

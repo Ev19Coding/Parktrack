@@ -4,16 +4,20 @@ import { Suspense } from "solid-js";
 import "./app.css";
 import { ConfirmationModal } from "./components/modal/confirmation-modal";
 import SideBar from "./components/side-bar";
+import { ToastContainer } from "./components/toast";
 
 export default function App() {
 	return (
 		<Router
 			root={(props) => (
-				<div class="h-screen w-screen overflow-clip">
+				<div class="h-screen w-screen overflow-hidden">
 					<SideBar />
 					<ConfirmationModal />
+					<ToastContainer />
 
-					<Suspense>{props.children}</Suspense>
+					<main class="h-screen overflow-y-auto">
+						<Suspense>{props.children}</Suspense>
+					</main>
 				</div>
 			)}
 		>

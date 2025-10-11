@@ -1,63 +1,66 @@
-// src/components/modal/report-modal.tsx
 import { createSignal } from "solid-js";
 import { createStore } from "solid-js/store";
-import { GenericModal, showModal, closeModal } from "./generic-modal";
+
+import { toast } from "~/components/toast";
+import { createLocationReport } from "~/server/report";
 import { generateRandomUUID } from "~/utils/random";
-import { GenericButton } from "~/components/button";
+import { closeModal, GenericModal, showModal } from "./generic-modal";
 
 const [state, setState] = createStore({
 	modalId: generateRandomUUID(),
 	locationId: "" as string,
-	title: "" as string,
+	locationTitle: "" as string,
 	onSuccess: (() => {}) as () => void | Promise<void>,
 });
 
 export function ReportModal() {
-	const [reason, setReason] = createSignal("");
-	const [details, setDetails] = createSignal("");
-	const [email, setEmail] = createSignal("");
-	const [file, setFile] = createSignal<File | null>(null);
+	const [title, setTitle] = createSignal("Other");
+	const [message, setMessage] = createSignal("");
 	const [submitting, setSubmitting] = createSignal(false);
 
 	async function submitReport() {
-		// basic validation
+		// Basic validation
 		if (!state.locationId) {
-			alert("Missing location id.");
+			toast.error("Error", "Missing location ID. Please try again.");
 			return;
 		}
-		if (!reason()) {
-			alert("Please select a reason.");
+		if (!title().trim()) {
+			toast.warning(
+				"Validation Error",
+				"Please select an issue type for your report.",
+			);
 			return;
 		}
 
 		setSubmitting(true);
 		try {
-			const form = new FormData();
-			form.append("locationId", state.locationId);
-			form.append("reason", reason());
-			form.append("details", details());
-			if (email()) form.append("email", email());
-			if (file()) form.append("photo", file() as Blob);
+			await createLocationReport(
+				state.locationId,
+				title().trim(),
+				message().trim(),
+			);
 
-			const res = await fetch("/api/reports", {
-				method: "POST",
-				body: form,
-			});
-
-			if (!res.ok) {
-				const text = await res.text();
-				throw new Error(text || "Failed to submit report");
-			}
-
-			// optional: call back
+			// Call success callback
 			await state.onSuccess?.();
 
-			// simple success UX - you can replace with toast
-			alert("Report submitted — thank you.");
+			// Reset form
+			setTitle("Other");
+			setMessage("");
+
+			// Close modal with success message
+			toast.success(
+				"Report Submitted Successfully",
+				"Thank you for helping us improve! The location owner will be notified.",
+			);
 			closeModal(state.modalId);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			console.error("Report error", err);
-			alert("Could not submit report: " + (err.message || "unknown error"));
+			toast.error(
+				"Failed to Submit Report",
+				err instanceof Error
+					? err.message
+					: "An unexpected error occurred. Please try again.",
+			);
 		} finally {
 			setSubmitting(false);
 		}
@@ -65,66 +68,100 @@ export function ReportModal() {
 
 	return (
 		<GenericModal modalId={state.modalId} z-index={999_999}>
-			<h3 class="text-lg font-semibold mb-2">
-				Report an issue for <span class="font-bold">{state.title}</span>
-			</h3>
+			<div class="space-y-6">
+				{/* Header */}
+				<div class="text-center">
+					<h3 class="mb-2 font-bold text-primary text-xl">Report an Issue</h3>
+					<div class="divider my-1"></div>
+					<p class="text-base-content/70 text-sm">
+						Help us improve by reporting a problem with{" "}
+						<span class="font-semibold text-accent">{state.locationTitle}</span>
+					</p>
+				</div>
 
-			<div class="space-y-3">
-				<label class="block">
-					<span class="label-text">Reason</span>
-					<select
-						class="select select-bordered w-full"
-						value={reason()}
-						onChange={(e) => setReason(e.currentTarget.value)}
+				{/* Form */}
+				<fieldset class="fieldset space-y-4">
+					<legend class="fieldset-legend">Report Details</legend>
+
+					<div class="form-control w-full">
+						<label class="label" for="issue-type-select">
+							<span class="label-text font-semibold">Issue Type</span>
+							<span class="label-text-alt text-error">Required</span>
+						</label>
+						<select
+							id="issue-type-select"
+							class="select select-bordered select-primary focus:select-accent w-full"
+							value={title()}
+							onChange={(e) => setTitle(e.currentTarget.value)}
+						>
+							<option disabled value="">
+								Choose an issue type
+							</option>
+							<option value="Other">Other</option>
+							<option value="Incorrect Information">
+								📝 Incorrect Information
+							</option>
+							<option value="Permanently Closed">🚫 Permanently Closed</option>
+							<option value="Safety Concern">⚠️ Safety Concern</option>
+							<option value="Inappropriate Content">
+								🔞 Inappropriate Content
+							</option>
+							<option value="Spam or Duplicate">🗑️ Spam or Duplicate</option>
+							<option value="Accessibility Issue">
+								♿ Accessibility Issue
+							</option>
+							<option value="Facility Problem">🔧 Facility Problem</option>
+						</select>
+					</div>
+
+					<div class="form-control w-full">
+						<label class="label" for="description-textarea">
+							<span class="label-text font-semibold">Description</span>
+							<span class="label-text-alt">Optional - Provide details</span>
+						</label>
+						<textarea
+							id="description-textarea"
+							class="textarea textarea-bordered textarea-primary focus:textarea-accent min-h-24 w-full"
+							placeholder="Please describe the issue in detail. This information will help the location owner understand and address your concern more effectively."
+							value={message()}
+							onInput={(e) => setMessage(e.currentTarget.value)}
+						/>
+						<div class="label">
+							<span class="label-text-alt"></span>
+							<span class="label-text-alt">
+								{message().length}/500 characters
+							</span>
+						</div>
+					</div>
+				</fieldset>
+
+				{/* Actions */}
+				<div class="modal-action justify-center gap-3">
+					<button
+						type="button"
+						class="btn btn-outline btn-neutral"
+						onClick={() => closeModal(state.modalId)}
+						disabled={submitting()}
 					>
-						<option value="">-- choose a reason --</option>
-						<option value="incorrect_info">Incorrect information</option>
-						<option value="closed_permanently">
-							Closed / Permanently closed
-						</option>
-						<option value="unsafe">Unsafe / Unsafe content</option>
-						<option value="spam">Spam / Duplicate</option>
-						<option value="other">Other</option>
-					</select>
-				</label>
+						Cancel
+					</button>
 
-				<label class="block">
-					<span class="label-text">Details (optional)</span>
-					<textarea
-						class="textarea textarea-bordered w-full"
-						rows={3}
-						value={details()}
-						onInput={(e) => setDetails(e.currentTarget.value)}
-						placeholder="Add any extra information to help us investigate"
-					/>
-				</label>
-
-				<label class="block">
-					<span class="label-text">Attach photo (optional)</span>
-
-					<input
-						type="file"
-						accept="image/*"
-						onChange={(e) => setFile(e.currentTarget.files?.[0] ?? null)}
-					/>
-				</label>
-			</div>
-
-			<div class="modal-action mt-4">
-				<GenericButton
-					onClick={() => closeModal(state.modalId)}
-					class="btn-ghost"
-				>
-					Cancel
-				</GenericButton>
-
-				<GenericButton
-					class="btn-primary"
-					onClick={submitReport}
-					disabled={submitting()}
-				>
-					{submitting() ? "Sending..." : "Send Report"}
-				</GenericButton>
+					<button
+						type="button"
+						class="btn btn-primary min-w-32"
+						onClick={submitReport}
+						disabled={submitting() || !title().trim()}
+					>
+						{submitting() ? (
+							<>
+								<span class="loading loading-spinner loading-sm"></span>
+								Submitting...
+							</>
+						) : (
+							<>Submit Report</>
+						)}
+					</button>
+				</div>
 			</div>
 		</GenericModal>
 	);
@@ -133,12 +170,12 @@ export function ReportModal() {
 /** Call this to open the report modal */
 export function triggerReportModal(
 	locationId: string,
-	title?: string,
+	locationTitle?: string,
 	onSuccess?: () => void | Promise<void>,
 ) {
 	setState({
 		locationId,
-		title: title ?? "location",
+		locationTitle: locationTitle ?? "this location",
 		onSuccess: onSuccess ?? (() => {}),
 	});
 

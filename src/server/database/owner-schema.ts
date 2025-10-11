@@ -193,7 +193,7 @@ INSERT INTO "owner_recreational_locations" (
 	menu, owner, about, user_reviews, user_reviews_extended, created_at, updated_at, is_active
 )
 SELECT
-	owner->>'id' as owner_id,
+	json_extract_string(owner, '$.id') as owner_id,
 	id as location_id,
 	title, category, address, link, latitude, longitude,
 	thumbnail, images, open_hours, popular_times, description, phone, website,
@@ -201,7 +201,7 @@ SELECT
 	price_range, timezone, plus_code, data_id, reviews_link, reservations, order_online,
 	menu, owner, about, user_reviews, user_reviews_extended, created_at, updated_at, is_active
 FROM "user_recreational_locations"
-WHERE owner IS NOT NULL AND owner->>'id' IS NOT NULL;
+WHERE owner IS NOT NULL AND json_extract_string(owner, '$.id') IS NOT NULL;
 */
 ` as const;
 

@@ -1,4 +1,5 @@
 import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
+import FlagIcon from "lucide-solid/icons/flag";
 import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
 import ListingsIcon from "lucide-solid/icons/map";
@@ -123,6 +124,11 @@ export default function SideBar() {
 										<ListingsIcon /> Your Listings
 									</A>
 								</li>
+								<li>
+									<A href="/owner/report" onClick={toggleDrawer}>
+										<FlagIcon /> Location Reports
+									</A>
+								</li>
 							</Show>
 						</Suspense>
 
@@ -131,6 +137,11 @@ export default function SideBar() {
 								<li>
 									<A href="/favourite" onClick={toggleDrawer}>
 										<StarIcon /> Favourites
+									</A>
+								</li>
+								<li>
+									<A href="/user/report" onClick={toggleDrawer}>
+										<FlagIcon /> My Reports
 									</A>
 								</li>
 							</Show>

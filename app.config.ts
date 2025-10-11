@@ -12,9 +12,11 @@ export default defineConfig({
 			routes: [
 				"/",
 				"/user",
+				"/user/report",
 				"/owner",
+				"/owner/report",
 				"/favourite",
-				...Array.from({ length: 1100 }, (_, i) => `/info/${i}`),
+				// ...Array.from({ length: 1100 }, (_, i) => `/info/${i}`),
 			],
 		},
 	},

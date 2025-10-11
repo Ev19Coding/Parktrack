@@ -138,9 +138,17 @@ export const ReportSchema = v.pipe(
 
 		/** Whether the report has been resolved */
 		isResolved: v.boolean(),
+
+		/** Owner's reply to the report */
+		ownerReply: v.nullish(v.string()),
+
+		/** When the owner replied to the report */
+		ownerReplyAt: v.nullish(IsoDateStringToDateSchema),
 	}),
 	v.readonly(),
 );
+
+export type ReportSchema = v.InferOutput<typeof ReportSchema>;
 
 const EventSchema = v.pipe(
 	v.object({

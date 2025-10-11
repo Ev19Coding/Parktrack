@@ -4,7 +4,6 @@
 // This contains functions for reading from the database
 import { redirect } from "@solidjs/router";
 import Fuse from "fuse.js";
-import QuickLRU from "quick-lru";
 import * as v from "valibot";
 import { PLACEHOLDER_IMG } from "~/shared/constants";
 import type { Satisfies } from "~/types/generics";
@@ -149,6 +148,7 @@ export function computeAboutText(about: unknown): string | undefined {
 export function computeOwnerName(owner: unknown): string | undefined {
 	if (!owner || typeof owner !== "object") return undefined;
 	try {
+		// :(
 		const name = (owner as any).name;
 		if (typeof name === "string" && name.trim()) return name.trim();
 	} catch {
@@ -793,7 +793,7 @@ export async function getLocationsByOwner(
 		).streamAndReadAll(`
           SELECT id, title, thumbnail
           FROM ${USER_RECREATIONAL_LOCATION_TABLE}
-          WHERE owner->>'id' = '${ownerId}'
+          WHERE json_extract_string(owner, '$.id') = '${ownerId}'
           LIMIT ${maxResults}
           `)
 	)

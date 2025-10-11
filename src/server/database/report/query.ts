@@ -1,0 +1,173 @@
+/** biome-ignore-all lint/complexity/useLiteralKeys: <Typescript takes priority> */
+"use server";
+
+import * as v from "valibot";
+import { ReportSchema, type ReportSchema as ReportSchemaType } from "../schema";
+import { getParkTrackDatabaseConnection } from "../util";
+
+const REPORT_TABLE = "report";
+
+// Helper to escape single quotes for SQL strings
+const escapeForSql = (val: string) => val.replace(/'/g, "''");
+
+/**
+ * Get a report by ID
+ */
+export async function getReportById(
+	reportId: string,
+): Promise<ReportSchemaType | null> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const sql = `
+		SELECT * FROM ${REPORT_TABLE}
+		WHERE id = '${escapeForSql(reportId)}'
+	`;
+
+	const result = await connection.streamAndReadAll(sql);
+	const rows = result.getRowObjectsJS();
+
+	if (rows.length === 0) return null;
+
+	const row = rows[0];
+	if (!row) return null;
+
+	return v.parse(ReportSchema, {
+		id: String(row["id"]),
+		locationId: String(row["locationId"]),
+		userId: String(row["userId"]),
+		title: String(row["title"]),
+		message: String(row["message"]),
+		createdAt: row["createdAt"],
+		updatedAt: row["updatedAt"],
+		isResolved: Boolean(row["isResolved"]),
+		ownerReply: row["ownerReply"] ? String(row["ownerReply"]) : null,
+		ownerReplyAt: row["ownerReplyAt"] || null,
+	});
+}
+
+/**
+ * Get all reports for a specific location
+ */
+export async function getReportsByLocationId(
+	locationId: string,
+): Promise<ReportSchemaType[]> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const sql = `
+		SELECT * FROM ${REPORT_TABLE}
+		WHERE locationId = '${escapeForSql(locationId)}'
+		ORDER BY createdAt DESC
+	`;
+
+	const result = await connection.streamAndReadAll(sql);
+	const rows = result.getRowObjectsJS();
+
+	return rows.map((row) =>
+		v.parse(ReportSchema, {
+			id: String(row["id"]),
+			locationId: String(row["locationId"]),
+			userId: String(row["userId"]),
+			title: String(row["title"]),
+			message: String(row["message"]),
+			createdAt: row["createdAt"],
+			updatedAt: row["updatedAt"],
+			isResolved: Boolean(row["isResolved"]),
+			ownerReply: row["ownerReply"] ? String(row["ownerReply"]) : null,
+			ownerReplyAt: row["ownerReplyAt"] || null,
+		}),
+	);
+}
+
+/**
+ * Get all reports created by a specific user
+ */
+export async function getReportsByUserId(
+	userId: string,
+): Promise<ReportSchemaType[]> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const sql = `
+		SELECT * FROM ${REPORT_TABLE}
+		WHERE userId = '${escapeForSql(userId)}'
+		ORDER BY createdAt DESC
+	`;
+
+	const result = await connection.streamAndReadAll(sql);
+	const rows = result.getRowObjectsJS();
+
+	return rows.map((row) =>
+		v.parse(ReportSchema, {
+			id: String(row["id"]),
+			locationId: String(row["locationId"]),
+			userId: String(row["userId"]),
+			title: String(row["title"]),
+			message: String(row["message"]),
+			createdAt: row["createdAt"],
+			updatedAt: row["updatedAt"],
+			isResolved: Boolean(row["isResolved"]),
+			ownerReply: row["ownerReply"] ? String(row["ownerReply"]) : null,
+			ownerReplyAt: row["ownerReplyAt"] || null,
+		}),
+	);
+}
+
+/**
+ * Get reports for locations owned by a specific user
+ */
+export async function getReportsForOwnerLocations(
+	ownerId: string,
+): Promise<Array<ReportSchemaType & { locationTitle: string }>> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const sql = `
+		SELECT
+			r.*,
+			l.title as locationTitle
+		FROM ${REPORT_TABLE} r
+		JOIN user_recreational_locations l ON r.locationId = l.id
+		WHERE json_extract_string(l.owner, '$.id') = '${escapeForSql(ownerId)}'
+		ORDER BY r.createdAt DESC
+	`;
+
+	const result = await connection.streamAndReadAll(sql);
+	const rows = result.getRowObjectsJS();
+
+	return rows.map((row) => ({
+		...v.parse(ReportSchema, {
+			id: String(row["id"]),
+			locationId: String(row["locationId"]),
+			userId: String(row["userId"]),
+			title: String(row["title"]),
+			message: String(row["message"]),
+			createdAt: row["createdAt"],
+			updatedAt: row["updatedAt"],
+			isResolved: Boolean(row["isResolved"]),
+			ownerReply: row["ownerReply"] ? String(row["ownerReply"]) : null,
+			ownerReplyAt: row["ownerReplyAt"] || null,
+		}),
+		locationTitle: String(row["locationTitle"]),
+	}));
+}
+
+/**
+ * Check if a user owns the location for a given report
+ */
+export async function doesUserOwnReportLocation(
+	userId: string,
+	reportId: string,
+): Promise<boolean> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	const sql = `
+		SELECT COUNT(*) as count
+		FROM ${REPORT_TABLE} r
+		JOIN user_recreational_locations l ON r.locationId = l.id
+		WHERE r.id = '${escapeForSql(reportId)}'
+		AND json_extract_string(l.owner, '$.id') = '${escapeForSql(userId)}'
+	`;
+
+	const result = await connection.streamAndReadAll(sql);
+	const rows = result.getRowObjectsJS();
+
+	return Number(rows[0]?.["count"] || 0) > 0;
+}

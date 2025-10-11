@@ -179,108 +179,122 @@ export default function AdvancedSearchPage() {
 							<div class="card-body space-y-3">
 								<form
 									onSubmit={runSearch}
-									class="space-y-3"
+									class="space-y-4"
 									aria-label="Advanced search filters"
 								>
-									<div class="form-control">
-										<label for="keywords" class="label">
-											<span class="label-text">Keywords</span>
-										</label>
-										<input
-											id="keywords"
-											class="input input-bordered w-full"
-											placeholder="e.g. lake, playground"
-											value={query()}
-											onInput={(e) => setQuery(e.currentTarget.value)}
-											aria-invalid={!!errors().query}
-											aria-describedby={
-												errors().query ? "keywords-error" : undefined
-											}
-										/>
-										<Show when={errors().query}>
-											<span id="keywords-error" class="mt-1 text-error text-sm">
-												{errors().query}
-											</span>
-										</Show>
-									</div>
+									<fieldset class="fieldset">
+										<legend class="fieldset-legend">Search Criteria</legend>
 
-									<div class="form-control">
-										<label for="category" class="label">
-											<span class="label-text">Category</span>
-										</label>
-										<select
-											id="category"
-											class="select select-bordered w-full"
-											value={category()}
-											onInput={(e) =>
-												// @ts-expect-error DOM value is string; options guarantee allowed values
-												setCategory(e.currentTarget.value)
-											}
-										>
-											<option value="">Any</option>
-											<option value="Park">Park</option>
-											<option value="Restaurant">Restaurant</option>
-										</select>
-									</div>
+										<div class="form-control">
+											<label for="keywords" class="label">
+												<span class="label-text">Keywords</span>
+											</label>
+											<input
+												id="keywords"
+												class="input input-bordered w-full"
+												placeholder="e.g. lake, playground"
+												value={query()}
+												onInput={(e) => setQuery(e.currentTarget.value)}
+												aria-invalid={!!errors().query}
+												aria-describedby={
+													errors().query ? "keywords-error" : undefined
+												}
+											/>
+											<Show when={errors().query}>
+												<span
+													id="keywords-error"
+													class="mt-1 text-error text-sm"
+												>
+													{errors().query}
+												</span>
+											</Show>
+										</div>
 
-									<div class="form-control">
-										<label for="tags" class="label">
-											<span class="label-text">Tags (comma separated)</span>
-										</label>
-										<input
-											id="tags"
-											class="input input-bordered w-full"
-											placeholder="e.g. family, water"
-											value={tagInput()}
-											onInput={(e) => setTagInput(e.currentTarget.value)}
-										/>
-									</div>
+										<div class="form-control">
+											<label for="category" class="label">
+												<span class="label-text">Category</span>
+											</label>
+											<select
+												id="category"
+												class="select select-bordered w-full"
+												value={category()}
+												onInput={(e) =>
+													// @ts-expect-error DOM value is string; options guarantee allowed values
+													setCategory(e.currentTarget.value)
+												}
+											>
+												<option value="">Any</option>
+												<option value="Park">Park</option>
+												<option value="Restaurant">Restaurant</option>
+											</select>
+										</div>
 
-									<div class="form-control">
-										<label for="maxDistance" class="label">
-											<span class="label-text">Max Distance (KM)</span>
-										</label>
-										<input
-											id="maxDistance"
-											type="range"
-											min={MIN_DISTANCE_IN_KM}
-											max={MAX_DISTANCE_IN_KM}
-											value={distance()}
-											onInput={(e) =>
-												setDistance(Number(e.currentTarget.value))
-											}
-											class="range range-primary"
-											aria-describedby={
-												errors().distance ? "distance-error" : undefined
-											}
-										/>
-										<div class="text-info text-sm">{distance()} KM</div>
-										<Show when={errors().distance}>
-											<span id="distance-error" class="mt-1 text-error text-sm">
-												{errors().distance}
-											</span>
-										</Show>
-									</div>
+										<div class="form-control">
+											<label for="tags" class="label">
+												<span class="label-text">Tags (comma separated)</span>
+											</label>
+											<input
+												id="tags"
+												class="input input-bordered w-full"
+												placeholder="e.g. family, water"
+												value={tagInput()}
+												onInput={(e) => setTagInput(e.currentTarget.value)}
+											/>
+										</div>
+									</fieldset>
 
-									<div class="form-control">
-										<label for="sortBy" class="label">
-											<span class="label-text">Sort By</span>
-										</label>
-										<select
-											id="sortBy"
-											class="select select-bordered w-full"
-											value={sortBy()}
-											onInput={(e) => {
-												// DOM value is string; options guarantee allowed values
-												setSortBy(
-													e.currentTarget.value as "relevance" | "distance",
-												);
-											}}
-										>
-											<option value="relevance">Relevance</option>
-											<option value="distance">Distance</option>
-										</select>
-									</div>
+									<fieldset class="fieldset">
+										<legend class="fieldset-legend">Distance & Sorting</legend>
+
+										<div class="form-control">
+											<label for="maxDistance" class="label">
+												<span class="label-text">Max Distance (KM)</span>
+											</label>
+											<input
+												id="maxDistance"
+												type="range"
+												min={MIN_DISTANCE_IN_KM}
+												max={MAX_DISTANCE_IN_KM}
+												value={distance()}
+												onInput={(e) =>
+													setDistance(Number(e.currentTarget.value))
+												}
+												class="range range-primary"
+												aria-describedby={
+													errors().distance ? "distance-error" : undefined
+												}
+											/>
+											<div class="text-info text-sm">{distance()} KM</div>
+											<Show when={errors().distance}>
+												<span
+													id="distance-error"
+													class="mt-1 text-error text-sm"
+												>
+													{errors().distance}
+												</span>
+											</Show>
+										</div>
+
+										<div class="form-control">
+											<label for="sortBy" class="label">
+												<span class="label-text">Sort By</span>
+											</label>
+											<select
+												id="sortBy"
+												class="select select-bordered w-full"
+												value={sortBy()}
+												onInput={(e) => {
+													// DOM value is string; options guarantee allowed values
+													setSortBy(
+														e.currentTarget.value as "relevance" | "distance",
+													);
+												}}
+											>
+												<option value="relevance">Relevance</option>
+												<option value="distance">Distance</option>
+											</select>
+										</div>
+									</fieldset>
 
 									<div class="flex gap-2">
 										<button
