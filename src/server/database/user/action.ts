@@ -2,6 +2,7 @@
 
 // This contains functions for writing to the database
 
+import * as v from "valibot";
 import { getCurrentUserInfo } from "~/server/user";
 import type { RecreationalLocationSchema } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
@@ -19,6 +20,24 @@ const toSqlJson = (val: unknown) =>
 
 const toSqlNumber = (val: number | null | undefined) =>
 	val == null ? "NULL" : String(val);
+
+// Event-specific schemas
+export const EventSchema = v.object({
+	id: v.string(),
+	name: v.pipe(v.string(), v.nonEmpty()),
+	description: v.string(),
+	dueFor: v.date(),
+});
+
+export type Event = v.InferOutput<typeof EventSchema>;
+
+export const CreateEventSchema = v.object({
+	name: v.pipe(v.string(), v.nonEmpty()),
+	description: v.string(),
+	dueFor: v.date(),
+});
+
+export type CreateEvent = v.InferOutput<typeof CreateEventSchema>;
 
 /**
  * Create a new recreational location entry.
@@ -90,42 +109,43 @@ export async function createUserRecreationalLocationTableEntry(
       images, openHours, popularTimes, description, phone, website, emails,
       rating, reviewRating, reviewCount, reviewsBreakdown, reviewsPerRating,
       priceRange, timezone, plusCode, dataId, reviewsLink, reservations,
-      orderOnline, menu, owner, about, userReviews, userReviewsExtended, isActive
+      orderOnline, menu, owner, about, userReviews, userReviewsExtended, events, isActive
     )
-    SELECT
-      maxid.m + row_number() OVER () AS id,
-      ti.title,
-      ti.category,
-      ti.address,
-      ti.link,
-      ti.latitude,
-      ti.longitude,
-      ti.thumbnail,
-      ti.images,
-      ti.openHours,
-      ti.popularTimes,
-      ti.description,
-      ti.phone,
-      ti.website,
-      ti.emails,
-      ti.rating,
-      ti.reviewRating,
-      ti.reviewCount,
-      ti.reviewsBreakdown,
-      ti.reviewsPerRating,
-      ti.priceRange,
-      ti.timezone,
-      ti.plusCode,
-      ti.dataId,
-      ti.reviewsLink,
-      ti.reservations,
-      ti.orderOnline,
-      ti.menu,
-      ti.owner,
-      ti.about,
-      ti.userReviews,
-      ti.userReviewsExtended,
-      ti.isActive
+  SELECT
+    maxid.m + row_number() OVER () AS id,
+    ti.title,
+    ti.category,
+    ti.address,
+    ti.link,
+    ti.latitude,
+    ti.longitude,
+    ti.thumbnail,
+    ti.images,
+    ti.openHours,
+    ti.popularTimes,
+    ti.description,
+    ti.phone,
+    ti.website,
+    ti.emails,
+    ti.rating,
+    ti.reviewRating,
+    ti.reviewCount,
+    ti.reviewsBreakdown,
+    ti.reviewsPerRating,
+    ti.priceRange,
+    ti.timezone,
+    ti.plusCode,
+    ti.dataId,
+    ti.reviewsLink,
+    ti.reservations,
+    ti.orderOnline,
+    ti.menu,
+    ti.owner,
+    ti.about,
+    ti.userReviews,
+    ti.userReviewsExtended,
+    '[]' AS events,
+    ti.isActive
     FROM to_insert ti, maxid
     RETURNING id
   `;
@@ -237,6 +257,7 @@ export async function updateUserRecreationalLocationTableEntry(
     about = ${toSqlJson(locationData.about ?? [])},
     userReviews = ${toSqlJson(locationData.userReviews)},
     userReviewsExtended = ${toSqlJson(locationData.userReviewsExtended)},
+    events = ${toSqlJson(locationData.events ?? [])},
     updatedAt = CURRENT_TIMESTAMP,
     isActive = ${locationData.isActive ? "TRUE" : "FALSE"}
    WHERE id = ${entryId}
@@ -248,4 +269,250 @@ export async function updateUserRecreationalLocationTableEntry(
 
 	// Return the updated row (if exists)
 	return await getRecreationalLocationFromDatabaseById(entryId);
+}
+
+/**
+ * Add a new event to a recreational location.
+ * Only the owner of the location can add events.
+ */
+export async function addEventToLocation(
+	locationId: string,
+	eventData: CreateEvent,
+): Promise<RecreationalLocationSchema | null> {
+	const [ownerInfo, locationData] = await Promise.all([
+		getCurrentUserInfo(),
+		getRecreationalLocationFromDatabaseById(locationId),
+	]);
+
+	if (ownerInfo?.type !== "owner") throw Error("Only owners can add events");
+
+	if (!locationData) throw Error("Location not found");
+
+	if (locationData.owner?.id !== ownerInfo.id)
+		throw Error("Owners can only add events to locations they own");
+
+	// Generate a new event ID
+	const eventId = crypto.randomUUID();
+
+	// Create the new event object
+	const newEvent: Event = {
+		id: eventId,
+		name: eventData.name,
+		description: eventData.description,
+		dueFor: eventData.dueFor,
+	};
+
+	// Get current events and add the new one
+	const currentEvents = locationData.events || [];
+	const updatedEvents = [...currentEvents, newEvent];
+
+	// Update the location with the new events array
+	const connection = await getParkTrackDatabaseConnection();
+
+	await connection.streamAndReadAll(`
+		UPDATE ${USER_RECREATIONAL_LOCATION_TABLE}
+		SET
+			events = ${toSqlJson(updatedEvents)},
+			updatedAt = CURRENT_TIMESTAMP
+		WHERE id = ${locationId}
+	`);
+
+	// Return the updated location
+	const updatedLocation =
+		await getRecreationalLocationFromDatabaseById(locationId);
+	return updatedLocation || null;
+}
+
+/**
+ * Update an event in a recreational location.
+ * Only the owner of the location can update events.
+ */
+export async function updateEventInLocation(
+	locationId: string,
+	eventId: string,
+	eventData: Partial<Omit<Event, "id">>,
+): Promise<RecreationalLocationSchema | null> {
+	const [ownerInfo, locationData] = await Promise.all([
+		getCurrentUserInfo(),
+		getRecreationalLocationFromDatabaseById(locationId),
+	]);
+
+	if (ownerInfo?.type !== "owner") throw Error("Only owners can update events");
+
+	if (!locationData) throw Error("Location not found");
+
+	if (locationData.owner?.id !== ownerInfo.id)
+		throw Error("Owners can only update events for locations they own");
+
+	// Get current events and find the one to update
+	const currentEvents = locationData.events || [];
+	const eventIndex = currentEvents.findIndex((e) => e.id === eventId);
+
+	if (eventIndex === -1) throw Error("Event not found");
+
+	// Update the event
+	const currentEvent = currentEvents[eventIndex];
+	if (!currentEvent) throw Error("Event not found");
+
+	const updatedEvent: Event = {
+		id: currentEvent.id,
+		name: eventData.name ?? currentEvent.name,
+		description: eventData.description ?? currentEvent.description,
+		dueFor: eventData.dueFor ?? currentEvent.dueFor,
+	};
+
+	// Replace the event in the array
+	const updatedEvents = [...currentEvents];
+	updatedEvents[eventIndex] = updatedEvent;
+
+	// Update the location with the modified events array
+	const connection = await getParkTrackDatabaseConnection();
+
+	await connection.streamAndReadAll(`
+		UPDATE ${USER_RECREATIONAL_LOCATION_TABLE}
+		SET
+			events = ${toSqlJson(updatedEvents)},
+			updatedAt = CURRENT_TIMESTAMP
+		WHERE id = ${locationId}
+	`);
+
+	// Return the updated location
+	const updatedLocation =
+		await getRecreationalLocationFromDatabaseById(locationId);
+	return updatedLocation || null;
+}
+
+/**
+ * Delete an event from a recreational location.
+ * Only the owner of the location can delete events.
+ */
+export async function deleteEventFromLocation(
+	locationId: string,
+	eventId: string,
+): Promise<RecreationalLocationSchema | null> {
+	const [ownerInfo, locationData] = await Promise.all([
+		getCurrentUserInfo(),
+		getRecreationalLocationFromDatabaseById(locationId),
+	]);
+
+	if (ownerInfo?.type !== "owner") throw Error("Only owners can delete events");
+
+	if (!locationData) throw Error("Location not found");
+
+	if (locationData.owner?.id !== ownerInfo.id)
+		throw Error("Owners can only delete events from locations they own");
+
+	// Get current events and filter out the one to delete
+	const currentEvents = locationData.events || [];
+	const updatedEvents = currentEvents.filter((e) => e.id !== eventId);
+
+	// Update the location with the filtered events array
+	const connection = await getParkTrackDatabaseConnection();
+
+	await connection.streamAndReadAll(`
+		UPDATE ${USER_RECREATIONAL_LOCATION_TABLE}
+		SET
+			events = ${toSqlJson(updatedEvents)},
+			updatedAt = CURRENT_TIMESTAMP
+		WHERE id = ${locationId}
+	`);
+
+	// Return the updated location
+	const updatedLocation =
+		await getRecreationalLocationFromDatabaseById(locationId);
+	return updatedLocation || null;
+}
+
+/**
+ * Get upcoming events from user's favorite locations.
+ * Returns events that are scheduled for the next specified number of days.
+ */
+export async function getUpcomingEventsForUser(
+	daysAhead: number = 90,
+): Promise<Array<Event & { locationId: string; locationTitle: string }>> {
+	const ownerInfo = await getCurrentUserInfo();
+
+	if (!ownerInfo) throw Error("User must be logged in");
+
+	const connection = await getParkTrackDatabaseConnection();
+
+	// Get user's favorites
+	const userResult = await connection.streamAndReadAll(`
+		SELECT favourites
+		FROM "user"
+		WHERE id = '${escapeForSql(ownerInfo.id)}'
+	`);
+
+	const userRows = userResult.getRowObjectsJS();
+	if (!userRows.length) return [];
+
+	const userRow = userRows[0];
+	if (!userRow || typeof userRow !== "object") return [];
+
+	const favouritesRaw = userRow["favourites"] || [];
+	// Parse favorites if it's a JSON string
+	const favourites =
+		typeof favouritesRaw === "string"
+			? JSON.parse(favouritesRaw)
+			: favouritesRaw;
+	if (!Array.isArray(favourites) || favourites.length === 0) return [];
+
+	// Get locations with events
+	const locationIds = favourites
+		.map((id) => `'${escapeForSql(String(id))}'`)
+		.join(",");
+
+	const locationsResult = await connection.streamAndReadAll(`
+		SELECT id, title, events
+		FROM ${USER_RECREATIONAL_LOCATION_TABLE}
+		WHERE id IN (${locationIds})
+		AND events IS NOT NULL
+		AND json_array_length(events) > 0
+	`);
+
+	const locationRows = locationsResult.getRowObjectsJS();
+
+	// Process events and filter for upcoming ones
+	const upcomingEvents: Array<
+		Event & { locationId: string; locationTitle: string }
+	> = [];
+	const cutoffDate = new Date();
+	cutoffDate.setDate(cutoffDate.getDate() + daysAhead);
+
+	for (const row of locationRows) {
+		if (!row || typeof row !== "object") continue;
+
+		const eventsRaw = row["events"] || [];
+		// Parse events if it's a JSON string
+		const events =
+			typeof eventsRaw === "string" ? JSON.parse(eventsRaw) : eventsRaw;
+		if (!Array.isArray(events)) continue;
+
+		for (const event of events) {
+			if (!event || typeof event !== "object") continue;
+
+			const eventObj = event as Record<string, unknown>;
+			if (!eventObj["dueFor"]) continue;
+
+			const eventDate = new Date(eventObj["dueFor"] as string);
+			const now = new Date();
+
+			// Include events that are today or in the future, within the specified range
+			if (eventDate >= now && eventDate <= cutoffDate) {
+				upcomingEvents.push({
+					id: String(eventObj["id"] || ""),
+					name: String(eventObj["name"] || ""),
+					description: String(eventObj["description"] || ""),
+					dueFor: eventDate,
+					locationId: String(row["id"]),
+					locationTitle: String(row["title"]),
+				});
+			}
+		}
+	}
+
+	// Sort by date
+	upcomingEvents.sort((a, b) => a.dueFor.getTime() - b.dueFor.getTime());
+
+	return upcomingEvents;
 }

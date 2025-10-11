@@ -74,7 +74,7 @@ export function addToast(
 
 export function ToastContainer() {
 	return (
-		<div class="toast toast-top toast-end z-[9999]">
+		<div class="toast toast-top toast-end z-[9999999]">
 			<For each={toasts()}>
 				{(toast) => (
 					<ToastItem toast={toast} onClose={() => removeToast(toast.id)} />
