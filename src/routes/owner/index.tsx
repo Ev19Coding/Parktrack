@@ -1,7 +1,9 @@
 import { createAsync, query, revalidate } from "@solidjs/router";
 import AscendingOrderIcon from "lucide-solid/icons/arrow-down-a-z";
 import DescendingOrderIcon from "lucide-solid/icons/arrow-down-z-a";
+import CalendarIcon from "lucide-solid/icons/calendar";
 import ViewIcon from "lucide-solid/icons/eye";
+
 import EditIcon from "lucide-solid/icons/square-pen";
 import DeleteIcon from "lucide-solid/icons/trash-2";
 import { createMemo, createSignal, For, Index, Show } from "solid-js";
@@ -15,6 +17,11 @@ import {
 	TooltipButton,
 } from "~/components/button";
 import { triggerConfirmationModal } from "~/components/modal/confirmation-modal";
+import { EventModal } from "~/components/modal/event-modal";
+import {
+	EventsManagementModal,
+	triggerEventsManagementModal,
+} from "~/components/modal/events-management-modal";
 import {
 	closeModal,
 	GenericModal,
@@ -936,6 +943,7 @@ export default function OwnerPage() {
 	const [sortKey, setSortKey] = createSignal<SortKeySchema>("title");
 	const [sortDir, setSortDir] = createSignal<"asc" | "desc">("asc");
 	const [isActionLoading, setIsActionLoading] = createSignal(false);
+	const [refreshTrigger, setRefreshTrigger] = createSignal(0);
 
 	const createModalId = generateRandomUUID();
 	const viewModalId = generateRandomUUID();
@@ -952,6 +960,8 @@ export default function OwnerPage() {
 	}
 
 	const locations = createMemo(() => {
+		// Include refreshTrigger in the dependencies to force reactivity
+		refreshTrigger();
 		const base = ownerRecreationalLocations();
 		const term = search().trim().toLowerCase();
 		const filtered = term
@@ -1103,13 +1113,14 @@ export default function OwnerPage() {
 
 				{/* Table */}
 				<div class="card overflow-auto bg-base-100 shadow-md">
-					<table class="table-compact table w-full">
+					<table class="table w-full">
 						<thead>
 							<tr>
 								<th>Thumbnail</th>
 								<th>Title</th>
 								<th>Category</th>
-								<th class="hidden sm:table-cell">Address</th>
+								<th>Address</th>
+								<th>Events</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
@@ -1119,7 +1130,7 @@ export default function OwnerPage() {
 								when={locations().length > 0}
 								fallback={
 									<tr>
-										<td colSpan={5}>
+										<td colSpan={6}>
 											<div class="p-4 text-center text-base-content/70">
 												No locations found.
 											</div>
@@ -1139,11 +1150,46 @@ export default function OwnerPage() {
 											</td>
 											<td class="break-words">{loc().title}</td>
 											<td class="break-words">{loc().category ?? "Other"}</td>
-											<td class="hidden break-words sm:table-cell">
-												{loc().address ?? "N/A"}
+											<td class="break-words">{loc().address ?? "N/A"}</td>
+											<td>
+												<div class="flex items-center gap-2">
+													<button
+														type="button"
+														class="btn btn-ghost btn-sm"
+														onClick={() =>
+															triggerEventsManagementModal(
+																loc().id,
+																loc().title,
+																loc().events || [],
+																async () => {
+																	// Revalidate the locations data
+																	await revalidate(
+																		queryOwnerRecreationalLocations.key,
+																	);
+																	// Force a reactivity update
+																	setRefreshTrigger((prev) => prev + 1);
+																},
+																async () => {
+																	// Force a fresh fetch to ensure we get the latest events
+																	const freshLocations =
+																		await queryOwnerRecreationalLocations();
+																	const location = freshLocations.find(
+																		(l) => l.id === loc().id,
+																	);
+																	return location?.events || [];
+																},
+															)
+														}
+													>
+														<CalendarIcon class="size-4" />
+														<span class="badge badge-outline badge-sm ml-1">
+															{(loc().events || []).length}
+														</span>
+													</button>
+												</div>
 											</td>
 											<td>
-												<div class="flex gap-2">
+												<div class="flex flex-wrap gap-2 lg:flex-nowrap">
 													<button
 														type="button"
 														class="btn btn-ghost btn-sm"
@@ -1216,6 +1262,9 @@ export default function OwnerPage() {
 				onCancel={() => closeModal(editModalId)}
 				onSubmit={handleEdit}
 			/>
+
+			<EventModal />
+			<EventsManagementModal />
 		</div>
 	);
 }

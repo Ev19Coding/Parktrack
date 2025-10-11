@@ -1,4 +1,5 @@
 import { A, createAsync, useLocation, useNavigate } from "@solidjs/router";
+import CalendarIcon from "lucide-solid/icons/calendar";
 import FlagIcon from "lucide-solid/icons/flag";
 import HomePageIcon from "lucide-solid/icons/house";
 import LogOutIcon from "lucide-solid/icons/log-out";
@@ -8,6 +9,7 @@ import SearchIcon from "lucide-solid/icons/search";
 import StarIcon from "lucide-solid/icons/star";
 import TrashIcon from "lucide-solid/icons/trash-2";
 import { createSignal, onCleanup, Show, Suspense } from "solid-js";
+import { getUpcomingEventsForUser } from "~/server/database/user/action";
 import { AUTH_CLIENT } from "~/server/lib/auth-client";
 import { makeElementDraggable } from "~/utils/draggable";
 import { generateRandomUUID } from "~/utils/random";
@@ -34,6 +36,20 @@ export default function SideBar() {
 		initialValue: false,
 	});
 
+	const upcomingEventsCount = createAsync(
+		async () => {
+			try {
+				const loggedIn = await queryUserLoggedIn();
+				if (!loggedIn) return 0;
+				const events = await getUpcomingEventsForUser(30);
+				return events.length;
+			} catch {
+				return 0;
+			}
+		},
+		{ initialValue: 0 },
+	);
+
 	const drawerId = generateRandomUUID();
 
 	let drawerToggle$!: HTMLInputElement;
@@ -43,7 +59,6 @@ export default function SideBar() {
 	};
 
 	return (
-		// No use of showing this on the login page
 		<Show when={location.pathname !== "/"}>
 			<div class="drawer">
 				<input
@@ -58,11 +73,9 @@ export default function SideBar() {
 							tooltipText="Sidebar"
 							tooltipDir="right"
 							class="btn-square z-[99999] m-2 p-2 opacity-75 hover:opacity-100 hover:shadow-md hover:shadow-primary/50 hover:brightness-105"
-							// Make a draggable button
 							style={{ position: "fixed" }}
 							ref={(ref) => {
 								const listeners = makeElementDraggable(ref);
-
 								onCleanup(() => {
 									listeners();
 								});
@@ -81,22 +94,18 @@ export default function SideBar() {
 						class="drawer-overlay"
 					></label>
 
-					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 text-base-content *:w-full *:font-semibold">
+					<ul class="menu min-h-full w-52 justify-end gap-2 bg-base-200 p-4 py-8 font-semibold text-base-content">
 						<li>
 							<button
 								type="button"
-								onClick={async (_) => {
+								onClick={async () => {
 									setIsLoading(true);
 									try {
 										if (isLoggedIn()) {
-											// Wait for signOut to complete so server cookie/state is updated first
 											await AUTH_CLIENT.signOut();
 										}
-
 										await revalidateUserLoginData();
-
 										navigate("/");
-
 										toggleDrawer();
 									} finally {
 										setIsLoading(false);
@@ -140,6 +149,18 @@ export default function SideBar() {
 									</A>
 								</li>
 								<li>
+									<A href="/calendar" onClick={toggleDrawer} class="relative">
+										<CalendarIcon /> Events Calendar
+										<Suspense>
+											<Show when={(upcomingEventsCount() || 0) > 0}>
+												<div class="badge badge-primary badge-sm -right-1 -top-1 absolute">
+													{upcomingEventsCount()}
+												</div>
+											</Show>
+										</Suspense>
+									</A>
+								</li>
+								<li>
 									<A href="/user/report" onClick={toggleDrawer}>
 										<FlagIcon /> My Reports
 									</A>
@@ -159,18 +180,13 @@ export default function SideBar() {
 									<button
 										type="button"
 										class="text-error"
-										onClick={(_) =>
+										onClick={() =>
 											triggerConfirmationModal(async () => {
 												setIsLoading(true);
-
 												await AUTH_CLIENT.deleteUser();
-
 												await revalidateUserLoginData();
-
 												navigate("/");
-
 												toggleDrawer();
-
 												setIsLoading(false);
 											}, "Account deletion is permanent. Are you sure?")
 										}
