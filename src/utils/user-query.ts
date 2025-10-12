@@ -103,7 +103,6 @@ export async function revalidateRecreationalLocationCategories() {
 	]);
 }
 
-
 export const queryRecreationalLocationsAtRandom = query(
 	getRecreationalLocationsFromDatabaseAtRandom,
 	"location/random",
@@ -132,13 +131,13 @@ export async function revalidateUserFavouriteStatus() {
 	]);
 }
 export const queryOwnerType = query(
-    // We create a wrapper that calls the server function with the specific type
-    async () => {
-        "use server";
-        // Assuming 'owner' is the string literal type getUsersByType expects
-        return getUsersByType("owner"); 
-    }, 
-    "users/ownerType"
+	// We create a wrapper that calls the server function with the specific type
+	async () => {
+		"use server";
+		// Assuming 'owner' is the string literal type getUsersByType expects
+		return getUsersByType("owner");
+	},
+	"users/ownerType",
 );
 
 export const queryIsLocationInUserFavourites = query(

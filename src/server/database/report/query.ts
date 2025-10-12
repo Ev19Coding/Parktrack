@@ -3,8 +3,8 @@
 
 import * as v from "valibot";
 import { ReportSchema, type ReportSchema as ReportSchemaType } from "../schema";
-import { getParkTrackDatabaseConnection } from "../util";
 import { USER_RECREATIONAL_LOCATION_TABLE } from "../user/constants";
+import { getParkTrackDatabaseConnection } from "../util";
 
 const REPORT_TABLE = "report";
 
@@ -163,8 +163,7 @@ export async function queryLocationOwnerId(
 				WHERE id = ${locationId}
 				LIMIT 1
 			`)
-		)
-			.getRowObjectsJS();
+		).getRowObjectsJS();
 
 		if (!fetchedLocation.length) {
 			return undefined;
@@ -179,7 +178,8 @@ export async function queryLocationOwnerId(
 		let ownerObject: { id?: string | number };
 		try {
 			// Parse the JSON string into an object (DuckDB often returns JSON as a string)
-			ownerObject = typeof ownerData === "string" ? JSON.parse(ownerData) : ownerData;
+			ownerObject =
+				typeof ownerData === "string" ? JSON.parse(ownerData) : ownerData;
 		} catch {
 			return undefined; // Failed to parse owner JSON
 		}
