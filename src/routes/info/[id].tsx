@@ -30,7 +30,11 @@ import {
 } from "~/components/modal/report-modal";
 import { queryLocationOwnerId } from "~/server/database/report/query";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import { addToFavourites, getCurrentUserId, removeFromFavourites } from "~/server/user";
+import {
+	addToFavourites,
+	getCurrentUserId,
+	removeFromFavourites,
+} from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { approximateNumberToDecimalPlaces } from "~/utils/formatting";
 import { getProxiedImageUrl } from "~/utils/image";
@@ -435,11 +439,10 @@ function BusinessDetails(props: {
 /** Shows extra details about a recreational location the user selected. Requires that id of the location is in the url parameters */
 export default function InformationRoute() {
 	try {
-	
-    // 1. Fetch the current logged-in user's ID
-    const currentUserId = createAsync(() => getCurrentUserId(), { 
-        initialValue: undefined 
-    });
+		// 1. Fetch the current logged-in user's ID
+		const currentUserId = createAsync(() => getCurrentUserId(), {
+			initialValue: undefined,
+		});
 
     
     
@@ -515,7 +518,9 @@ export default function InformationRoute() {
 										initialValue: false,
 									});
 									// FETCH OWNER-SPECIFIC DATA
-									const ownerInfo = createAsync(() => queryOwnerType(), { initialValue: null });
+									const ownerInfo = createAsync(() => queryOwnerType(), {
+										initialValue: null,
+									});
 
 									const isNotOwner = createAsync(
 										async () => !(await queryIsUserOwner()),
@@ -567,26 +572,26 @@ export default function InformationRoute() {
 													</Suspense>
 												</button>
 
-												<Show when={isLoggedIn() && isNotOwner() && ownerInfo()}>
-												<button
-													type="button"
-													class="link link-error flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
-													onClick={() => {
-														triggerReportModal(
-															id(),
-															locationData().title,
-															async () => {
-																// Refresh location reports after submission
-																await revalidate(queryLocationReports.key);
-															},
-														);
-													}}>
-												
+												<Show
+													when={isLoggedIn() && isNotOwner() && ownerInfo()}
+												>
+													<button
+														type="button"
+														class="link link-error flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
+														onClick={() => {
+															triggerReportModal(
+																id(),
+																locationData().title,
+																async () => {
+																	// Refresh location reports after submission
+																	await revalidate(queryLocationReports.key);
+																},
+															);
+														}}
+													>
 														<FlagIcon size={16} />
 														Report Issue
-												
-													
-												</button>
+													</button>
 												</Show>
 											</div>
 										</Show>

@@ -1,49 +1,17 @@
-import { createSignal, Index, Show } from "solid-js";
+import { createAsync } from "@solidjs/router";
+import MapPinIcon from "lucide-solid/icons/map-pin";
+import RefreshCwIcon from "lucide-solid/icons/refresh-cw";
+import SearchIcon from "lucide-solid/icons/search";
+import { createSignal, For, Index, Show } from "solid-js";
+import { useGeolocation } from "solidjs-use";
 import * as v from "valibot";
 import { BackNavigationButton } from "~/components/button";
-import LoadingSpinner from "~/components/loading-spinner";
 import { RecreationalLocationDisplayButtonCard } from "~/components/location-display-button-card";
+import {
+	getAllRecreationalLocationCategories,
+	getUserQueryResultFromDatabase,
+} from "~/server/database/user/query";
 import { getProxiedImageUrl } from "~/utils/image";
-
-type Result = {
-	id: string;
-	title: string;
-	thumbnail: string;
-	category?: string;
-	tags?: string[];
-	distanceKm?: number;
-	href?: string;
-};
-
-const MOCK_RESULTS: Result[] = [
-	{
-		id: "1",
-		title: "Millenium Park",
-		thumbnail: "/images/001-MP/Abuja_Millenium_Park_2019_01.jpg",
-		category: "Park",
-		tags: ["green", "family"],
-		distanceKm: 1.2,
-		href: "/info/1",
-	},
-	{
-		id: "2",
-		title: "Jabi Lake Waterfront",
-		thumbnail: "/images/Jabi-Lake-Waterfront.jpg",
-		category: "Park",
-		tags: ["water", "walk"],
-		distanceKm: 4.5,
-		href: "/info/2",
-	},
-	{
-		id: "3",
-		title: "Sample Restaurant",
-		thumbnail: "/images/placeholder.webp",
-		category: "Restaurant",
-		tags: ["food", "family"],
-		distanceKm: 2.1,
-		href: "/info/3",
-	},
-];
 
 export default function AdvancedSearchPage() {
 	const MIN_DISTANCE_IN_KM = 1;
@@ -51,38 +19,52 @@ export default function AdvancedSearchPage() {
 
 	// Form state
 	const [query, setQuery] = createSignal("");
-	const [category, setCategory] = createSignal<"" | "Park" | "Restaurant">("");
-	const [tagInput, setTagInput] = createSignal("");
-	const [distance, setDistance] = createSignal(10); // km
+	const [category, setCategory] = createSignal("");
+	const [distance, setDistance] = createSignal(10);
 	const [sortBy, setSortBy] = createSignal<"relevance" | "distance">(
 		"relevance",
 	);
+	const [searchResults, setSearchResults] = createSignal<
+		Array<{
+			id: string;
+			title: string;
+			thumbnail: string;
+			distanceKm?: number;
+		}>
+	>([]);
+	const [isLoading, setIsLoading] = createSignal(false);
 
-	// Results + loading + validation errors
-	const [isActionLoading, setIsActionLoading] = createSignal(false);
-	const [results, setResults] = createSignal<Result[]>([]);
+	// Validation errors
 	const [errors, setErrors] = createSignal<{
 		query?: string;
 		distance?: string;
 	}>({});
 
-	// Simple client-side "search" that filters the mock results.
-	// Using valibot for basic validation. We keep checks simple so this
-	// can be replaced with a full server-side schema later.
+	// Get user geolocation
+	const { coords } = useGeolocation({ enableHighAccuracy: true });
+
+	// Get categories
+	const categories = createAsync(() => getAllRecreationalLocationCategories());
+
+	// Search function with validation
 	async function runSearch(e?: Event) {
 		if (e) e.preventDefault();
 
-		// reset errors
 		setErrors({});
+		setIsLoading(true);
 
 		try {
-			v.parse(v.string(), query());
+			// Validate query if provided
+			if (query()?.trim()) {
+				v.parse(v.string(), query());
+			}
 		} catch {
 			setErrors({ query: "Invalid search keywords" });
+			setIsLoading(false);
 			return;
 		}
 
-		// ensure distance is a number in range
+		// Validate distance
 		const numericDistance = Number(distance());
 		if (
 			Number.isNaN(numericDistance) ||
@@ -92,236 +74,218 @@ export default function AdvancedSearchPage() {
 			setErrors({
 				distance: `Distance must be between ${MIN_DISTANCE_IN_KM} and ${MAX_DISTANCE_IN_KM} KM`,
 			});
+			setIsLoading(false);
 			return;
 		}
 
-		setIsActionLoading(true);
+		try {
+			const searchCoords = (): [number, number] => [
+				coords().latitude,
+				coords().longitude,
+			];
 
-		// simulate network latency
-		await new Promise((r) => setTimeout(r, 600));
-
-		const tags = tagInput()
-			.split(",")
-			.map((t) => t.trim().toLowerCase())
-			.filter(Boolean);
-
-		let filtered = MOCK_RESULTS.filter((r) => {
-			// query match
-			const q = query().trim().toLowerCase();
-			if (q) {
-				const inTitle = r.title.toLowerCase().includes(q);
-				const inTags = r.tags?.some((t) => t.toLowerCase().includes(q));
-				if (!inTitle && !inTags) return false;
-			}
-
-			// category match
-			if (category() && r.category !== category()) return false;
-
-			// tags match (all provided tags must be present)
-			if (tags.length > 0) {
-				const hasAll = tags.every((t) =>
-					r.tags?.some((rt) => rt.toLowerCase().includes(t)),
-				);
-				if (!hasAll) return false;
-			}
-
-			// distance filter
-			if (typeof r.distanceKm === "number" && r.distanceKm > numericDistance)
-				return false;
-
-			return true;
-		});
-
-		// sorting
-		if (sortBy() === "distance") {
-			filtered = filtered.sort(
-				(a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity),
+			let results = await getUserQueryResultFromDatabase(
+				query(),
+				searchCoords(),
+				50,
 			);
+
+			console.log(results);
+
+			// Apply distance filter
+			if (numericDistance < 100) {
+				results = results.filter(
+					(location) =>
+						!location.distanceKm || location.distanceKm <= numericDistance,
+				);
+			}
+
+			// Apply sorting
+			if (
+				sortBy() === "distance" &&
+				results.some((r) => r.distanceKm !== undefined)
+			) {
+				results = results.toSorted((a, b) => {
+					const distA = a.distanceKm ?? Infinity;
+					const distB = b.distanceKm ?? Infinity;
+					return distA - distB;
+				});
+			}
+
+			setSearchResults(results.slice(0, 20));
+		} catch (error) {
+			console.error("Search error:", error);
+			setSearchResults([]);
+		} finally {
+			setIsLoading(false);
 		}
-
-		setResults(filtered);
-
-		setIsActionLoading(false);
 	}
 
-	// run initial empty search to show suggestions
-	// eslint-disable-next-line @typescript-eslint/no-floating-promises
-	(async () => {
-		// small delay so page renders quickly
-		await new Promise((r) => setTimeout(r, 50));
-		setResults(MOCK_RESULTS);
-	})();
+	// Reset function
+	function resetForm() {
+		setQuery("");
+		setCategory("");
+		setDistance(10);
+		setSortBy("relevance");
+		setErrors({});
+		setSearchResults([]);
+	}
+
+	// Run initial search on mount
+	setTimeout(() => {
+		runSearch();
+	}, 100);
 
 	return (
-		<div class="size-full overflow-y-auto overflow-x-clip bg-base-200/50">
-			<div class="container relative mx-auto max-w-7xl space-y-4 p-3 sm:space-y-6 sm:p-4">
+		<div class="min-h-screen bg-base-200">
+			<div class="container relative mx-auto max-w-7xl space-y-6 p-4">
 				<BackNavigationButton />
 
 				{/* Header */}
-				<div class="hero rounded-box bg-base-100 shadow-md">
-					<div class="hero-content px-4 py-6 text-center">
-						<div class="max-w-full space-y-2">
-							<h1 class="break-words font-bold text-xl sm:text-2xl">
+				<div class="hero rounded-box bg-base-100">
+					<div class="hero-content text-center">
+						<div class="max-w-md">
+							<h1 class="mb-2 flex items-center justify-center gap-3 font-bold text-3xl">
+								<SearchIcon class="size-8" />
 								Advanced Search
 							</h1>
-							<p class="break-words text-base-content/70 text-xs sm:text-sm">
-								Search locations by keywords, category, tags, distance and more.
+							<p class="text-base-content/70">
+								Discover amazing recreational locations with powerful filters
+								and smart search.
 							</p>
 						</div>
 					</div>
 				</div>
 
 				{/* Main content area: filters (left) + results (right) */}
-				<div class="grid gap-4 lg:grid-cols-4">
-					{/* Filters (daisyUI card + form-control usage) */}
-					<aside class="col-span-1">
+				<div class="grid gap-6 lg:grid-cols-4">
+					{/* Filters */}
+					<aside class="lg:col-span-1">
 						<div class="card bg-base-100 shadow-sm">
-							<div class="card-body space-y-3">
-								<form
-									onSubmit={runSearch}
-									class="space-y-4"
-									aria-label="Advanced search filters"
-								>
-									<fieldset class="fieldset">
-										<legend class="fieldset-legend">Search Criteria</legend>
+							<div class="card-body">
+								<h2 class="card-title text-lg">Search Filters</h2>
 
-										<div class="form-control">
-											<label for="keywords" class="label">
-												<span class="label-text">Keywords</span>
-											</label>
-											<input
-												id="keywords"
-												class="input input-bordered w-full"
-												placeholder="e.g. lake, playground"
-												value={query()}
-												onInput={(e) => setQuery(e.currentTarget.value)}
-												aria-invalid={!!errors().query}
-												aria-describedby={
-													errors().query ? "keywords-error" : undefined
-												}
-											/>
-											<Show when={errors().query}>
-												<span
-													id="keywords-error"
-													class="mt-1 text-error text-sm"
-												>
+								<form onSubmit={runSearch} class="space-y-4">
+									{/* Keywords */}
+									<div class="form-control">
+										<label class="label" for="keywords-input">
+											<span class="label-text font-medium">Keywords</span>
+										</label>
+										<input
+											id="keywords-input"
+											type="text"
+											placeholder="e.g. lake, playground"
+											class={`input input-bordered w-full ${errors().query ? "input-error" : ""}`}
+											value={query()}
+											onInput={(e) => setQuery(e.currentTarget.value)}
+										/>
+										<Show when={errors().query}>
+											<div class="label">
+												<span class="label-text-alt text-error">
 													{errors().query}
 												</span>
-											</Show>
-										</div>
+											</div>
+										</Show>
+									</div>
 
-										<div class="form-control">
-											<label for="category" class="label">
-												<span class="label-text">Category</span>
-											</label>
-											<select
-												id="category"
-												class="select select-bordered w-full"
-												value={category()}
-												onInput={(e) =>
-													// @ts-expect-error DOM value is string; options guarantee allowed values
-													setCategory(e.currentTarget.value)
-												}
+									{/* Category */}
+									<div class="form-control">
+										<label class="label" for="category-select">
+											<span class="label-text font-medium">Category</span>
+										</label>
+										<select
+											id="category-select"
+											class="select select-bordered w-full"
+											value={category()}
+											onInput={(e) => setCategory(e.currentTarget.value)}
+										>
+											<option value="">All Categories</option>
+											<Show
+												when={categories()}
+												fallback={<option disabled>Loading...</option>}
 											>
-												<option value="">Any</option>
-												<option value="Park">Park</option>
-												<option value="Restaurant">Restaurant</option>
-											</select>
+												<For each={categories()}>
+													{(cat) => <option value={cat}>{cat}</option>}
+												</For>
+											</Show>
+										</select>
+									</div>
+
+									{/* Distance */}
+									<div class="form-control">
+										<label class="label" for="distance-range">
+											<span class="label-text font-medium">
+												Max Distance: {distance()} KM
+											</span>
+										</label>
+										<input
+											id="distance-range"
+											type="range"
+											min={MIN_DISTANCE_IN_KM}
+											max={MAX_DISTANCE_IN_KM}
+											value={distance()}
+											onInput={(e) =>
+												setDistance(Number(e.currentTarget.value))
+											}
+											class={`range range-primary ${errors().distance ? "range-error" : ""}`}
+										/>
+										<div class="flex w-full justify-between px-2 text-xs">
+											<span>{MIN_DISTANCE_IN_KM}km</span>
+											<span>25km</span>
+											<span>50km</span>
+											<span>75km</span>
+											<span>{MAX_DISTANCE_IN_KM}km</span>
 										</div>
-
-										<div class="form-control">
-											<label for="tags" class="label">
-												<span class="label-text">Tags (comma separated)</span>
-											</label>
-											<input
-												id="tags"
-												class="input input-bordered w-full"
-												placeholder="e.g. family, water"
-												value={tagInput()}
-												onInput={(e) => setTagInput(e.currentTarget.value)}
-											/>
-										</div>
-									</fieldset>
-
-									<fieldset class="fieldset">
-										<legend class="fieldset-legend">Distance & Sorting</legend>
-
-										<div class="form-control">
-											<label for="maxDistance" class="label">
-												<span class="label-text">Max Distance (KM)</span>
-											</label>
-											<input
-												id="maxDistance"
-												type="range"
-												min={MIN_DISTANCE_IN_KM}
-												max={MAX_DISTANCE_IN_KM}
-												value={distance()}
-												onInput={(e) =>
-													setDistance(Number(e.currentTarget.value))
-												}
-												class="range range-primary"
-												aria-describedby={
-													errors().distance ? "distance-error" : undefined
-												}
-											/>
-											<div class="text-info text-sm">{distance()} KM</div>
-											<Show when={errors().distance}>
-												<span
-													id="distance-error"
-													class="mt-1 text-error text-sm"
-												>
+										<Show when={errors().distance}>
+											<div class="label">
+												<span class="label-text-alt text-error">
 													{errors().distance}
 												</span>
-											</Show>
-										</div>
+											</div>
+										</Show>
+									</div>
 
-										<div class="form-control">
-											<label for="sortBy" class="label">
-												<span class="label-text">Sort By</span>
-											</label>
-											<select
-												id="sortBy"
-												class="select select-bordered w-full"
-												value={sortBy()}
-												onInput={(e) => {
-													// DOM value is string; options guarantee allowed values
-													setSortBy(
-														e.currentTarget.value as "relevance" | "distance",
-													);
-												}}
-											>
-												<option value="relevance">Relevance</option>
-												<option value="distance">Distance</option>
-											</select>
-										</div>
-									</fieldset>
+									{/* Sort By */}
+									<div class="form-control">
+										<label class="label" for="sort-select">
+											<span class="label-text font-medium">Sort By</span>
+										</label>
+										<select
+											id="sort-select"
+											class="select select-bordered w-full"
+											value={sortBy()}
+											onInput={(e) =>
+												setSortBy(
+													e.currentTarget.value as "relevance" | "distance",
+												)
+											}
+										>
+											<option value="relevance">Relevance</option>
+											<option value="distance">Distance</option>
+										</select>
+									</div>
 
-									<div class="flex gap-2">
+									{/* Action Buttons */}
+									<div class="flex gap-2 pt-6">
 										<button
 											type="submit"
-											class="btn btn-primary flex-1"
-											disabled={isActionLoading()}
+											class="btn btn-primary flex-1 gap-2"
+											disabled={isLoading()}
 										>
-											{isActionLoading() ? (
+											<Show
+												when={isLoading()}
+												fallback={<SearchIcon class="h-4 w-4" />}
+											>
 												<span class="loading loading-spinner loading-sm"></span>
-											) : (
-												"Search"
-											)}
+											</Show>
+											{isLoading() ? "Searching..." : "Search"}
 										</button>
-
 										<button
 											type="button"
-											class="btn btn-ghost"
-											onClick={() => {
-												setQuery("");
-												setCategory("");
-												setTagInput("");
-												setDistance(10);
-												setSortBy("relevance");
-												setResults(MOCK_RESULTS);
-												setErrors({});
-											}}
+											class="btn btn-ghost gap-2"
+											onClick={resetForm}
 										>
+											<RefreshCwIcon class="h-4 w-4" />
 											Reset
 										</button>
 									</div>
@@ -331,62 +295,88 @@ export default function AdvancedSearchPage() {
 					</aside>
 
 					{/* Results */}
-					<section class="col-span-3">
-						<div class="mb-3 flex items-center justify-between">
-							<div>
+					<section class="lg:col-span-3">
+						<div class="space-y-4">
+							{/* Results Header */}
+							<div class="flex items-center justify-between">
 								<p class="text-base-content/70 text-sm">
-									Showing <strong>{results().length}</strong> result
-									{results().length === 1 ? "" : "s"}
+									<Show when={!isLoading()} fallback="Searching...">
+										Showing <strong>{searchResults().length}</strong> result
+										{searchResults().length === 1 ? "" : "s"}
+										<Show when={coords().latitude && coords().longitude}>
+											<span class="ml-1 text-primary">
+												(using your location)
+											</span>
+										</Show>
+									</Show>
 								</p>
 							</div>
 
-							<div class="text-base-content/60 text-xs">
-								{/* Small hint area */}
-								Tip: click a card to view details
-							</div>
-						</div>
-
-						{/* grid of cards */}
-						<div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-							{/* When loading show skeletons */}
-							<Show when={isActionLoading()}>
-								<Index each={[1, 2, 3, 4]}>
-									{() => (
-										<RecreationalLocationDisplayButtonCard isSkeleton={true} />
-									)}
-								</Index>
+							{/* Results Grid */}
+							<Show when={isLoading()}>
+								<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+									<Index each={Array(8).fill(0)}>
+										{() => (
+											<RecreationalLocationDisplayButtonCard
+												isSkeleton={true}
+											/>
+										)}
+									</Index>
+								</div>
 							</Show>
 
-							{/* Actual results */}
-							<Index
-								each={results()}
-								fallback={
-									<div class="col-span-full rounded-box bg-base-100 p-4 text-center shadow-sm">
-										No results found. Try widening your filters.
+							<Show when={!isLoading()}>
+								<Show
+									when={searchResults().length > 0}
+									fallback={
+										<div class="card bg-base-100 shadow-sm">
+											<div class="card-body text-center">
+												<SearchIcon class="mx-auto mb-4 h-16 w-16 text-base-content/20" />
+												<h3 class="mb-2 font-medium text-lg">
+													No results found
+												</h3>
+												<p class="mb-4 text-base-content/70">
+													Try adjusting your search criteria or expanding your
+													search area.
+												</p>
+												<button
+													type="button"
+													class="btn btn-outline btn-sm"
+													onClick={resetForm}
+												>
+													Clear Filters
+												</button>
+											</div>
+										</div>
+									}
+								>
+									<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+										<Index each={searchResults()}>
+											{(location) => {
+												const loc = location();
+												return (
+													<div class="relative">
+														<RecreationalLocationDisplayButtonCard
+															href={`/info/${loc.id}`}
+															title={loc.title}
+															thumbnail={getProxiedImageUrl(loc.thumbnail)}
+														/>
+														<Show when={loc.distanceKm !== undefined}>
+															<div class="badge badge-primary badge-sm absolute right-2 bottom-2 flex items-center gap-1">
+																<MapPinIcon class="h-3 w-3" />
+																{loc.distanceKm?.toFixed(1)} km
+															</div>
+														</Show>
+													</div>
+												);
+											}}
+										</Index>
 									</div>
-								}
-							>
-								{(res) => {
-									const r = res();
-									return (
-										<RecreationalLocationDisplayButtonCard
-											href={r.href ?? "#"}
-											title={r.title}
-											thumbnail={getProxiedImageUrl(r.thumbnail)}
-										/>
-									);
-								}}
-							</Index>
+								</Show>
+							</Show>
 						</div>
 					</section>
 				</div>
-
-				{/* Global loading overlay */}
-				<Show when={isActionLoading()}>
-					<div class="fixed top-0 left-0 z-[999999] h-screen w-screen">
-						<LoadingSpinner />
-					</div>
-				</Show>
 			</div>
 		</div>
 	);
