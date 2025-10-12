@@ -4,6 +4,7 @@
 import * as v from "valibot";
 import { ReportSchema, type ReportSchema as ReportSchemaType } from "../schema";
 import { getParkTrackDatabaseConnection } from "../util";
+import { USER_RECREATIONAL_LOCATION_TABLE } from "../user/constants";
 
 const REPORT_TABLE = "report";
 
@@ -149,6 +150,53 @@ export async function getReportsForOwnerLocations(
 	}));
 }
 
+export async function queryLocationOwnerId(
+	locationId: string,
+): Promise<string | undefined> {
+	const connection = await getParkTrackDatabaseConnection();
+
+	try {
+		const fetchedLocation = (
+			await connection.streamAndReadAll(`
+				SELECT owner
+				FROM ${USER_RECREATIONAL_LOCATION_TABLE}
+				WHERE id = ${locationId}
+				LIMIT 1
+			`)
+		)
+			.getRowObjectsJS();
+
+		if (!fetchedLocation.length) {
+			return undefined;
+		}
+
+		const ownerData = fetchedLocation[0]?.["owner"];
+
+		if (!ownerData) {
+			return undefined; // No owner data exists
+		}
+
+		let ownerObject: { id?: string | number };
+		try {
+			// Parse the JSON string into an object (DuckDB often returns JSON as a string)
+			ownerObject = typeof ownerData === "string" ? JSON.parse(ownerData) : ownerData;
+		} catch {
+			return undefined; // Failed to parse owner JSON
+		}
+
+		const ownerId = ownerObject?.id;
+
+		if (ownerId === undefined || ownerId === null) {
+			return undefined; // 'id' field is missing or null in the JSON
+		}
+
+		// Ensure the ID is a string for consistent comparison (since DB IDs are often BIGINTs)
+		return String(ownerId);
+	} catch (error) {
+		console.error(`Error querying location owner ID for ${locationId}:`, error);
+		return undefined;
+	}
+}
 /**
  * Check if a user owns the location for a given report
  */

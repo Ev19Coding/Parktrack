@@ -28,8 +28,9 @@ import {
 	ReportModal,
 	triggerReportModal,
 } from "~/components/modal/report-modal";
+import { queryLocationOwnerId } from "~/server/database/report/query";
 import type { RecreationalLocationSchema } from "~/server/database/schema";
-import { addToFavourites, removeFromFavourites } from "~/server/user";
+import { addToFavourites, getCurrentUserId, removeFromFavourites } from "~/server/user";
 import { DUMMY_RECREATIONAL_LOCATION_DATA } from "~/shared/constants";
 import { approximateNumberToDecimalPlaces } from "~/utils/formatting";
 import { getProxiedImageUrl } from "~/utils/image";
@@ -40,6 +41,7 @@ import { queryLocationReports } from "~/utils/report-query";
 import {
 	queryIsLocationInUserFavourites,
 	queryIsUserOwner,
+	queryOwnerType,
 	queryRecreationalLocationById,
 	queryUserLoggedIn,
 } from "~/utils/user-query";
@@ -433,6 +435,55 @@ function BusinessDetails(props: {
 /** Shows extra details about a recreational location the user selected. Requires that id of the location is in the url parameters */
 export default function InformationRoute() {
 	try {
+	
+    // 1. Fetch the current logged-in user's ID
+    const currentUserId = createAsync(() => getCurrentUserId(), { 
+        initialValue: undefined 
+    });
+
+    // 2. Fetch the ID of the user who owns this location
+    const locationOwnerId = createAsync(
+        () => queryLocationOwnerId(queryRecreationalLocationById()), 
+        { initialValue: undefined }
+    );
+
+    // Determines if the current user is the owner
+    const isUserTheLocationOwner = createMemo(() => {
+        // Both IDs must be available and must match (using loose equality for safety)
+        return (
+            !!currentUserId() && 
+            !!locationOwnerId() && 
+            currentUserId() === locationOwnerId()
+        );
+    });
+
+    // Determines if the Report button should be visible
+    const canReport = createMemo(() => {
+        // Rule: Logged in AND location has an owner ID AND current user is NOT that owner.
+
+        // 1. Must be logged in
+        if (!currentUserId()) return false;
+
+        // 2. Location must have an owner ID (fetched from the JSON column)
+        const ownerId = locationOwnerId();
+        if (!ownerId) return false;
+
+        // 3. Current user must NOT be that owner
+        return !isUserTheLocationOwner(); 
+    });
+    
+    // ... (rest of the component)
+    
+    return (
+        // ...
+        <Show when={canReport()}>
+            <button /* ... Report button action/modal ... */ >
+                Report Location
+            </button>
+        </Show>
+        // ...
+    );
+
 		// Destructure the params since it's a proxy
 		const params = v.parse(IdParamSchema, { ...useParams() });
 
@@ -504,6 +555,8 @@ export default function InformationRoute() {
 									const isLoggedIn = createAsync(() => queryUserLoggedIn(), {
 										initialValue: false,
 									});
+									// FETCH OWNER-SPECIFIC DATA
+									const ownerInfo = createAsync(() => queryOwnerType(), { initialValue: null });
 
 									const isNotOwner = createAsync(
 										async () => !(await queryIsUserOwner()),
@@ -555,6 +608,7 @@ export default function InformationRoute() {
 													</Suspense>
 												</button>
 
+												<Show when={isLoggedIn() && isNotOwner() && ownerInfo()}>
 												<button
 													type="button"
 													class="link link-error flex items-center justify-center gap-1 break-words font-semibold text-base-content/70 text-xs sm:text-sm"
@@ -567,11 +621,14 @@ export default function InformationRoute() {
 																await revalidate(queryLocationReports.key);
 															},
 														);
-													}}
-												>
-													<FlagIcon size={16} />
-													Report Issue
+													}}>
+												
+														<FlagIcon size={16} />
+														Report Issue
+												
+													
 												</button>
+												</Show>
 											</div>
 										</Show>
 									);
