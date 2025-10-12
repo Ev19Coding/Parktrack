@@ -118,6 +118,11 @@ export default function SideBar() {
 								</Suspense>
 							</button>
 						</li>
+						<li>
+							<A href="/user" onClick={toggleDrawer}>
+								<HomePageIcon /> Homepage
+							</A>
+						</li>
 
 						<li>
 							<A href="/search" onClick={toggleDrawer}>

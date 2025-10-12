@@ -441,49 +441,8 @@ export default function InformationRoute() {
         initialValue: undefined 
     });
 
-    // 2. Fetch the ID of the user who owns this location
-    const locationOwnerId = createAsync(
-        () => queryLocationOwnerId(queryRecreationalLocationById()), 
-        { initialValue: undefined }
-    );
-
-    // Determines if the current user is the owner
-    const isUserTheLocationOwner = createMemo(() => {
-        // Both IDs must be available and must match (using loose equality for safety)
-        return (
-            !!currentUserId() && 
-            !!locationOwnerId() && 
-            currentUserId() === locationOwnerId()
-        );
-    });
-
-    // Determines if the Report button should be visible
-    const canReport = createMemo(() => {
-        // Rule: Logged in AND location has an owner ID AND current user is NOT that owner.
-
-        // 1. Must be logged in
-        if (!currentUserId()) return false;
-
-        // 2. Location must have an owner ID (fetched from the JSON column)
-        const ownerId = locationOwnerId();
-        if (!ownerId) return false;
-
-        // 3. Current user must NOT be that owner
-        return !isUserTheLocationOwner(); 
-    });
     
-    // ... (rest of the component)
     
-    return (
-        // ...
-        <Show when={canReport()}>
-            <button /* ... Report button action/modal ... */ >
-                Report Location
-            </button>
-        </Show>
-        // ...
-    );
-
 		// Destructure the params since it's a proxy
 		const params = v.parse(IdParamSchema, { ...useParams() });
 
