@@ -173,11 +173,7 @@ export default function SideBar() {
 							</Show>
 						</Suspense>
 
-						<li>
-							<A href="/user" onClick={toggleDrawer}>
-								<HomePageIcon /> Homepage
-							</A>
-						</li>
+						
 
 						<Suspense>
 							<Show when={isLoggedIn()}>

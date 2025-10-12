@@ -31,7 +31,7 @@ export default function UserMapView(prop: {
 	showNearby?: boolean;
 }) {
 	const mapId = generateRandomUUID();
-	const ZOOM_SIZE = 18;
+	const ZOOM_SIZE = 20;
 	const navigate = useNavigate();
 
 	const coords = createMemo(
@@ -63,7 +63,7 @@ export default function UserMapView(prop: {
 
 	// Clear existing recreational markers and add new ones when coordinates change
 	createEffect(
-		// Only track the basics so we don't enter an infinite loop
+		// Only track the basics to avoid entering an infinite loop
 		on([coords, mapRef, leafletRef, () => prop.showNearby], async () => {
 			if (!mapRef() || !leafletRef() || !prop.showNearby) return;
 

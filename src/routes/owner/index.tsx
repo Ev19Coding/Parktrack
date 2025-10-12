@@ -629,7 +629,7 @@ function LocationForm(props: {
 					<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
 						<For each={props.formData.images ?? []}>
 							{(img, i) => (
-								<div class="card bg-base-200 p-2">
+								<div class="card grid bg-base-200 p-2">
 									<div class="flex items-center gap-2">
 										<img
 											src={getProxiedImageUrl(img.image)}

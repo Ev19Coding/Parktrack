@@ -273,11 +273,6 @@ export const RecreationalLocationSchema = v.pipe(
 		/** TODO: Extended user reviews */
 		userReviewsExtended: v.nullish(v.any()),
 
-		// /** Input ID from scraping process */
-		// inputId: NullableStringSchema,
-
-		// TODO
-
 		/** Date when location was created in our system */
 		createdAt: v.nullish(IsoDateStringToDateSchema),
 
